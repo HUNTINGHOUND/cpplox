@@ -1,14 +1,63 @@
-//
-//  main.cpp
-//  cpplox
-//
-//  Created by Morgan Xu on 1/24/21.
-//
-
+#include "vm.hpp"
+#include "debug.hpp"
+#include <string>
 #include <iostream>
+#include <fstream>
 
-int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
-    return 0;
+void repl(VM* vm) {
+    std::string line;
+    for (;;) {
+        std::cout << "> ";
+        
+        if(!std::getline(std::cin, line)) {
+            std::cout << std::endl;
+            break;
+        }
+        
+        vm->interpret(line);
+    }
+}
+
+std::string readFile(const char* path) {
+    std::fstream file(path);
+    std::string source;
+    std::string line;
+    
+    if(file.is_open()) {
+        while(getline(file, line)) {
+            source += line;
+            source += '\n';
+        }
+        
+        file.close();
+    } else {
+        std::cerr << "Could not open file \\" << path;
+        exit(74);
+    }
+    
+    return "";
+}
+
+void runFile(VM* vm, const char* path) {
+    std::string source = readFile(path);
+    InterpretResult result = vm->interpret(source.c_str());
+    
+    if(result == INTERPRET_COMPILE_ERROR) exit(65);
+    if(result == INTERPRET_RUNTIME_ERROR) exit(70);
+}
+
+int main(int argc, const char* argv[]) {
+    
+    VM vm;
+
+    if(argc == 1) {
+        repl(&vm);
+    } else if(argc == 2) {
+        runFile(&vm, argv[1]);
+    } else {
+        std::cerr << "Usage: clox [path]\n";
+        exit(64);
+    }
+    
+    vm.freeVM();
 }
