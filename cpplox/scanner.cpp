@@ -136,7 +136,7 @@ TokenType Scanner::identifierType() {
             if (current - start > 1) {
                 switch(source[start + 1]) {
                     case 'h': return checkKeyword(2, 2, "is", TOKEN_THIS);
-                    case 'r': return checkKeyword(2, 2, "uw", TOKEN_TRUE);
+                    case 'r': return checkKeyword(2, 2, "ue", TOKEN_TRUE);
                 }
             }
         case 'v': return checkKeyword(1, 2, "ar", TOKEN_VAR);

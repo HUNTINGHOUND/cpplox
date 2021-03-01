@@ -16,6 +16,8 @@ Value VM::read_constant() {
 
 template <typename T>
 InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<double (double, double)> func) {
+    
+    
     if(!is_number(peek(0)) || !is_number(peek(1))) {
         runtimeError("Operands must be numbers.");
         return INTERPRET_RUNTIME_ERROR;
@@ -24,7 +26,8 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<double (double
     stack.pop_back();
     double a = as_number(stack.back());
     stack.pop_back();
-    stack.push_back(*valuetype(func(a,b)));
+    Value v = valuetype(func(a,b));
+    stack.push_back(v);
     return INTERPRET_OK;
 }
 
@@ -62,7 +65,7 @@ InterpretResult VM::run() {
 #ifdef DEBUG_TRACE_EXECUTION
         std::cout << "         ";
         for (auto it = stack.begin(); it != stack.end(); it++) {
-            std::cout << "[" << *it << "]";
+            std::cout << "[" << as_number(*it) << "]";
         }
         std::cout << std::endl;
         
@@ -75,19 +78,19 @@ InterpretResult VM::run() {
         uint8_t instruction;
         switch(instruction = read_byte()) {
             case OP_ADD: {
-                binary_op(number_val, std::plus<double>());
+                binary_op<double>(number_val, std::plus<double>());
                 break;
             }
             case OP_DIVIDE: {
-                binary_op(number_val, std::divides<double>());
+                binary_op<double>(number_val, std::divides<double>());
                 break;
             }
             case OP_MULTIPLY: {
-                binary_op(number_val, std::multiplies<double>());
+                binary_op<double>(number_val, std::multiplies<double>());
                 break;
             }
             case OP_SUBTRACT: {
-                binary_op(number_val, std::minus<double>());
+                binary_op<double>(number_val, std::minus<double>());
                 break;
             }
             case OP_NEGATE: {
@@ -126,7 +129,7 @@ InterpretResult VM::run() {
 }
 
 Value VM::peek(int distance) {
-    return *(stack.rend() + distance);
+    return *(stack.end() - distance - 1);
 }
 
 void VM::runtimeError(const std::string& format, ... ) {
