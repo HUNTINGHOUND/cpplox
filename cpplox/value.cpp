@@ -22,7 +22,17 @@ void ValueArray::freeValueArray(){
 }
 
 void ValueArray::printValue(Value value) {
-    std::cout << as_number(value);
+    switch (value.type) {
+        case VAL_BOOL:
+            std::cout << (as_bool(value) ? "true" : "false");
+            break;
+        case VAL_NUL:
+            std::cout << "nul";
+            break;
+        case VAL_NUMBER:
+            std::cout << as_number(value);
+            break;
+    }
 }
 
 Value bool_val(bool value) {

@@ -62,6 +62,12 @@ int Disassembler::disassembleInstruction(Chunk* chunk, int offset) {
             return constantInstruction("OP_CONSTANT", chunk, offset);
         case OP_RETURN:
             return simpleInstruction("OP_RETURN", offset);
+        case OP_NUL:
+            return simpleInstruction("OP_NUL", offset);
+        case OP_TRUE:
+            return simpleInstruction("OP_TRUE", offset);
+        case OP_FALSE:
+            return simpleInstruction("OP_FALSE", offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;
