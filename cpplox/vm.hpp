@@ -29,6 +29,8 @@ class VM {
     
     Value peek(int distance);
     
+    bool isFalsey(Value value);
+    
     void runtimeError(const std::string& format, ... );
     
 public:

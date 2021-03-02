@@ -8,6 +8,7 @@ enum OpCode {
     OP_CONSTANT,
     OP_CONSTANT_LONG,
     OP_RETURN,
+    OP_NOT,
     OP_NEGATE,
     OP_ADD,
     OP_SUBTRACT,

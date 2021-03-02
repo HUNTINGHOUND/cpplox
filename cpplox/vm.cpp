@@ -93,6 +93,12 @@ InterpretResult VM::run() {
                 binary_op<double>(number_val, std::minus<double>());
                 break;
             }
+            case OP_NOT: {
+                Value v = bool_val(isFalsey(stack.back()));
+                stack.pop_back();
+                stack.push_back(v);
+                break;
+            }
             case OP_NEGATE: {
                 if (!is_number(peek(0))) {
                     runtimeError("Operand must be a number.");
@@ -126,6 +132,10 @@ InterpretResult VM::run() {
                 break;
         }
     }
+}
+
+bool VM::isFalsey(Value value) {
+    return is_nul(value) || (is_bool(value) && !as_bool(value));
 }
 
 Value VM::peek(int distance) {
