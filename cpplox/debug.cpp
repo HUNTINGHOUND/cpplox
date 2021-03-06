@@ -76,6 +76,8 @@ int Disassembler::disassembleInstruction(Chunk* chunk, int offset) {
             return simpleInstruction("OP_GREATER", offset);
         case OP_LESS:
             return simpleInstruction("OP_LESS", offset);
+        case OP_CONDITIONAL:
+            return simpleInstruction("OP_CONDITIONAL", offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

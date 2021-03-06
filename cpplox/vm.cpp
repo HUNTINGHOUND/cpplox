@@ -87,6 +87,22 @@ InterpretResult VM::run() {
         
         uint8_t instruction;
         switch(instruction = read_byte()) {
+            case OP_CONDITIONAL: {
+                Value b = stack.back();
+                stack.pop_back();
+                Value a = stack.back();
+                stack.pop_back();
+                Value condition = stack.back();
+                stack.pop_back();
+                
+                if(Value::as_bool(condition)) {
+                    stack.push_back(a);
+                } else {
+                    stack.push_back(b);
+                }
+                
+                break;
+            }
             case OP_EQUAL: {
                 Value b = stack.back();
                 stack.pop_back();

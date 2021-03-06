@@ -19,7 +19,8 @@ enum OpCode {
     OP_FALSE,
     OP_EQUAL,
     OP_GREATER,
-    OP_LESS
+    OP_LESS,
+    OP_CONDITIONAL
 };
 
 //Data structure that represent a line in source code

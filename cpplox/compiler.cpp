@@ -126,6 +126,7 @@ void Compiler::condition() {
     parser.consume(TOKEN_COLON, "Expect ':' after conditional operator");
     
     parsePrecedence(PREC_ASSIGNMENT);
+    emitByte(OP_CONDITIONAL);
 }
 
 void Compiler::emitReturn() {
