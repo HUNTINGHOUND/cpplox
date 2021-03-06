@@ -24,8 +24,8 @@ class VM {
     
     Value read_constant();
     
-    template <typename T>
-    InterpretResult binary_op(Value (*valuetype)(T),std::function<double (double, double)> func);
+    template <typename T, typename U>
+    InterpretResult binary_op(Value (*valuetype)(T),std::function<T (U, U)> func);
     
     Value peek(int distance);
     

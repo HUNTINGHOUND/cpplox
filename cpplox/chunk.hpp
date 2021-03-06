@@ -16,7 +16,10 @@ enum OpCode {
     OP_DIVIDE,
     OP_NUL,
     OP_TRUE,
-    OP_FALSE
+    OP_FALSE,
+    OP_EQUAL,
+    OP_GREATER,
+    OP_LESS
 };
 
 //Data structure that represent a line in source code

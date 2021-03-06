@@ -19,13 +19,13 @@ ParseRule rules[42] = {
   [TOKEN_SLASH]         = {nullptr,     &Compiler::binary, PREC_FACTOR},
   [TOKEN_STAR]          = {nullptr,     &Compiler::binary, PREC_FACTOR},
   [TOKEN_BANG]          = {&Compiler::unary,     nullptr,   PREC_NONE},
-  [TOKEN_BANG_EQUAL]    = {nullptr,     nullptr,   PREC_NONE},
+  [TOKEN_BANG_EQUAL]    = {nullptr,     &Compiler::binary,   PREC_EQUALITY},
   [TOKEN_EQUAL]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_EQUAL_EQUAL]   = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_GREATER]       = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_GREATER_EQUAL] = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_LESS]          = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_LESS_EQUAL]    = {nullptr,     nullptr,   PREC_NONE},
+  [TOKEN_EQUAL_EQUAL]   = {nullptr,     &Compiler::binary,   PREC_EQUALITY},
+  [TOKEN_GREATER]       = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
+  [TOKEN_GREATER_EQUAL] = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
+  [TOKEN_LESS]          = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
+  [TOKEN_LESS_EQUAL]    = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
   [TOKEN_QUESTION_MARK] = {nullptr,     &Compiler::condition, PREC_CONDITIONAL},
   [TOKEN_COLON]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_IDENTIFIER]    = {nullptr,     nullptr,   PREC_NONE},
@@ -139,7 +139,7 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
 
 void Compiler::number() {
     double value = atof(parser.previous.source.c_str());
-    emitConstant(number_val(value));
+    emitConstant(Value::number_val(value));
 }
 
 void Compiler::emitConstant(Value value) {
@@ -186,6 +186,24 @@ void Compiler::binary() {
     parsePrecedence((Precedence)(rule->precedence + 1));
     
     switch(operatorType) {
+        case TOKEN_BANG_EQUAL:
+            emitBytes(OP_EQUAL, OP_NOT);
+            break;
+        case TOKEN_EQUAL_EQUAL:
+            emitByte(OP_EQUAL);
+            break;
+        case TOKEN_GREATER:
+            emitByte(OP_GREATER);
+            break;
+        case TOKEN_GREATER_EQUAL:
+            emitBytes(OP_LESS, OP_NOT);
+            break;
+        case TOKEN_LESS:
+            emitByte(OP_LESS);
+            break;
+        case TOKEN_LESS_EQUAL:
+            emitBytes(OP_GREATER, OP_NOT);
+            break;
         case TOKEN_PLUS:
             emitByte(OP_ADD);
             break;

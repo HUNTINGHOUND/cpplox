@@ -14,19 +14,19 @@ Value VM::read_constant() {
     return chunk->constants.values[read_byte()];
 }
 
-template <typename T>
-InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<double (double, double)> func) {
+template <typename T, typename U>
+InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func) {
     
     
-    if(!is_number(peek(0)) || !is_number(peek(1))) {
+    if(!Value::is_number(peek(0)) || !Value::is_number(peek(1))) {
         runtimeError("Operands must be numbers.");
         return INTERPRET_RUNTIME_ERROR;
     }
-    double b = as_number(stack.back());
+    double b = Value::as_number(stack.back());
     stack.pop_back();
-    double a = as_number(stack.back());
+    double a = Value::as_number(stack.back());
     stack.pop_back();
-    Value v = valuetype(func(a,b));
+    Value v = std::invoke(*valuetype, func(a,b));
     stack.push_back(v);
     return INTERPRET_OK;
 }
@@ -65,7 +65,17 @@ InterpretResult VM::run() {
 #ifdef DEBUG_TRACE_EXECUTION
         std::cout << "         ";
         for (auto it = stack.begin(); it != stack.end(); it++) {
-            std::cout << "[" << as_number(*it) << "]";
+            std::cout << "[";
+            if(Value::is_nul(*it)) {
+                std::cout << "nul]";
+            } else if (Value::is_bool(*it)) {
+                std::cout << (Value::as_bool(*it) ? "true" : "false") << "]";
+            } else if (Value::is_number(*it)) {
+                std::cout << Value::as_number(*it) << "]";
+            } else {
+                //should not happen
+                std::cerr << "unrecognizable value in stack";
+            }
         }
         std::cout << std::endl;
         
@@ -77,35 +87,51 @@ InterpretResult VM::run() {
         
         uint8_t instruction;
         switch(instruction = read_byte()) {
+            case OP_EQUAL: {
+                Value b = stack.back();
+                stack.pop_back();
+                Value a = stack.back();
+                stack.pop_back();
+                stack.push_back(Value::bool_val(Value::valuesEqual(a,b)));
+                break;
+            }
+            case OP_GREATER: {
+                binary_op<bool, double>(Value::bool_val, std::greater<double>());
+                break;
+            }
+            case OP_LESS: {
+                binary_op<bool, double>(Value::bool_val, std::less<double>());
+                break;
+            }
             case OP_ADD: {
-                binary_op<double>(number_val, std::plus<double>());
+                binary_op<double,double>(Value::number_val, std::plus<double>());
                 break;
             }
             case OP_DIVIDE: {
-                binary_op<double>(number_val, std::divides<double>());
+                binary_op<double,double>(Value::number_val, std::divides<double>());
                 break;
             }
             case OP_MULTIPLY: {
-                binary_op<double>(number_val, std::multiplies<double>());
+                binary_op<double,double>(Value::number_val, std::multiplies<double>());
                 break;
             }
             case OP_SUBTRACT: {
-                binary_op<double>(number_val, std::minus<double>());
+                binary_op<double,double>(Value::number_val, std::minus<double>());
                 break;
             }
             case OP_NOT: {
-                Value v = bool_val(isFalsey(stack.back()));
+                Value v = Value::bool_val(isFalsey(stack.back()));
                 stack.pop_back();
                 stack.push_back(v);
                 break;
             }
             case OP_NEGATE: {
-                if (!is_number(peek(0))) {
+                if (!Value::is_number(peek(0))) {
                     runtimeError("Operand must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                stack.back() = number_val(-as_number(stack.back()));
+                stack.back() = Value::number_val(-Value::as_number(stack.back()));
                 break;
             }
             case OP_CONSTANT: {
@@ -122,20 +148,20 @@ InterpretResult VM::run() {
                 return INTERPRET_OK;
             }
             case OP_NUL:
-                stack.push_back(nul_val());
+                stack.push_back(Value::nul_val());
                 break;
             case OP_TRUE:
-                stack.push_back(bool_val(true));
+                stack.push_back(Value::bool_val(true));
                 break;
             case OP_FALSE:
-                stack.push_back(bool_val(false));
+                stack.push_back(Value::bool_val(false));
                 break;
         }
     }
 }
 
 bool VM::isFalsey(Value value) {
-    return is_nul(value) || (is_bool(value) && !as_bool(value));
+    return Value::is_nul(value) || (Value::is_bool(value) && !Value::as_bool(value));
 }
 
 Value VM::peek(int distance) {
