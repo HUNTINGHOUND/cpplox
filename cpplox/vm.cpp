@@ -2,6 +2,7 @@
 #include "debug.hpp"
 #include "compiler.hpp"
 #include "flags.hpp"
+#include "memory.hpp"
 #include <iostream>
 #include <cstdio>
 #include <cstdarg>
@@ -72,9 +73,11 @@ InterpretResult VM::run() {
                 std::cout << (Value::as_bool(*it) ? "true" : "false") << "]";
             } else if (Value::is_number(*it)) {
                 std::cout << Value::as_number(*it) << "]";
+            } else if (Value::is_obj(*it)) {
+                std::cout <<Value::as_string(*it) << "]";
             } else {
                 //should not happen
-                std::cerr << "unrecognizable value in stack";
+                std::cout << "unrecognizable value" << "]";
             }
         }
         std::cout << std::endl;
@@ -120,7 +123,16 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_ADD: {
-                binary_op<double,double>(Value::number_val, std::plus<double>());
+                if (Value::is_string(peek(0)) && Value::is_string(peek(1))) {
+                    concatenate();
+                } else if (Value::is_number(peek(0)) && Value::is_number(peek(1))) {
+                    binary_op<double,double>(Value::number_val, std::plus<double>());
+                } else {
+                    runtimeError(
+                                 "Operands mus be two numbers or two strings.");
+                    
+                    return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
             }
             case OP_DIVIDE: {
@@ -153,12 +165,12 @@ InterpretResult VM::run() {
             case OP_CONSTANT: {
                 Value constant = read_constant();
                 stack.push_back(constant);
-                ValueArray::printValue(constant);
+                Value::printValue(constant);
                 std::cout << std::endl;
                 break;
             }
             case OP_RETURN: {
-                ValueArray::printValue(stack.back());
+                Value::printValue(stack.back());
                 stack.pop_back();
                 std::cout << std::endl;
                 return INTERPRET_OK;
@@ -176,6 +188,24 @@ InterpretResult VM::run() {
     }
 }
 
+void VM::concatenate() {
+    ObjString* b = Value::as_string(stack.back());
+    stack.pop_back();
+    
+    ObjString* a = Value::as_string(stack.back());
+    stack.pop_back();
+    
+    int length = a->length + b->length;
+    char* chars = allocate<char>(length + 1);
+    memcpy(chars, a->chars, a->length);
+    memcpy(chars + a->length, b->chars, b->length);
+    
+    chars[length] = '\0';
+    
+    ObjString* result = ObjString::takeString(chars, length);
+    stack.push_back(Value::obj_val(result));
+}
+
 bool VM::isFalsey(Value value) {
     return Value::is_nul(value) || (Value::is_bool(value) && !Value::as_bool(value));
 }
@@ -190,7 +220,7 @@ void VM::runtimeError(const std::string& format, ... ) {
     vfprintf(stderr, format.c_str(), args);
     va_end(args);
     std::cerr << std::endl;
-    
+
     size_t instruction = ip - &chunk->code[0] - 1;
     int line = chunk->getLine(instruction);
     std::cerr << "[line " << line << "] in script" << std::endl;

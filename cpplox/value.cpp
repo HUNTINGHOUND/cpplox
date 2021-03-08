@@ -9,7 +9,7 @@ ValueArray::ValueArray() {
 void ValueArray::writeValueArray(Value value){
     if (this->values.capacity() == this->count) {
         size_t oldCapacity = this->values.capacity();
-        grow_array<Value>(this->values, oldCapacity, grow_capacity(oldCapacity));
+        grow_array<Value>(this->values, grow_capacity(oldCapacity));
     }
     
     this->values[this->count] = value;
@@ -17,11 +17,11 @@ void ValueArray::writeValueArray(Value value){
 }
 
 void ValueArray::freeValueArray(){
-    free_array(this->values, this->values.capacity());
+    free_array(this->values);
     ValueArray();
 }
 
-void ValueArray::printValue(Value value) {
+void Value::printValue(Value value) {
     switch (value.type) {
         case VAL_BOOL:
             std::cout << (Value::as_bool(value) ? "true" : "false");
@@ -31,6 +31,9 @@ void ValueArray::printValue(Value value) {
             break;
         case VAL_NUMBER:
             std::cout << Value::as_number(value);
+            break;
+        case VAL_OBJ:
+            printObject(value);
             break;
     }
 }
@@ -86,7 +89,56 @@ bool Value::valuesEqual(Value a, Value b) {
             return true;
         case VAL_NUMBER:
             return Value::as_number(a) == Value::as_number(b);
+        case VAL_OBJ: {
+            ObjString* aString = as_string(a);
+            ObjString* bString = as_string(b);
+            return (aString->length == bString->length) &&
+            (memcmp(aString->chars, bString->chars, aString->length) == 0);
+        }
         default:
             return false; //unreachable
+    }
+}
+
+bool Value::is_obj(Value value) {
+    return value.type == VAL_OBJ;
+}
+
+bool Value::is_string(Value value) {
+    return isObjType(value, OBJ_STRING);
+}
+
+bool Value::isObjType(Value value, ObjType type) {
+    return is_obj(value) && as_obj(value)->type == type;
+}
+
+Obj* Value::as_obj(Value value) {
+    return value.as.obj;
+}
+
+Value Value::obj_val(Obj* obj) {
+    Value val;
+    val.type = VAL_OBJ;
+    val.as.obj = obj;
+    return val;
+}
+
+ObjType Value::obj_type(Value value) {
+    return value.as.obj->type;
+}
+
+ObjString* Value::as_string(Value value) {
+    return (ObjString*)as_obj(value);
+}
+
+char* Value::as_c_string(Value value) {
+    return ((ObjString*)as_obj(value))->chars;
+}
+
+void Value::printObject(Value value) {
+    switch(obj_type(value)) {
+        case OBJ_STRING:
+            std::cout << as_c_string(value);
+            break;
     }
 }

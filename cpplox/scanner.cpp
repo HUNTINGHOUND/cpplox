@@ -154,9 +154,9 @@ Token Scanner::identifier() {
 
 Token Scanner::scanToken() {
     
-    this->start = this->current;
-    
     skipWhitespace();
+    
+    this->start = this->current;
     
     if(isAtEnd()) return makeToken(TOKEN_EOF);
     

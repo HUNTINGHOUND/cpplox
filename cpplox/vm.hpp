@@ -31,6 +31,8 @@ class VM {
     
     bool isFalsey(Value value);
     
+    void concatenate();
+    
     void runtimeError(const std::string& format, ... );
     
 public:

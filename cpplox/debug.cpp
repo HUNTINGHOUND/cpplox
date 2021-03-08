@@ -12,7 +12,7 @@ int Disassembler::simpleInstruction(const char* name, int offset) {
 int Disassembler::constantInstruction(const char* name, Chunk* chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)constant << " '";
-    ValueArray::printValue(chunk->constants.values[constant]);
+    Value::printValue(chunk->constants.values[constant]);
     std::cout << "'" << std::endl;
     return offset + 2;
 }
@@ -23,7 +23,7 @@ int Disassembler::constantLongInstruction(const char* name, Chunk* chunk, int of
     constant |= chunk->code[offset + 3] << 16;
     constant |= chunk->code[offset + 4] << 24;
     std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)constant << " '";
-    ValueArray::printValue(chunk->constants.values[constant]);
+    Value::printValue(chunk->constants.values[constant]);
     std::cout << "'" << std::endl;
     return offset + 5;
 }

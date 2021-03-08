@@ -29,7 +29,7 @@ ParseRule rules[42] = {
   [TOKEN_QUESTION_MARK] = {nullptr,     &Compiler::condition, PREC_CONDITIONAL},
   [TOKEN_COLON]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_IDENTIFIER]    = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_STRING]        = {nullptr,     nullptr,   PREC_NONE},
+  [TOKEN_STRING]        = {&Compiler::string, nullptr, PREC_NONE},
   [TOKEN_NUMBER]        = {&Compiler::number, nullptr, PREC_NONE},
   [TOKEN_AND]           = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_CLASS]         = {nullptr,     nullptr,   PREC_NONE},
@@ -178,6 +178,11 @@ void Compiler::unary() {
         default:
             return; //unreachable
     }
+}
+
+void Compiler::string() {
+    emitConstant(Value::obj_val(ObjString::copyString(parser.previous.source.c_str() + 1,
+                                                      parser.previous.length - 2)));
 }
 
 void Compiler::binary() {

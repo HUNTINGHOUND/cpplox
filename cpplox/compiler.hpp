@@ -114,6 +114,8 @@ public:
     
     void literal();
     
+    void string();
+    
     
     /// Constructor
     /// @param source source code to be compiled
