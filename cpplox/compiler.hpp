@@ -3,6 +3,7 @@
 
 #include "chunk.hpp"
 #include "scanner.hpp"
+#include "vm.hpp"
 
 
 class Parser{
@@ -62,6 +63,8 @@ enum Precedence {
 
 class Compiler {
     
+    VM* vm;
+    
     
     /// Appending a single byte to the current chunk
     /// @param byte byte to be appended
@@ -119,7 +122,7 @@ public:
     
     /// Constructor
     /// @param source source code to be compiled
-    Compiler(const std::string& source);
+    Compiler(const std::string& source, VM* vm);
     
     
     /// Compile the source code passed to the constructor and write the byte code to the chunk given. Return false if parser encounters error

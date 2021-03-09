@@ -1,10 +1,3 @@
-//
-//  object.hpp
-//  cpplox
-//
-//  Created by Morgan Xu on 3/6/21.
-//
-
 #ifndef object_h
 #define object_h
 
@@ -21,6 +14,7 @@ class Obj {
     
 public:
     ObjType type;
+    Obj* next;
     
     template<typename T>
     static T* allocate_obj(ObjType objectType);

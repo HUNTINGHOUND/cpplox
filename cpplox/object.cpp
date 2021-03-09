@@ -9,6 +9,7 @@ T* Obj::allocate_obj(ObjType objectType) {
 Obj* Obj::allocateObject(size_t size, ObjType type) {
     Obj* object = (Obj*)reallocate(nullptr, 0, size);
     object->type = type;
+    
     return object;
 }
 

@@ -10,6 +10,7 @@
 
 #define STACK_MAX 256
 
+
 enum InterpretResult {
     INTERPRET_OK,
     INTERPRET_COMPILE_ERROR,
@@ -40,9 +41,13 @@ public:
     uint8_t* ip;
     std::deque<Value> stack;
     
+    Obj* objects;
+    
     VM();
     void freeVM();
     InterpretResult interpret(const std::string& source);
 };
+
+
 
 #endif /* vm_h */

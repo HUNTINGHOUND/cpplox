@@ -3,6 +3,7 @@
 #include "compiler.hpp"
 #include "flags.hpp"
 #include "memory.hpp"
+#include "object.hpp"
 #include <iostream>
 #include <cstdio>
 #include <cstdarg>
@@ -34,6 +35,7 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
 
 VM::VM() {
     std::deque<Value>().swap(stack);
+    objects = nullptr;
 }
 
 void VM::freeVM() {
@@ -42,7 +44,7 @@ void VM::freeVM() {
 
 InterpretResult VM::interpret(const std::string& source) {
     Chunk chunk;
-    Compiler compiler(source);
+    Compiler compiler(source, this);
     
     if(!compiler.compile(&chunk)) {
         chunk.freeChunk();
@@ -203,6 +205,8 @@ void VM::concatenate() {
     chars[length] = '\0';
     
     ObjString* result = ObjString::takeString(chars, length);
+    result->next = this->objects;
+    this->objects = result;
     stack.push_back(Value::obj_val(result));
 }
 

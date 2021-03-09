@@ -51,7 +51,8 @@ ParseRule rules[42] = {
   [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
 };
 
-Compiler::Compiler(const std::string& source) : scanner(source), parser(&scanner){
+Compiler::Compiler(const std::string& source, VM* vm) : scanner(source), parser(&scanner){
+    this->vm = vm;
 }
 
 Parser::Parser(Scanner* scanner) : current(TOKEN_NUL, "", 0, 0, 0), previous(TOKEN_NUL, "", 0, 0, 0){
@@ -181,8 +182,11 @@ void Compiler::unary() {
 }
 
 void Compiler::string() {
-    emitConstant(Value::obj_val(ObjString::copyString(parser.previous.source.c_str() + 1,
-                                                      parser.previous.length - 2)));
+    ObjString* string = ObjString::copyString(parser.previous.source.c_str() + 1,
+                                              parser.previous.length - 2);
+    string->next = vm->objects;
+    vm->objects = string;
+    emitConstant(Value::obj_val(string));
 }
 
 void Compiler::binary() {
