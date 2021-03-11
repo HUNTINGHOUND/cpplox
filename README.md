@@ -112,6 +112,10 @@ for (var a = 1; a < 10; a = a + 1) {
   print a;
 }
 ```
+You also have.
+```
+var test a = true ? 1 : 2; \\a = 1
+```
 ### Functions
 Functions are considered first class in Lox, this means you can get reference, store, and pass them around. Functions works almost exactly the same as c++.
 However, you need to use the keyword `fun` to define a function and you don't need to specify return value. 
