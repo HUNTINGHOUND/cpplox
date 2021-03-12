@@ -17,18 +17,16 @@ public:
     Obj* next;
     
     template<typename T>
-    static T* allocate_obj(ObjType objectType);
+    static T* allocate_obj(ObjType objectType, size_t extra);
 };
 
 class ObjString : public Obj {
     
-    static ObjString* allocateString(char* chars, int length);
-    
 public:
     int length;
     char chars[];
+    static ObjString* makeString(int length);
     static ObjString* copyString(const char* chars, int length);
-    static ObjString* takeString(char* chars, int length);
 };
 
 #endif /* object_h */

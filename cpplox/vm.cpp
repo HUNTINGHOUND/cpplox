@@ -198,15 +198,11 @@ void VM::concatenate() {
     stack.pop_back();
     
     int length = a->length + b->length;
-    char* chars = allocate<char>(length + 1);
-    memcpy(chars, a->chars, a->length);
-    memcpy(chars + a->length, b->chars, b->length);
+    ObjString* result = ObjString::makeString(length);
+    memcpy(result->chars, a->chars, a->length);
+    memcpy(result->chars + a->length, b->chars, b->length);
+    result->chars[length] = '\0';
     
-    chars[length] = '\0';
-    
-    ObjString* result = ObjString::takeString(chars, length);
-    result->next = this->objects;
-    this->objects = result;
     stack.push_back(Value::obj_val(result));
 }
 

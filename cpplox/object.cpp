@@ -2,8 +2,8 @@
 #include "memory.hpp"
 
 template<typename T>
-T* Obj::allocate_obj(ObjType objectType) {
-    return (T*)allocateObject(sizeof(T), objectType);
+T* Obj::allocate_obj(ObjType objectType, size_t extra) {
+    return (T*)allocateObject(sizeof(T) + extra, objectType);
 }
 
 Obj* Obj::allocateObject(size_t size, ObjType type) {
@@ -13,22 +13,17 @@ Obj* Obj::allocateObject(size_t size, ObjType type) {
     return object;
 }
 
-ObjString* ObjString::copyString(const char* chars, int length) {
-    char* heapChars = allocate<char>(length + 1);
-    memcpy(heapChars, chars, length);
-    heapChars[length] = '\0';
-    
-    return allocateString(heapChars, length);
-}
-
-ObjString* ObjString::allocateString(char* chars, int length) {
-    ObjString* string = Obj::allocate_obj<ObjString>(OBJ_STRING);
+ObjString* ObjString::makeString(int length) {
+    ObjString* string = Obj::allocate_obj<ObjString>(OBJ_STRING, sizeof(char) * (length + 1));
     string->length = length;
-    string->chars = chars;
     
     return string;
 }
 
-ObjString* ObjString::takeString(char* chars, int length) {
-    return allocateString(chars, length);
+ObjString* ObjString::copyString(const char* chars, int length) {
+    ObjString* string = makeString(length);
+    memcpy(string->chars, chars, length);
+    string->chars[length] = '\0';
+    
+    return string;
 }
