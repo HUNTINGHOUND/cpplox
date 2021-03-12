@@ -2,6 +2,7 @@
 #define memory_h
 
 #include <vector>
+#include "vm.hpp"
 
 //central allocation method that helps keep track of memory usage
 void* reallocate(void* pointer, size_t oldsize, size_t newsize);
@@ -12,6 +13,12 @@ void* reallocate(void* pointer, size_t oldsize, size_t newsize);
  Non-zero          < oldSize         Shrink block.
  Non-zero          > oldSize         Expand block.
  */
+
+//Free objects from heap space
+void freeObjects(VM* vm);
+
+void freeObject(Obj* object);
+
 
 //return the expanded capacity size
 inline size_t grow_capacity(size_t capacity) {

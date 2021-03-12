@@ -25,8 +25,8 @@ class ObjString : public Obj {
     static ObjString* allocateString(char* chars, int length);
     
 public:
-    char* chars;
     int length;
+    char chars[];
     static ObjString* copyString(const char* chars, int length);
     static ObjString* takeString(char* chars, int length);
 };

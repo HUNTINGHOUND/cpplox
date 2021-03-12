@@ -39,7 +39,7 @@ VM::VM() {
 }
 
 void VM::freeVM() {
-    
+    freeObjects(this);
 }
 
 InterpretResult VM::interpret(const std::string& source) {
