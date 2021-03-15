@@ -89,12 +89,8 @@ bool Value::valuesEqual(Value a, Value b) {
             return true;
         case VAL_NUMBER:
             return Value::as_number(a) == Value::as_number(b);
-        case VAL_OBJ: {
-            ObjString* aString = as_string(a);
-            ObjString* bString = as_string(b);
-            return (aString->length == bString->length) &&
-            (memcmp(aString->chars, bString->chars, aString->length) == 0);
-        }
+        case VAL_OBJ:
+            return as_obj(a) == as_obj(b);
         default:
             return false; //unreachable
     }
@@ -140,5 +136,35 @@ void Value::printObject(Value value) {
         case OBJ_STRING:
             std::cout << as_c_string(value);
             break;
+    }
+}
+
+bool Value::is_empty(Value value) {
+    return value.type == VAL_EMPTY;
+}
+
+Value Value::empty_val() {
+    Value val;
+    val.type = VAL_EMPTY;
+    return val;
+}
+
+uint32_t Value::hashDouble(double value) {
+    union {
+        double value;
+        uint32_t ints[2];
+    } cast;
+    
+    cast.value = (value) + 1.0;
+    return cast.ints[0] + cast.ints[1];
+}
+
+uint32_t Value::hashValue(Value value) {
+    switch(value.type) {
+        case VAL_BOOL: return as_bool(value) ? 3 : 4;
+        case VAL_NUL: return 8;
+        case VAL_NUMBER: return hashDouble(as_number(value));
+        case VAL_OBJ: return as_string(value)->hash;
+        case VAL_EMPTY: return 0;
     }
 }

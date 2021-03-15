@@ -3,6 +3,7 @@
 
 #include "flags.hpp"
 
+class VM;
 
 enum ObjType{
     OBJ_STRING
@@ -22,11 +23,14 @@ public:
 
 class ObjString : public Obj {
     
+    static ObjString* makeString(VM* vm, int length, uint32_t hash);
+    
 public:
     int length;
+    uint32_t hash;
     char chars[];
-    static ObjString* makeString(int length);
-    static ObjString* copyString(const char* chars, int length);
+    static ObjString* copyString(VM* vm, const char* chars, int length);
+    static uint32_t hashString(const char* key, int length);
 };
 
 #endif /* object_h */

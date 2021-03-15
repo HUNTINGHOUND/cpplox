@@ -33,12 +33,13 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
     return INTERPRET_OK;
 }
 
-VM::VM() {
+VM::VM() : strings(){
     std::deque<Value>().swap(stack);
     objects = nullptr;
 }
 
 void VM::freeVM() {
+    strings.freeTable();
     freeObjects(this);
 }
 
@@ -198,10 +199,13 @@ void VM::concatenate() {
     stack.pop_back();
     
     int length = a->length + b->length;
-    ObjString* result = ObjString::makeString(length);
-    memcpy(result->chars, a->chars, a->length);
-    memcpy(result->chars + a->length, b->chars, b->length);
-    result->chars[length] = '\0';
+    char* newString = allocate<char>(length + 1);
+    memcpy(newString, a->chars, a->length);
+    memcpy(newString+ a->length, b->chars, b->length);
+    newString[length] = '\0';
+    
+    ObjString* result = ObjString::copyString(this, newString, length);
+    
     
     stack.push_back(Value::obj_val(result));
 }

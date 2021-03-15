@@ -5,6 +5,7 @@
 #define vm_h
 
 #include "chunk.hpp"
+#include "table.hpp"
 #include <queue>
 #include <cstdarg>
 
@@ -40,6 +41,7 @@ public:
     Chunk* chunk;
     uint8_t* ip;
     std::deque<Value> stack;
+    Table strings;
     
     Obj* objects;
     

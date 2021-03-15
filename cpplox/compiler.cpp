@@ -182,10 +182,9 @@ void Compiler::unary() {
 }
 
 void Compiler::string() {
-    ObjString* string = ObjString::copyString(parser.previous.source.c_str() + 1,
+    ObjString* string = ObjString::copyString(vm, parser.previous.source.c_str() + 1,
                                               parser.previous.length - 2);
-    string->next = vm->objects;
-    vm->objects = string;
+    
     emitConstant(Value::obj_val(string));
 }
 
