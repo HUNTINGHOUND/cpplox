@@ -382,7 +382,17 @@ uint8_t Compiler::parseVariable(const std::string& errorMessage) {
 }
 
 uint8_t Compiler::identifierConstant(Token *name) {
-    return makeConstant(Value::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length)));
+    Value index;
+    Value identifier = Value::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length));
+    if (vm->globalsNames.tableGet(identifier, &index)) {
+        return (uint8_t)Value::as_number(index);
+    }
+    
+    uint8_t newIndex = (uint8_t)vm->globalValue.count;
+    vm->globalValue.writeValueArray(Value::empty_val());
+    
+    vm->globalsNames.tableSet(identifier, Value::number_val((double)newIndex));
+    return newIndex;
 }
 
 void Compiler::defineVariable(uint8_t global) {

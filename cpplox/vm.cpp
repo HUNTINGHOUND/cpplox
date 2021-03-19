@@ -33,14 +33,15 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
     return INTERPRET_OK;
 }
 
-VM::VM() : strings(), globals(){
+VM::VM() : strings(), globalNames(), globalValues(){
     std::deque<Value>().swap(stack);
     objects = nullptr;
 }
 
 void VM::freeVM() {
     strings.freeTable();
-    globals.freeTable();
+    globalNames.freeTable();
+    globalValues.freeValueArray();
     freeObjects(this);
 }
 
@@ -196,29 +197,26 @@ InterpretResult VM::run() {
                 stack.pop_back();
                 break;
             case OP_DEFINE_GLOBAL: {
-                Value name = read_constant();
-                globals.tableSet(name, peek(0));
+                globalValues.values[read_byte()] = stack.back();
                 stack.pop_back();
                 break;
             }
             case OP_GET_GLOBAL: {
-                Value name = read_constant();
-                Value value;
-                if (!globals.tableGet(name, &value)) {
-                    runtimeError("Undefined variable '%s'.", Value::as_c_string(name));
+                Value value = globalValues.values[read_byte()];
+                if (Value::is_empty(value)) {
+                    runtimeError("Undefined variable.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 stack.push_back(value);
                 break;
             }
             case OP_SET_GLOBAL: {
-                Value name = read_constant();
-                if (globals.tableSet(name, peek(0))) {
-                    globals.tableDelete(name);
-                    runtimeError("Undefined variable '%s'.", Value::as_c_string(name));
+                uint8_t index = read_byte();
+                if (Value::is_empty(globalValues.values[index])) {
+                    runtimeError("Undefined variable.");;
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                break;
+                globalValues.values[index] = peek(0);
             }
         }
     }

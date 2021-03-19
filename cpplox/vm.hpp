@@ -43,7 +43,8 @@ public:
     uint8_t* ip;
     std::deque<Value> stack;
     Table strings;
-    Table globals;
+    Table globalNames;
+    ValueArray globalValues;
     
     Obj* objects;
     
