@@ -33,13 +33,14 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
     return INTERPRET_OK;
 }
 
-VM::VM() : strings(){
+VM::VM() : strings(), globals(){
     std::deque<Value>().swap(stack);
     objects = nullptr;
 }
 
 void VM::freeVM() {
     strings.freeTable();
+    globals.freeTable();
     freeObjects(this);
 }
 
@@ -132,7 +133,7 @@ InterpretResult VM::run() {
                     binary_op<double,double>(Value::number_val, std::plus<double>());
                 } else {
                     runtimeError(
-                                 "Operands mus be two numbers or two strings.");
+                                 "Operands must be two numbers or two strings.");
                     
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -173,9 +174,7 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_RETURN: {
-                Value::printValue(stack.back());
-                stack.pop_back();
-                std::cout << std::endl;
+                //Exit interpreter
                 return INTERPRET_OK;
             }
             case OP_NUL:
@@ -187,9 +186,44 @@ InterpretResult VM::run() {
             case OP_FALSE:
                 stack.push_back(Value::bool_val(false));
                 break;
+            case OP_PRINT: {
+                Value::printValue(stack.back());
+                stack.pop_back();
+                std::cout << std::endl;
+                break;
+            }
+            case OP_POP:
+                stack.pop_back();
+                break;
+            case OP_DEFINE_GLOBAL: {
+                Value name = read_constant();
+                globals.tableSet(name, peek(0));
+                stack.pop_back();
+                break;
+            }
+            case OP_GET_GLOBAL: {
+                Value name = read_constant();
+                Value value;
+                if (!globals.tableGet(name, &value)) {
+                    runtimeError("Undefined variable '%s'.", Value::as_c_string(name));
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                stack.push_back(value);
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                Value name = read_constant();
+                if (globals.tableSet(name, peek(0))) {
+                    globals.tableDelete(name);
+                    runtimeError("Undefined variable '%s'.", Value::as_c_string(name));
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
         }
     }
 }
+
 
 void VM::concatenate() {
     ObjString* b = Value::as_string(stack.back());

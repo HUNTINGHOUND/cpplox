@@ -37,11 +37,13 @@ class VM {
     
     void runtimeError(const std::string& format, ... );
     
+    
 public:
     Chunk* chunk;
     uint8_t* ip;
     std::deque<Value> stack;
     Table strings;
+    Table globals;
     
     Obj* objects;
     

@@ -28,7 +28,7 @@ ParseRule rules[42] = {
   [TOKEN_LESS_EQUAL]    = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
   [TOKEN_QUESTION_MARK] = {nullptr,     &Compiler::condition, PREC_CONDITIONAL},
   [TOKEN_COLON]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_IDENTIFIER]    = {nullptr,     nullptr,   PREC_NONE},
+  [TOKEN_IDENTIFIER]    = {&Compiler::variable,     nullptr,   PREC_NONE},
   [TOKEN_STRING]        = {&Compiler::string, nullptr, PREC_NONE},
   [TOKEN_NUMBER]        = {&Compiler::number, nullptr, PREC_NONE},
   [TOKEN_AND]           = {nullptr,     nullptr,   PREC_NONE},
@@ -104,6 +104,10 @@ void Parser::consume(TokenType type, const std::string& message) {
     errorAtCurrent(message);
 }
 
+bool Parser::check(TokenType type) {
+    return current.type == type;
+}
+
 Chunk* Compiler::currentChunk() {
     return compilingChunk;
 }
@@ -121,7 +125,7 @@ void Compiler::endCompiler() {
 #endif
 }
 
-void Compiler::condition() {
+void Compiler::condition(bool canAssign) {
     parsePrecedence(PREC_CONDITIONAL);
     
     parser.consume(TOKEN_COLON, "Expect ':' after conditional operator");
@@ -139,7 +143,7 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
     emitByte(byte2);
 }
 
-void Compiler::number() {
+void Compiler::number(bool canAssign) {
     double value = atof(parser.previous.source.c_str());
     emitConstant(Value::number_val(value));
 }
@@ -150,7 +154,7 @@ void Compiler::emitConstant(Value value) {
 
 uint8_t Compiler::makeConstant(Value value) {
     int constant = currentChunk()->addConstant(value);
-    if (constant > UINT8_MAX) {
+    if (constant > currentChunk()->constants.values.max_size()) {
         parser.error("Too many constants in one chunk.");
         return 0;
     }
@@ -158,12 +162,12 @@ uint8_t Compiler::makeConstant(Value value) {
     return (uint8_t)constant;
 }
 
-void Compiler::grouping() {
+void Compiler::grouping(bool canAssign) {
     expression();
     parser.consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression");
 }
 
-void Compiler::unary() {
+void Compiler::unary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
     
     parsePrecedence(PREC_UNARY);
@@ -181,14 +185,14 @@ void Compiler::unary() {
     }
 }
 
-void Compiler::string() {
+void Compiler::string(bool canAssign) {
     ObjString* string = ObjString::copyString(vm, parser.previous.source.c_str() + 1,
                                               parser.previous.length - 2);
     
     emitConstant(Value::obj_val(string));
 }
 
-void Compiler::binary() {
+void Compiler::binary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
     
     ParseRule* rule = ParseRule::getRule(operatorType);
@@ -240,16 +244,21 @@ void Compiler::parsePrecedence(Precedence precedence) {
         return;
     }
     
-    std::invoke(prefixRule, *this);
+    bool canAssign = precedence <= PREC_ASSIGNMENT;
+    std::invoke(prefixRule, *this, canAssign);
     
     while (precedence <= ParseRule::getRule(parser.current.type)->precedence) {
         parser.advance();
         ParseFn infixRule = ParseRule::getRule(parser.previous.type)->infix;
-        std::invoke(infixRule, *this);
+        std::invoke(infixRule, *this, canAssign);
+    }
+    
+    if (canAssign && match(TOKEN_EQUAL)) {
+        parser.error("Invalid assignment target.");
     }
 }
 
-void Compiler::literal() {
+void Compiler::literal(bool canAssign) {
     switch(parser.previous.type) {
         case TOKEN_FALSE:
             emitByte(OP_FALSE);
@@ -277,8 +286,11 @@ bool Compiler::compile(Chunk* chunk) {
     parser.panicMode = false;
     
     parser.advance();
-    expression();
-    parser.consume(TOKEN_EOF, "Expect end of expression.");
+    
+    while(!match(TOKEN_EOF)) {
+        declaration();
+    }
+    
     endCompiler();
     return !parser.hadError;
 }
@@ -286,3 +298,110 @@ bool Compiler::compile(Chunk* chunk) {
 ParseRule*  ParseRule::getRule(TokenType type) {
     return &rules[type];
 }
+
+void Compiler::declaration() {
+    if (match(TOKEN_VAR)) {
+        varDeclaration();
+    } else {
+        statement();
+    }
+    
+    if(parser.panicMode) synchronize();
+}
+
+void Compiler::statement() {
+    if (match(TOKEN_PRINT)) {
+        printStatement();
+    } else {
+        expressionStatement();
+    }
+}
+
+bool Compiler::match(TokenType type) {
+    if(!parser.check(type)) return false;
+    parser.advance();
+    return true;
+}
+
+void Compiler::printStatement() {
+    expression();
+    parser.consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+    emitByte(OP_PRINT);
+}
+
+void Compiler::expressionStatement() {
+    expression();
+    parser.consume(TOKEN_SEMICOLON, "Expect ';' after expression");
+    emitByte(OP_POP);
+}
+
+void Compiler::synchronize() {
+    parser.panicMode = false;
+    
+    while (parser.current.type != TOKEN_EOF) {
+        if(parser.previous.type == TOKEN_SEMICOLON) return;
+        
+        switch(parser.current.type) {
+            case TOKEN_CLASS:
+            case TOKEN_FUN:
+            case TOKEN_VAR:
+            case TOKEN_FOR:
+            case TOKEN_IF:
+            case TOKEN_WHILE:
+            case TOKEN_PRINT:
+            case TOKEN_RETURN:
+                return;
+                
+            default:
+                //Do nothing
+                ;
+        }
+        
+        
+        parser.advance();
+    }
+}
+
+void Compiler::varDeclaration() {
+    uint8_t global = parseVariable("Expect variable name.");
+    
+    if (match(TOKEN_EQUAL)) {
+        expression();
+    } else {
+        emitByte(OP_NUL);;
+    }
+    
+    parser.consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+    
+    defineVariable(global);
+}
+
+uint8_t Compiler::parseVariable(const std::string& errorMessage) {
+    parser.consume(TOKEN_IDENTIFIER, errorMessage);
+    return identifierConstant(&parser.previous);
+}
+
+uint8_t Compiler::identifierConstant(Token *name) {
+    return makeConstant(Value::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length)));
+}
+
+void Compiler::defineVariable(uint8_t global) {
+    emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
+void Compiler::variable(bool canAssign) {
+    namedVariable(parser.previous, canAssign);
+}
+
+void Compiler::namedVariable(Token name, bool canAssign) {
+    uint8_t arg = identifierConstant(&name);
+    
+    if (canAssign && match(TOKEN_EQUAL)) {
+        expression();
+        emitBytes(OP_SET_GLOBAL, arg);
+    } else {
+        emitBytes(OP_GET_GLOBAL, arg);
+    }
+}
+
+

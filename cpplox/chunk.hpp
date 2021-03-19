@@ -20,7 +20,12 @@ enum OpCode {
     OP_EQUAL,
     OP_GREATER,
     OP_LESS,
-    OP_CONDITIONAL
+    OP_CONDITIONAL,
+    OP_PRINT,
+    OP_POP,
+    OP_DEFINE_GLOBAL,
+    OP_GET_GLOBAL,
+    OP_SET_GLOBAL
 };
 
 //Data structure that represent a line in source code

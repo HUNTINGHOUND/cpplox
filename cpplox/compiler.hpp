@@ -34,6 +34,8 @@ class Parser{
     /// Advance current token, well continue when encounter error token
     void advance();
     
+    bool check(TokenType type);
+    
     
     /// Constructor
     /// @param scanner scanner for the parser
@@ -97,6 +99,28 @@ class Compiler {
     
     uint8_t makeConstant(Value value);
     
+    void declaration();
+    
+    void statement();
+    
+    bool match(TokenType type);
+    
+    void printStatement();
+    
+    void expressionStatement();
+    
+    void synchronize();
+    
+    void varDeclaration();
+    
+    uint8_t parseVariable(const std::string& errorMessage);
+    
+    uint8_t identifierConstant(Token* name);
+    
+    void defineVariable(uint8_t global);
+    
+    void namedVariable(Token name, bool canAssign);
+    
 public:
     
     Scanner scanner;
@@ -105,19 +129,21 @@ public:
     //curent chunk to be written to
     Chunk* compilingChunk = nullptr;
     
-    void number();
+    void number(bool canAssign);
     
-    void grouping();
+    void grouping(bool canAssign);
     
-    void unary();
+    void unary(bool canAssign);
     
-    void binary();
+    void binary(bool canAssign);
     
-    void condition();
+    void condition(bool canAssign);
     
-    void literal();
+    void literal(bool canAssign);
     
-    void string();
+    void string(bool canAssign);
+    
+    void variable(bool canAssign);
     
     
     /// Constructor
@@ -130,7 +156,7 @@ public:
     bool compile(Chunk* chunk);
 };
 
-using ParseFn = void (Compiler::*)();
+using ParseFn = void (Compiler::*)(bool canAssign);
 
 struct ParseRule {
 public:
