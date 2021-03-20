@@ -2,6 +2,7 @@
 #define debug_h
 
 #include "chunk.hpp"
+#include "vm.hpp"
 
 class Disassembler {
     
@@ -25,14 +26,16 @@ class Disassembler {
     /// @param offset offset for iterating purposes
     static int constantInstruction(const char* name, Chunk* chunk, int offset);
     
+    static int globalVarInstruction(const char* name, Chunk* chunk, VM* vm, int offset);
+    
     
 public:
     
     //disassemble a particular instruction
-    static int disassembleInstruction(Chunk* chunk, int offset);
+    static int disassembleInstruction(Chunk* chunk, VM* vm, int offset);
     
     //disassemble a chunk
-    static void disassembleChunk(Chunk* chunk, const char* name);
+    static void disassembleChunk(Chunk* chunk, VM* vm, const char* name);
 };
 
 #endif /* debug_h */

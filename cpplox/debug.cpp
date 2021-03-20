@@ -28,15 +28,23 @@ int Disassembler::constantLongInstruction(const char* name, Chunk* chunk, int of
     return offset + 5;
 }
 
-void Disassembler::disassembleChunk(Chunk* chunk, const char* name) {
+int Disassembler::globalVarInstruction(const char *name, Chunk* chunk, VM *vm, int offset) {
+    uint8_t constant = chunk->code[offset + 1];
+    std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)constant << " '";
+    Value::printValue(vm->globalValues.values[constant]);
+    std::cout << "'" << std::endl;
+    return offset + 2;
+}
+
+void Disassembler::disassembleChunk(Chunk* chunk, VM* vm, const char* name) {
     std::cout << "== " << name << " ==" << std::endl;
     
     for (int offset = 0; offset < chunk->count;) {
-        offset = disassembleInstruction(chunk, offset);
+        offset = disassembleInstruction(chunk, vm, offset);
     }
 }
 
-int Disassembler::disassembleInstruction(Chunk* chunk, int offset) {
+int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
     std::cout << std::setw(4) << offset << " ";
     if(offset > 0 && chunk->getLine(offset) == chunk->getLine(offset - 1)) {
         std::cout << "   | ";
@@ -83,11 +91,11 @@ int Disassembler::disassembleInstruction(Chunk* chunk, int offset) {
         case OP_POP:
             return simpleInstruction("OP_POP", offset);
         case OP_DEFINE_GLOBAL:
-            return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);
+            return globalVarInstruction("OP_DEFINE_GLOBAL", chunk, vm, offset);
         case OP_GET_GLOBAL:
-            return constantInstruction("OP_GET_GLOBAL", chunk, offset);
+            return globalVarInstruction("OP_GET_GLOBAL", chunk, vm, offset);
         case OP_SET_GLOBAL:
-            return constantInstruction("OP_SET_GLOBAL", chunk, offset);
+            return globalVarInstruction("OP_SET_GLOBAL", chunk, vm, offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

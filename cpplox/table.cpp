@@ -45,7 +45,7 @@ Entry* Table::findEntry(std::vector<Entry>& entries, Value key) {
             return entry;
         }
         
-        index = (index + 1) & capacity;
+        index = (index + 1) % capacity;
     }
 }
 

@@ -88,7 +88,7 @@ InterpretResult VM::run() {
         std::cout << std::endl;
         
         uint8_t* start = &this->chunk->code[0];
-        Disassembler::disassembleInstruction(this->chunk, (int)(this->ip - start));
+        Disassembler::disassembleInstruction(this->chunk, this, (int)(this->ip - start));
         
 #endif
         

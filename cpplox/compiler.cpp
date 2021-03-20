@@ -120,7 +120,7 @@ void Compiler::endCompiler() {
     emitReturn();
 #ifdef DEBUG_PRINT_CODE
     if(!parser.hadError) {
-        Disassembler::disassembleChunk(currentChunk(), "code");
+        Disassembler::disassembleChunk(currentChunk(), vm, "code");
     }
 #endif
 }
@@ -384,14 +384,14 @@ uint8_t Compiler::parseVariable(const std::string& errorMessage) {
 uint8_t Compiler::identifierConstant(Token *name) {
     Value index;
     Value identifier = Value::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length));
-    if (vm->globalsNames.tableGet(identifier, &index)) {
+    if (vm->globalNames.tableGet(identifier, &index)) {
         return (uint8_t)Value::as_number(index);
     }
     
-    uint8_t newIndex = (uint8_t)vm->globalValue.count;
-    vm->globalValue.writeValueArray(Value::empty_val());
+    uint8_t newIndex = (uint8_t)vm->globalValues.count;
+    vm->globalValues.writeValueArray(Value::empty_val());
     
-    vm->globalsNames.tableSet(identifier, Value::number_val((double)newIndex));
+    vm->globalNames.tableSet(identifier, Value::number_val((double)newIndex));
     return newIndex;
 }
 
