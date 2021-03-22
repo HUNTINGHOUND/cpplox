@@ -1,4 +1,5 @@
 #include "compiler.hpp"
+#include "memory.hpp"
 #include <iostream>
 
 #ifdef DEBUG_PRINT_CODE
@@ -51,7 +52,16 @@ ParseRule rules[42] = {
   [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
 };
 
+bool identifierEqual(Token* a, Token* b) {
+    if (a->length != b->length) return false;
+    return a->source.compare(b->source) == 0;
+}
+
+Local::Local() : name(TOKEN_NUL, "", 0, 0, 0) {}
+
 Compiler::Compiler(const std::string& source, VM* vm) : scanner(source), parser(&scanner){
+    this->localCount = 0;
+    this->scopeDepth = 0;
     this->vm = vm;
 }
 
@@ -312,6 +322,10 @@ void Compiler::declaration() {
 void Compiler::statement() {
     if (match(TOKEN_PRINT)) {
         printStatement();
+    } else if (match(TOKEN_LEFT_BRACE)) {
+        beginScope();
+        block();
+        endScope();
     } else {
         expressionStatement();
     }
@@ -378,6 +392,10 @@ void Compiler::varDeclaration() {
 
 uint8_t Compiler::parseVariable(const std::string& errorMessage) {
     parser.consume(TOKEN_IDENTIFIER, errorMessage);
+    
+    declareVariable();
+    if (scopeDepth > 0) return 0;
+    
     return identifierConstant(&parser.previous);
 }
 
@@ -396,6 +414,11 @@ uint8_t Compiler::identifierConstant(Token *name) {
 }
 
 void Compiler::defineVariable(uint8_t global) {
+    if (scopeDepth > 0) {
+        markInitialized();
+        return;
+    }
+    
     emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
@@ -404,14 +427,93 @@ void Compiler::variable(bool canAssign) {
 }
 
 void Compiler::namedVariable(Token name, bool canAssign) {
-    uint8_t arg = identifierConstant(&name);
+    uint8_t getOp, setOp;
+    int arg = resolveLocal(&name);
+    if (arg != -1) {
+        getOp = OP_GET_LOCAL;
+        setOp = OP_SET_LOCAL;
+    } else {
+        arg = identifierConstant(&name);
+        getOp = OP_GET_GLOBAL;
+        setOp = OP_SET_GLOBAL;
+    }
     
     if (canAssign && match(TOKEN_EQUAL)) {
         expression();
-        emitBytes(OP_SET_GLOBAL, arg);
+        emitBytes(setOp, arg);
     } else {
-        emitBytes(OP_GET_GLOBAL, arg);
+        emitBytes(getOp, arg);
     }
 }
 
+void Compiler::block() {
+    while (!parser.check(TOKEN_RIGHT_BRACE) && !parser.check(TOKEN_EOF)) {
+        declaration();
+    }
+    
+    parser.consume(TOKEN_RIGHT_BRACE, "Expect '}' after block,");
+}
 
+void Compiler::beginScope() {
+    scopeDepth++;
+}
+
+void Compiler::endScope() {
+    scopeDepth--;
+    
+    while (localCount > 0 && locals[localCount - 1].depth > scopeDepth) {
+        emitByte(OP_POP);
+        localCount--;
+    }
+}
+
+void Compiler::declareVariable() {
+    if (scopeDepth == 0) return;
+    
+    Token* name = &parser.previous;
+    for(int i = localCount - 1; i >= 0; i--) {
+        Local* local = &locals[i];
+        if (local->depth != -1 && local->depth < scopeDepth) {
+            break;
+        }
+        
+        if (identifierEqual(name, &local->name)) {
+            parser.error("Already variable with this name in this scope.");
+        }
+    }
+    
+    addLocal(*name);
+}
+
+void Compiler::addLocal(Token name) {
+    if(localCount + 1 == locals.max_size()) {
+        parser.error("Too many local variables in function.");
+        return;
+    }
+    
+    if(localCount + 1 >= locals.capacity()) {
+        grow_array(locals, grow_capacity(locals.capacity()));
+    }
+    
+    Local* local = &locals[localCount++];
+    local->name = name;
+    local->depth = -1;
+}
+
+int Compiler::resolveLocal(Token* name) {
+  for (int i = localCount - 1; i >= 0; i--) {
+    Local* local = &locals[i];
+    if (identifierEqual(name, &local->name)) {
+        if(local->depth == -1) {
+            parser.error("Can't read local variable in its own initializer.");
+        }
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+void Compiler::markInitialized() {
+    locals[localCount - 1].depth = scopeDepth;
+}

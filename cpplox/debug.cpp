@@ -36,6 +36,12 @@ int Disassembler::globalVarInstruction(const char *name, Chunk* chunk, VM *vm, i
     return offset + 2;
 }
 
+int Disassembler::byteInstruction(const char *name, Chunk *chunk, int offset) {
+    uint8_t slot = chunk->code[offset + 1];
+    std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)slot << " '";
+    return offset + 2;
+}
+
 void Disassembler::disassembleChunk(Chunk* chunk, VM* vm, const char* name) {
     std::cout << "== " << name << " ==" << std::endl;
     
@@ -96,6 +102,10 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             return globalVarInstruction("OP_GET_GLOBAL", chunk, vm, offset);
         case OP_SET_GLOBAL:
             return globalVarInstruction("OP_SET_GLOBAL", chunk, vm, offset);
+        case OP_GET_LOCAL:
+            return byteInstruction("OP_GET_LOCAL", chunk, offset);
+        case OP_SET_LOCAL:
+            return byteInstruction("OP_SET_LOCAL", chunk, offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

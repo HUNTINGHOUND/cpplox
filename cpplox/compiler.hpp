@@ -61,7 +61,11 @@ enum Precedence {
     PREC_PRIMARY
 };
 
-
+struct Local {
+    Token name;
+    int depth;
+    Local();
+};
 
 class Compiler {
     
@@ -121,10 +125,28 @@ class Compiler {
     
     void namedVariable(Token name, bool canAssign);
     
+    void beginScope();
+    
+    void block();
+    
+    void endScope();
+    
+    void declareVariable();
+    
+    void addLocal(Token name);
+    
+    int resolveLocal(Token* name);
+    
+    void markInitialized();
+    
 public:
     
     Scanner scanner;
     Parser parser;
+    
+    std::vector<Local> locals;
+    int localCount;
+    int scopeDepth;
     
     //curent chunk to be written to
     Chunk* compilingChunk = nullptr;

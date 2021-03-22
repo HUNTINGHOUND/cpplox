@@ -28,6 +28,7 @@ class Disassembler {
     
     static int globalVarInstruction(const char* name, Chunk* chunk, VM* vm, int offset);
     
+    static int byteInstruction(const char* name, Chunk* chunk, int offset);
     
 public:
     

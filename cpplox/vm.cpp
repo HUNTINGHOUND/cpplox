@@ -218,6 +218,16 @@ InterpretResult VM::run() {
                 }
                 globalValues.values[index] = peek(0);
             }
+            case OP_GET_LOCAL: {
+                uint8_t slot = read_byte();
+                stack.push_back(stack[slot]);
+                break;
+            }
+            case OP_SET_LOCAL: {
+                uint8_t slot = read_byte();
+                stack[slot] = peek(0);
+                break;
+            }
         }
     }
 }
