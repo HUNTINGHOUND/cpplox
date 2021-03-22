@@ -64,6 +64,7 @@ enum Precedence {
 struct Local {
     Token name;
     int depth;
+    bool isConst = false;
     Local();
 };
 
@@ -115,11 +116,11 @@ class Compiler {
     
     void synchronize();
     
-    void varDeclaration();
+    void varDeclaration(bool isConst);
     
-    uint8_t parseVariable(const std::string& errorMessage);
+    uint8_t parseVariable(const std::string& errorMessage, bool isConst);
     
-    uint8_t identifierConstant(Token* name);
+    uint8_t identifierConstant(Token* name, bool isConst);
     
     void defineVariable(uint8_t global);
     
@@ -131,9 +132,9 @@ class Compiler {
     
     void endScope();
     
-    void declareVariable();
+    void declareVariable(bool isConst);
     
-    void addLocal(Token name);
+    void addLocal(Token name, bool isConst);
     
     int resolveLocal(Token* name);
     

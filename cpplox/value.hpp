@@ -20,6 +20,7 @@ class Value {
     
 public:
     ValueType type;
+    bool isConst = false;
     union {
         bool boolean;
         double number;

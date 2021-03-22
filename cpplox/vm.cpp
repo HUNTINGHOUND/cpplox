@@ -217,6 +217,7 @@ InterpretResult VM::run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 globalValues.values[index] = peek(0);
+                break;
             }
             case OP_GET_LOCAL: {
                 uint8_t slot = read_byte();

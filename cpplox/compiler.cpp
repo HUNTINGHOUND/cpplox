@@ -7,7 +7,7 @@
 #endif
 
 
-ParseRule rules[42] = {
+ParseRule rules[43] = {
   [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, nullptr,   PREC_NONE},
   [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
@@ -47,6 +47,7 @@ ParseRule rules[42] = {
   [TOKEN_THIS]          = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_TRUE]          = {&Compiler::literal,     nullptr,   PREC_NONE},
   [TOKEN_VAR]           = {nullptr,     nullptr,   PREC_NONE},
+  [TOKEN_CONST]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_WHILE]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_ERROR]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
@@ -310,8 +311,9 @@ ParseRule*  ParseRule::getRule(TokenType type) {
 }
 
 void Compiler::declaration() {
-    if (match(TOKEN_VAR)) {
-        varDeclaration();
+    bool isConst = false;
+    if (match(TOKEN_VAR) || (isConst = match(TOKEN_CONST))) {
+        varDeclaration(isConst);
     } else {
         statement();
     }
@@ -376,8 +378,8 @@ void Compiler::synchronize() {
     }
 }
 
-void Compiler::varDeclaration() {
-    uint8_t global = parseVariable("Expect variable name.");
+void Compiler::varDeclaration(bool isConst) {
+    uint8_t global = parseVariable("Expect variable name.", isConst);
     
     if (match(TOKEN_EQUAL)) {
         expression();
@@ -390,16 +392,16 @@ void Compiler::varDeclaration() {
     defineVariable(global);
 }
 
-uint8_t Compiler::parseVariable(const std::string& errorMessage) {
+uint8_t Compiler::parseVariable(const std::string& errorMessage, bool isConst) {
     parser.consume(TOKEN_IDENTIFIER, errorMessage);
     
-    declareVariable();
+    declareVariable(isConst);
     if (scopeDepth > 0) return 0;
     
-    return identifierConstant(&parser.previous);
+    return identifierConstant(&parser.previous, isConst);
 }
 
-uint8_t Compiler::identifierConstant(Token *name) {
+uint8_t Compiler::identifierConstant(Token *name, bool isConst) {
     Value index;
     Value identifier = Value::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length));
     if (vm->globalNames.tableGet(identifier, &index)) {
@@ -409,7 +411,9 @@ uint8_t Compiler::identifierConstant(Token *name) {
     uint8_t newIndex = (uint8_t)vm->globalValues.count;
     vm->globalValues.writeValueArray(Value::empty_val());
     
-    vm->globalNames.tableSet(identifier, Value::number_val((double)newIndex));
+    Value v = Value::number_val((double)newIndex);
+    if(isConst) v.isConst = true;
+    vm->globalNames.tableSet(identifier, v);
     return newIndex;
 }
 
@@ -433,12 +437,27 @@ void Compiler::namedVariable(Token name, bool canAssign) {
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
     } else {
-        arg = identifierConstant(&name);
+        arg = identifierConstant(&name, false);
         getOp = OP_GET_GLOBAL;
         setOp = OP_SET_GLOBAL;
     }
     
     if (canAssign && match(TOKEN_EQUAL)) {
+        if(setOp == OP_SET_GLOBAL) {
+            Value index;
+            Value identifier = Value::obj_val(ObjString::copyString(vm, name.source.c_str(), name.length));
+            vm->globalNames.tableGet(identifier, &index);
+            if(index.isConst) {
+                parser.error("Cannot assign to constant variable.");
+                return;
+            }
+        } else {
+            if(locals[arg].isConst) {
+                parser.error("Cannot assign to constant variable.");
+                return;
+            }
+        }
+        
         expression();
         emitBytes(setOp, arg);
     } else {
@@ -467,7 +486,7 @@ void Compiler::endScope() {
     }
 }
 
-void Compiler::declareVariable() {
+void Compiler::declareVariable(bool isConst) {
     if (scopeDepth == 0) return;
     
     Token* name = &parser.previous;
@@ -482,10 +501,10 @@ void Compiler::declareVariable() {
         }
     }
     
-    addLocal(*name);
+    addLocal(*name, isConst);
 }
 
-void Compiler::addLocal(Token name) {
+void Compiler::addLocal(Token name, bool isConst) {
     if(localCount + 1 == locals.max_size()) {
         parser.error("Too many local variables in function.");
         return;
@@ -498,6 +517,7 @@ void Compiler::addLocal(Token name) {
     Local* local = &locals[localCount++];
     local->name = name;
     local->depth = -1;
+    local->isConst = isConst;
 }
 
 int Compiler::resolveLocal(Token* name) {
