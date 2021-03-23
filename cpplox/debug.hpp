@@ -30,6 +30,8 @@ class Disassembler {
     
     static int byteInstruction(const char* name, Chunk* chunk, int offset);
     
+    static int jumpInstruction(const char* name, int sign, Chunk* chunk, int offset);
+    
 public:
     
     //disassemble a particular instruction

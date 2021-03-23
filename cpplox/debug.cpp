@@ -38,8 +38,16 @@ int Disassembler::globalVarInstruction(const char *name, Chunk* chunk, VM *vm, i
 
 int Disassembler::byteInstruction(const char *name, Chunk *chunk, int offset) {
     uint8_t slot = chunk->code[offset + 1];
-    std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)slot << " '";
+    std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)slot << " '" << std::endl;
     return offset + 2;
+}
+
+int Disassembler::jumpInstruction(const char *name, int sign, Chunk *chunk, int offset) {
+    uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8);
+    jump |= chunk->code[offset + 2];
+    std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)offset << " "
+    << " -> " << offset + 3 + sign * jump << std::endl;
+    return offset + 3;
 }
 
 void Disassembler::disassembleChunk(Chunk* chunk, VM* vm, const char* name) {
@@ -106,6 +114,11 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             return byteInstruction("OP_GET_LOCAL", chunk, offset);
         case OP_SET_LOCAL:
             return byteInstruction("OP_SET_LOCAL", chunk, offset);
+        case OP_JUMP:
+            return jumpInstruction("OP_JUMP", 1, chunk, offset);
+        case OP_JUMP_IF_FALSE:
+            return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
+            
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

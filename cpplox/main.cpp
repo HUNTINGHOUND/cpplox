@@ -1,20 +1,26 @@
 #include "vm.hpp"
 #include "debug.hpp"
+#include <sstream>
 #include <string>
 #include <iostream>
 #include <fstream>
 
 void repl(VM* vm) {
-    std::string line;
-    for (;;) {
+    std::stringstream ss;
+    while(true) {
         std::cout << "> ";
         
-        if(!std::getline(std::cin, line)) {
-            std::cout << std::endl;
-            break;
+        std::string line;
+        while(std::getline(std::cin, line)) {
+            ss << line;
+            ss << '\n';
+            if(line.length() == 0) {
+                break;
+            }
         }
         
-        vm->interpret(line);
+        vm->interpret(ss.str());
+        ss.str(std::string());
     }
 }
 

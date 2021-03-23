@@ -229,6 +229,16 @@ InterpretResult VM::run() {
                 stack[slot] = peek(0);
                 break;
             }
+            case OP_JUMP_IF_FALSE: {
+                uint16_t offset = read_short();
+                if (isFalsey(peek(0))) ip += offset;
+                break;
+            }
+            case OP_JUMP: {
+                uint16_t offset = read_short();
+                ip += offset;
+                break;
+            }
         }
     }
 }
@@ -273,4 +283,9 @@ void VM::runtimeError(const std::string& format, ... ) {
     std::cerr << "[line " << line << "] in script" << std::endl;
     
     stack = std::deque<Value>();
+}
+
+uint16_t VM::read_short() {
+    ip += 2;
+    return (uint16_t)((ip[-2] << 8) | ip[-1]);
 }

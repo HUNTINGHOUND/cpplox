@@ -26,6 +26,8 @@ class VM {
     
     Value read_constant();
     
+    uint16_t read_short();
+    
     template <typename T, typename U>
     InterpretResult binary_op(Value (*valuetype)(T),std::function<T (U, U)> func);
     

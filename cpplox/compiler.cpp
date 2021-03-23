@@ -32,7 +32,7 @@ ParseRule rules[43] = {
   [TOKEN_IDENTIFIER]    = {&Compiler::variable,     nullptr,   PREC_NONE},
   [TOKEN_STRING]        = {&Compiler::string, nullptr, PREC_NONE},
   [TOKEN_NUMBER]        = {&Compiler::number, nullptr, PREC_NONE},
-  [TOKEN_AND]           = {nullptr,     nullptr,   PREC_NONE},
+  [TOKEN_AND]           = {nullptr,     &Compiler::_and,   PREC_AND},
   [TOKEN_CLASS]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_ELSE]          = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_FALSE]         = {&Compiler::literal,     nullptr,   PREC_NONE},
@@ -40,7 +40,7 @@ ParseRule rules[43] = {
   [TOKEN_FUN]           = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_IF]            = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_NUL]           = {&Compiler::literal,     nullptr,   PREC_NONE},
-  [TOKEN_OR]            = {nullptr,     nullptr,   PREC_NONE},
+  [TOKEN_OR]            = {nullptr,     &Compiler::_or,   PREC_OR},
   [TOKEN_PRINT]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_RETURN]        = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_SUPER]         = {nullptr,     nullptr,   PREC_NONE},
@@ -324,6 +324,8 @@ void Compiler::declaration() {
 void Compiler::statement() {
     if (match(TOKEN_PRINT)) {
         printStatement();
+    } else if (match(TOKEN_IF)) {
+        ifStatement();
     } else if (match(TOKEN_LEFT_BRACE)) {
         beginScope();
         block();
@@ -536,4 +538,59 @@ int Compiler::resolveLocal(Token* name) {
 
 void Compiler::markInitialized() {
     locals[localCount - 1].depth = scopeDepth;
+}
+
+void Compiler::ifStatement() {
+    parser.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+    expression();
+    parser.consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+    
+    int thenJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+    statement();
+    
+    int elseJump = emitJump(OP_JUMP);
+    
+    patchJump(thenJump);
+    emitByte(OP_POP);
+    
+    if(match(TOKEN_ELSE)) statement();
+    patchJump(elseJump);
+}
+
+int Compiler::emitJump(uint8_t instruction) {
+    emitByte(instruction);
+    emitByte(0xff);
+    emitByte(0xff);
+    return currentChunk()->count - 2;
+}
+
+void Compiler::patchJump(int offset) {
+    int jump = currentChunk()->count - offset - 2;
+    if (jump > UINT16_MAX) {
+        parser.error("Too much code to jump over.");
+    }
+    
+    currentChunk()->code[offset] = (jump >> 8) & 0xff;
+    currentChunk()->code[offset + 1] = jump & 0xff;
+}
+
+void Compiler::_and(bool canAssign) {
+    int endJump = emitJump(OP_JUMP_IF_FALSE);
+    
+    emitByte(OP_POP);
+    parsePrecedence(PREC_AND);
+    
+    patchJump(endJump);
+}
+
+void Compiler::_or(bool canAssign) {
+    int elseJump = emitJump(OP_JUMP_IF_FALSE);
+    int endJump = emitJump(OP_JUMP);
+    
+    patchJump(elseJump);
+    emitByte(OP_POP);
+    
+    parsePrecedence(PREC_OR);
+    patchJump(endJump);
 }

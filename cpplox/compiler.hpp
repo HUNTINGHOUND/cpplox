@@ -140,6 +140,12 @@ class Compiler {
     
     void markInitialized();
     
+    void ifStatement();
+    
+    int emitJump(uint8_t instruction);
+    
+    void patchJump(int offset);
+    
 public:
     
     Scanner scanner;
@@ -167,6 +173,10 @@ public:
     void string(bool canAssign);
     
     void variable(bool canAssign);
+    
+    void _and(bool canAssign);
+    
+    void _or(bool canAssign);
     
     
     /// Constructor
