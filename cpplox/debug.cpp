@@ -118,6 +118,8 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             return jumpInstruction("OP_JUMP", 1, chunk, offset);
         case OP_JUMP_IF_FALSE:
             return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
+        case OP_LOOP:
+            return jumpInstruction("OP_LOOP", -1, chunk, offset);
             
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;

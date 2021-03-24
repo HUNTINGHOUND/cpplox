@@ -239,6 +239,11 @@ InterpretResult VM::run() {
                 ip += offset;
                 break;
             }
+            case OP_LOOP: {
+                uint16_t offset = read_short();
+                ip -= offset;
+                break;
+            }
         }
     }
 }

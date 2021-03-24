@@ -330,6 +330,8 @@ void Compiler::statement() {
         beginScope();
         block();
         endScope();
+    } else if (match(TOKEN_WHILE)){
+        whileStatement();
     } else {
         expressionStatement();
     }
@@ -593,4 +595,32 @@ void Compiler::_or(bool canAssign) {
     
     parsePrecedence(PREC_OR);
     patchJump(endJump);
+}
+
+void Compiler::whileStatement() {
+    int loopStart = currentChunk()->count;
+    
+    parser.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+    expression();
+    parser.consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition");
+    
+    int exitJump = emitJump(OP_JUMP_IF_FALSE);
+    
+    emitByte(OP_POP);
+    statement();
+    
+    emitLoop(loopStart);
+    
+    patchJump(exitJump);
+    emitByte(OP_POP);
+}
+
+void Compiler::emitLoop(int loopStart) {
+    emitByte(OP_LOOP);
+    
+    int offset = currentChunk()->count - loopStart + 2;
+    if (offset > UINT16_MAX) parser.error("Loop body too large.");
+    
+    emitByte((offset >> 8) & 0xff);
+    emitByte(offset & 0xff);
 }

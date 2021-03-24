@@ -146,6 +146,10 @@ class Compiler {
     
     void patchJump(int offset);
     
+    void whileStatement();
+    
+    void emitLoop(int loopStart);
+    
 public:
     
     Scanner scanner;
