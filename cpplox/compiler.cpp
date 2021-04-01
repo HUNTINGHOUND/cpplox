@@ -7,7 +7,7 @@
 #endif
 
 
-ParseRule rules[43] = {
+ParseRule rules[45] = {
   [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, nullptr,   PREC_NONE},
   [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
@@ -49,6 +49,8 @@ ParseRule rules[43] = {
   [TOKEN_VAR]           = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_CONST]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_WHILE]         = {nullptr,     nullptr,   PREC_NONE},
+  [TOKEN_CONTINUE]      = {nullptr,     nullptr,   PREC_NONE},
+  [TOKEN_BREAK]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_ERROR]         = {nullptr,     nullptr,   PREC_NONE},
   [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
 };
@@ -332,6 +334,12 @@ void Compiler::statement() {
         endScope();
     } else if (match(TOKEN_WHILE)){
         whileStatement();
+    } else if (match(TOKEN_FOR)) {
+        forStatement();
+    } else if(match(TOKEN_CONTINUE)) {
+        continueStatement();
+    } else if(match(TOKEN_BREAK)) {
+        breakStatement();
     } else {
         expressionStatement();
     }
@@ -577,6 +585,13 @@ void Compiler::patchJump(int offset) {
     currentChunk()->code[offset + 1] = jump & 0xff;
 }
 
+void Compiler::patchBreaks() {
+    for(int i = breakStatements.size() - 1; i >= 0 && breakStatements[i].depth >= innermostLoopScopeDepth; i--) {
+        patchJump(breakStatements[i].position);
+        breakStatements.pop_back();
+    }
+}
+
 void Compiler::_and(bool canAssign) {
     int endJump = emitJump(OP_JUMP_IF_FALSE);
     
@@ -598,7 +613,10 @@ void Compiler::_or(bool canAssign) {
 }
 
 void Compiler::whileStatement() {
-    int loopStart = currentChunk()->count;
+    int surroundingLoopStart = innermostLoopStart;
+    int surroundingLoopScopeDepth = innermostLoopScopeDepth;
+    innermostLoopStart = currentChunk()->count;
+    innermostLoopScopeDepth = scopeDepth;
     
     parser.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
     expression();
@@ -609,10 +627,15 @@ void Compiler::whileStatement() {
     emitByte(OP_POP);
     statement();
     
-    emitLoop(loopStart);
+    emitLoop(innermostLoopStart);
     
     patchJump(exitJump);
     emitByte(OP_POP);
+    
+    patchBreaks();
+    
+    innermostLoopStart = surroundingLoopStart;
+    innermostLoopScopeDepth = surroundingLoopScopeDepth;
 }
 
 void Compiler::emitLoop(int loopStart) {
@@ -624,3 +647,91 @@ void Compiler::emitLoop(int loopStart) {
     emitByte((offset >> 8) & 0xff);
     emitByte(offset & 0xff);
 }
+
+void Compiler::forStatement() {
+    beginScope();
+    
+    parser.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for.");
+    bool isConst = false;
+    if (match(TOKEN_SEMICOLON)) {
+        
+    } else if (match(TOKEN_VAR) || (isConst = match(TOKEN_CONST))) {
+        varDeclaration(isConst);
+    } else {
+        expressionStatement();
+    }
+    
+    int surroundingLoopStart = innermostLoopStart;
+    int surroundingLoopScopeDepth = innermostLoopScopeDepth;
+    innermostLoopStart = currentChunk()->count;
+    innermostLoopScopeDepth = scopeDepth;
+    
+    int exitJump = -1;
+    if(!match(TOKEN_SEMICOLON)) {
+        expression();
+        parser.consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+        
+        exitJump = emitJump(OP_JUMP_IF_FALSE);
+        emitByte(OP_POP);//Popping the condition to keep the stack clean
+    }
+    
+    if(!match(TOKEN_RIGHT_PAREN)) {
+        int bodyJump = emitJump(OP_JUMP);
+        
+        int incrementStart = currentChunk()->count;
+        expression();
+        emitByte(OP_POP);
+        parser.consume(TOKEN_RIGHT_PAREN, "Expect ')'.");
+        
+        emitLoop(innermostLoopStart);
+        innermostLoopStart = incrementStart;
+        patchJump(bodyJump);
+    }
+    
+    
+    statement();
+    
+    emitLoop(innermostLoopStart);
+    if(exitJump != -1) {
+        patchJump(exitJump);
+        emitByte(OP_POP);
+    }
+    
+    patchBreaks();
+    
+    
+    innermostLoopStart = surroundingLoopStart;
+    innermostLoopScopeDepth = surroundingLoopScopeDepth;
+    
+    endScope();
+}
+
+
+void Compiler::continueStatement() {
+    if (innermostLoopScopeDepth == -1) {
+        parser.error("Cannot use 'continue' outside of a loop.");
+    }
+    
+    parser.consume(TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
+    
+    for (int i = localCount - 1; i >= 0 && locals[i].depth > innermostLoopScopeDepth; i--) {
+        emitByte(OP_POP);
+    }
+    
+    emitLoop(innermostLoopStart);
+}
+
+void Compiler::breakStatement() {
+    if (innermostLoopScopeDepth == -1) {
+        parser.error("Cannot use 'break' outside of a loop");
+    }
+    
+    parser.consume(TOKEN_SEMICOLON, "Expect ';' after 'break'.");
+    
+    for (int i = localCount - 1; i >= 0 && locals[i].depth > innermostLoopScopeDepth; i--) {
+        emitByte(OP_POP);
+    }
+    
+    breakStatements.push_back(Break{emitJump(OP_JUMP),innermostLoopScopeDepth});
+}
+

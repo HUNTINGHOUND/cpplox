@@ -68,9 +68,20 @@ struct Local {
     Local();
 };
 
+struct Break {
+    int position;
+    int depth;
+};
+
+
 class Compiler {
     
     VM* vm;
+    
+    std::vector<Break> breakStatements;
+    
+    int innermostLoopStart = -1;
+    int innermostLoopScopeDepth = 0;
     
     
     /// Appending a single byte to the current chunk
@@ -149,6 +160,14 @@ class Compiler {
     void whileStatement();
     
     void emitLoop(int loopStart);
+    
+    void forStatement();
+    
+    void continueStatement();
+    
+    void breakStatement();
+    
+    void patchBreaks();
     
 public:
     
