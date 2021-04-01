@@ -244,6 +244,9 @@ InterpretResult VM::run() {
                 ip -= offset;
                 break;
             }
+            case OP_DUP:
+                stack.push_back(peek(0));
+                break;
         }
     }
 }

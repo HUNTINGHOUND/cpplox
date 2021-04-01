@@ -30,7 +30,8 @@ enum OpCode {
     OP_GET_LOCAL,
     OP_JUMP_IF_FALSE,
     OP_JUMP,
-    OP_LOOP
+    OP_LOOP,
+    OP_DUP
 };
 
 //Data structure that represent a line in source code

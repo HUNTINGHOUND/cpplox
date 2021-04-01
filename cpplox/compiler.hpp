@@ -169,6 +169,8 @@ class Compiler {
     
     void patchBreaks();
     
+    void switchStatement();
+    
 public:
     
     Scanner scanner;

@@ -7,52 +7,55 @@
 #endif
 
 
-ParseRule rules[45] = {
-  [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, nullptr,   PREC_NONE},
-  [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_RIGHT_BRACE]   = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_COMMA]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_DOT]           = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_MINUS]         = {&Compiler::unary, &Compiler::binary, PREC_TERM},
-  [TOKEN_PLUS]          = {nullptr,     &Compiler::binary, PREC_TERM},
-  [TOKEN_SEMICOLON]     = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_SLASH]         = {nullptr,     &Compiler::binary, PREC_FACTOR},
-  [TOKEN_STAR]          = {nullptr,     &Compiler::binary, PREC_FACTOR},
-  [TOKEN_BANG]          = {&Compiler::unary,     nullptr,   PREC_NONE},
-  [TOKEN_BANG_EQUAL]    = {nullptr,     &Compiler::binary,   PREC_EQUALITY},
-  [TOKEN_EQUAL]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_EQUAL_EQUAL]   = {nullptr,     &Compiler::binary,   PREC_EQUALITY},
-  [TOKEN_GREATER]       = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
-  [TOKEN_GREATER_EQUAL] = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
-  [TOKEN_LESS]          = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
-  [TOKEN_LESS_EQUAL]    = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
-  [TOKEN_QUESTION_MARK] = {nullptr,     &Compiler::condition, PREC_CONDITIONAL},
-  [TOKEN_COLON]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_IDENTIFIER]    = {&Compiler::variable,     nullptr,   PREC_NONE},
-  [TOKEN_STRING]        = {&Compiler::string, nullptr, PREC_NONE},
-  [TOKEN_NUMBER]        = {&Compiler::number, nullptr, PREC_NONE},
-  [TOKEN_AND]           = {nullptr,     &Compiler::_and,   PREC_AND},
-  [TOKEN_CLASS]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_ELSE]          = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_FALSE]         = {&Compiler::literal,     nullptr,   PREC_NONE},
-  [TOKEN_FOR]           = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_FUN]           = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_IF]            = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_NUL]           = {&Compiler::literal,     nullptr,   PREC_NONE},
-  [TOKEN_OR]            = {nullptr,     &Compiler::_or,   PREC_OR},
-  [TOKEN_PRINT]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_RETURN]        = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_SUPER]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_THIS]          = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_TRUE]          = {&Compiler::literal,     nullptr,   PREC_NONE},
-  [TOKEN_VAR]           = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_CONST]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_WHILE]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_CONTINUE]      = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_BREAK]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_ERROR]         = {nullptr,     nullptr,   PREC_NONE},
-  [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
+ParseRule rules[48] = {
+    [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, nullptr,   PREC_NONE},
+    [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_RIGHT_BRACE]   = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_COMMA]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_DOT]           = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_MINUS]         = {&Compiler::unary, &Compiler::binary, PREC_TERM},
+    [TOKEN_PLUS]          = {nullptr,     &Compiler::binary, PREC_TERM},
+    [TOKEN_SEMICOLON]     = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_SLASH]         = {nullptr,     &Compiler::binary, PREC_FACTOR},
+    [TOKEN_STAR]          = {nullptr,     &Compiler::binary, PREC_FACTOR},
+    [TOKEN_BANG]          = {&Compiler::unary,     nullptr,   PREC_NONE},
+    [TOKEN_BANG_EQUAL]    = {nullptr,     &Compiler::binary,   PREC_EQUALITY},
+    [TOKEN_EQUAL]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_EQUAL_EQUAL]   = {nullptr,     &Compiler::binary,   PREC_EQUALITY},
+    [TOKEN_GREATER]       = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
+    [TOKEN_GREATER_EQUAL] = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
+    [TOKEN_LESS]          = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
+    [TOKEN_LESS_EQUAL]    = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
+    [TOKEN_QUESTION_MARK] = {nullptr,     &Compiler::condition, PREC_CONDITIONAL},
+    [TOKEN_COLON]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_IDENTIFIER]    = {&Compiler::variable,     nullptr,   PREC_NONE},
+    [TOKEN_STRING]        = {&Compiler::string, nullptr, PREC_NONE},
+    [TOKEN_NUMBER]        = {&Compiler::number, nullptr, PREC_NONE},
+    [TOKEN_AND]           = {nullptr,     &Compiler::_and,   PREC_AND},
+    [TOKEN_CLASS]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_ELSE]          = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_FALSE]         = {&Compiler::literal,     nullptr,   PREC_NONE},
+    [TOKEN_FOR]           = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_FUN]           = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_IF]            = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_NUL]           = {&Compiler::literal,     nullptr,   PREC_NONE},
+    [TOKEN_OR]            = {nullptr,     &Compiler::_or,   PREC_OR},
+    [TOKEN_PRINT]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_RETURN]        = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_SUPER]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_THIS]          = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_TRUE]          = {&Compiler::literal,     nullptr,   PREC_NONE},
+    [TOKEN_VAR]           = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_CONST]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_WHILE]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_CONTINUE]      = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_BREAK]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_SWITCH]        = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_CASE]          = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_DEFAULT]       = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_ERROR]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
 };
 
 bool identifierEqual(Token* a, Token* b) {
@@ -340,6 +343,8 @@ void Compiler::statement() {
         continueStatement();
     } else if(match(TOKEN_BREAK)) {
         breakStatement();
+    } else if(match(TOKEN_SWITCH)) {
+        switchStatement();
     } else {
         expressionStatement();
     }
@@ -533,17 +538,17 @@ void Compiler::addLocal(Token name, bool isConst) {
 }
 
 int Compiler::resolveLocal(Token* name) {
-  for (int i = localCount - 1; i >= 0; i--) {
-    Local* local = &locals[i];
-    if (identifierEqual(name, &local->name)) {
-        if(local->depth == -1) {
-            parser.error("Can't read local variable in its own initializer.");
+    for (int i = localCount - 1; i >= 0; i--) {
+        Local* local = &locals[i];
+        if (identifierEqual(name, &local->name)) {
+            if(local->depth == -1) {
+                parser.error("Can't read local variable in its own initializer.");
+            }
+            return i;
         }
-      return i;
     }
-  }
-
-  return -1;
+    
+    return -1;
 }
 
 void Compiler::markInitialized() {
@@ -735,3 +740,88 @@ void Compiler::breakStatement() {
     breakStatements.push_back(Break{emitJump(OP_JUMP),innermostLoopScopeDepth});
 }
 
+
+void Compiler::switchStatement() {
+#define BEFORE_CASES 0
+#define BEFORE_DEFAULT 1
+#define AFTER_DEFAULT 2
+    
+    
+    parser.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'switch'.");
+    expression();
+    parser.consume(TOKEN_RIGHT_PAREN, "Expect ')' after value.");
+    parser.consume(TOKEN_LEFT_BRACE, "Exprect '{' before cases.");
+    
+    beginScope();
+    int surroundingLoopStart = innermostLoopStart;
+    int surroundingLoopScopeDepth = innermostLoopScopeDepth;
+    innermostLoopStart = currentChunk()->count;
+    innermostLoopScopeDepth = scopeDepth;
+    
+    int state = BEFORE_CASES;
+    int previousCaseSkip = -1;
+    int caseCount = 0;
+    
+    while (!match(TOKEN_RIGHT_BRACE) && !parser.check(TOKEN_EOF)) {
+        if(match(TOKEN_CASE) || match(TOKEN_DEFAULT)) {
+            TokenType caseType = parser.previous.type;
+            
+            
+            if (state == AFTER_DEFAULT) {
+                parser.error("Can't have another case or default after the default case.");
+            }
+            
+            if(state == 1) {
+                int previousCaseEnds = emitJump(OP_JUMP);
+                caseCount++;
+                if(caseCount == MAX_CASES) {
+                    parser.error("Too many cases in switch statement");
+                }
+                
+                patchJump(previousCaseSkip);
+                emitByte(OP_POP);
+                
+                patchJump(previousCaseEnds);
+            }
+            
+            if (caseType == TOKEN_CASE) {
+                state = BEFORE_DEFAULT;
+                
+                emitByte(OP_DUP);
+                expression();
+                
+                parser.consume(TOKEN_COLON, "Expect ':' after case value.");
+                
+                emitByte(OP_EQUAL);
+                previousCaseSkip = emitJump(OP_JUMP_IF_FALSE);
+                
+                emitByte(OP_POP);
+                
+            } else {
+                state = 2;
+                parser.consume(TOKEN_COLON, "Expect ':' after default.");
+                previousCaseSkip = -1;
+            }
+        } else {
+            if(state == 0) {
+                parser.error("Cannot have statements before any case.");
+            }
+            statement();
+        }
+    }
+    
+    patchBreaks();
+    if(state == 1) {
+        patchJump(previousCaseSkip);
+        emitByte(OP_POP);
+    }
+    
+    emitByte(OP_POP);
+    
+    innermostLoopStart = surroundingLoopStart;
+    innermostLoopScopeDepth = surroundingLoopScopeDepth;
+    endScope();
+#undef BEFORE_CASES
+#undef BEFORE_DEFAULT
+#undef AFTER_DEFAULT
+}
