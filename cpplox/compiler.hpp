@@ -78,6 +78,9 @@ class Compiler {
     
     VM* vm;
     
+    ObjFunction* function;
+    FunctionType type;
+    
     std::vector<Break> breakStatements;
     
     int innermostLoopStart = -1;
@@ -97,7 +100,7 @@ class Compiler {
     Chunk* currentChunk();
     
     /// end the compiling process
-    void endCompiler();
+    ObjFunction* endCompiler();
     
     /// Util method for writing OP_RETURN
     void emitReturn();
@@ -180,8 +183,6 @@ public:
     int localCount;
     int scopeDepth;
     
-    //curent chunk to be written to
-    Chunk* compilingChunk = nullptr;
     
     void number(bool canAssign);
     
@@ -206,12 +207,11 @@ public:
     
     /// Constructor
     /// @param source source code to be compiled
-    Compiler(const std::string& source, VM* vm);
+    Compiler(const std::string& source, VM* vm, FunctionType type);
     
     
     /// Compile the source code passed to the constructor and write the byte code to the chunk given. Return false if parser encounters error
-    /// @param chunk chunk the bytecode should be written to
-    bool compile(Chunk* chunk);
+    ObjFunction* compile();
 };
 
 using ParseFn = void (Compiler::*)(bool canAssign);

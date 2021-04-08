@@ -8,12 +8,18 @@
 #include <cstdio>
 #include <cstdarg>
 
-uint8_t VM::read_byte() {
-    return *ip++;
+uint8_t VM::read_byte(CallFrame* frame) {
+    return *frame->ip++;
 }
 
-Value VM::read_constant() {
-    return chunk->constants.values[read_byte()];
+Value VM::read_constant(CallFrame* frame) {
+    return frame->function->chunk.constants.values[read_byte(frame)];
+}
+
+CallFrame::CallFrame(ObjFunction* function, uint8_t* ip, size_t slots) {
+    this->function = function;
+    this->ip = ip;
+    this->slots = slots;
 }
 
 template <typename T, typename U>
@@ -46,25 +52,21 @@ void VM::freeVM() {
 }
 
 InterpretResult VM::interpret(const std::string& source) {
-    Chunk chunk;
-    Compiler compiler(source, this);
+    Compiler compiler(source, this, TYPE_SCRIPT);
+    ObjFunction* function = compiler.compile();
     
-    if(!compiler.compile(&chunk)) {
-        chunk.freeChunk();
-        return INTERPRET_COMPILE_ERROR;
-    }
+    if(function == nullptr) return INTERPRET_COMPILE_ERROR;
     
-    this->chunk = &chunk;
-    this->ip = &this->chunk->code[0];
+    stack.push_back(Value::obj_val(function));
+    frames.push_back(CallFrame(function, function->chunk.code, 0));
     
-    InterpretResult result = run();
-    
-    chunk.freeChunk();
-    return result;
+    return run();
 }
 
 
 InterpretResult VM::run() {
+    
+    CallFrame* frame = &frames.back();
     
     for(;;) {
         
@@ -72,29 +74,19 @@ InterpretResult VM::run() {
         std::cout << "         ";
         for (auto it = stack.begin(); it != stack.end(); it++) {
             std::cout << "[";
-            if(Value::is_nul(*it)) {
-                std::cout << "nul]";
-            } else if (Value::is_bool(*it)) {
-                std::cout << (Value::as_bool(*it) ? "true" : "false") << "]";
-            } else if (Value::is_number(*it)) {
-                std::cout << Value::as_number(*it) << "]";
-            } else if (Value::is_obj(*it)) {
-                std::cout <<Value::as_string(*it) << "]";
-            } else {
-                //should not happen
-                std::cout << "unrecognizable value" << "]";
-            }
+            Value::printValue(*it);
+            std::cout << "]";
         }
         std::cout << std::endl;
         
-        uint8_t* start = &this->chunk->code[0];
-        Disassembler::disassembleInstruction(this->chunk, this, (int)(this->ip - start));
+        uint8_t* start = frame->function->chunk.code;
+        Disassembler::disassembleInstruction(&frame->function->chunk, this, (int)(frame->ip - start));
         
 #endif
         
         
         uint8_t instruction;
-        switch(instruction = read_byte()) {
+        switch(instruction = read_byte(frame)) {
             case OP_CONDITIONAL: {
                 Value b = stack.back();
                 stack.pop_back();
@@ -168,7 +160,7 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_CONSTANT: {
-                Value constant = read_constant();
+                Value constant = read_constant(frame);
                 stack.push_back(constant);
                 Value::printValue(constant);
                 std::cout << std::endl;
@@ -197,12 +189,12 @@ InterpretResult VM::run() {
                 stack.pop_back();
                 break;
             case OP_DEFINE_GLOBAL: {
-                globalValues.values[read_byte()] = stack.back();
+                globalValues.values[read_byte(frame)] = stack.back();
                 stack.pop_back();
                 break;
             }
             case OP_GET_GLOBAL: {
-                Value value = globalValues.values[read_byte()];
+                Value value = globalValues.values[read_byte(frame)];
                 if (Value::is_empty(value)) {
                     runtimeError("Undefined variable.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -211,7 +203,7 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_SET_GLOBAL: {
-                uint8_t index = read_byte();
+                uint8_t index = read_byte(frame);
                 if (Value::is_empty(globalValues.values[index])) {
                     runtimeError("Undefined variable.");;
                     return INTERPRET_RUNTIME_ERROR;
@@ -220,28 +212,28 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_GET_LOCAL: {
-                uint8_t slot = read_byte();
-                stack.push_back(stack[slot]);
+                uint8_t slot = read_byte(frame);
+                stack.push_back(stack[frame->slots + slot]);
                 break;
             }
             case OP_SET_LOCAL: {
-                uint8_t slot = read_byte();
-                stack[slot] = peek(0);
+                uint8_t slot = read_byte(frame);
+                stack[frame->slots + slot] = peek(0);
                 break;
             }
             case OP_JUMP_IF_FALSE: {
-                uint16_t offset = read_short();
-                if (isFalsey(peek(0))) ip += offset;
+                uint16_t offset = read_short(frame);
+                if (isFalsey(peek(0))) frame->ip += offset;
                 break;
             }
             case OP_JUMP: {
-                uint16_t offset = read_short();
-                ip += offset;
+                uint16_t offset = read_short(frame);
+                frame->ip += offset;
                 break;
             }
             case OP_LOOP: {
-                uint16_t offset = read_short();
-                ip -= offset;
+                uint16_t offset = read_short(frame);
+                frame->ip -= offset;
                 break;
             }
             case OP_DUP:
@@ -286,14 +278,15 @@ void VM::runtimeError(const std::string& format, ... ) {
     va_end(args);
     std::cerr << std::endl;
 
-    size_t instruction = ip - &chunk->code[0] - 1;
-    int line = chunk->getLine(instruction);
+    CallFrame* frame = &frames.back();
+    size_t instruction = frame->ip - frame->function->chunk.code - 1;
+    int line = frame->function->chunk.getLine(instruction);
     std::cerr << "[line " << line << "] in script" << std::endl;
     
     stack = std::deque<Value>();
 }
 
-uint16_t VM::read_short() {
-    ip += 2;
-    return (uint16_t)((ip[-2] << 8) | ip[-1]);
+uint16_t VM::read_short(CallFrame* frame) {
+    frame->ip += 2;
+    return (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]);
 }

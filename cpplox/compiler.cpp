@@ -65,10 +65,24 @@ bool identifierEqual(Token* a, Token* b) {
 
 Local::Local() : name(TOKEN_NUL, "", 0, 0, 0) {}
 
-Compiler::Compiler(const std::string& source, VM* vm) : scanner(source), parser(&scanner){
+Compiler::Compiler(const std::string& source, VM* vm, FunctionType type) : scanner(source), parser(&scanner){
+    function = nullptr;
+    this->type = type;
+    
     this->localCount = 0;
     this->scopeDepth = 0;
     this->vm = vm;
+    
+    function = ObjFunction::newFunction();
+    
+    if(localCount + 1 >= locals.capacity()) {
+        locals.resize(locals.capacity() == 0 ? 8 : locals.capacity() * 2);
+    }
+    
+    Local* local = &locals[localCount++];
+    local->depth = 0;
+    local->name.source = "";
+    local->name.length = 0;
 }
 
 Parser::Parser(Scanner* scanner) : current(TOKEN_NUL, "", 0, 0, 0), previous(TOKEN_NUL, "", 0, 0, 0){
@@ -125,20 +139,25 @@ bool Parser::check(TokenType type) {
 }
 
 Chunk* Compiler::currentChunk() {
-    return compilingChunk;
+    return &function->chunk;
 }
 
 void Compiler::emitByte(uint8_t byte) {
     currentChunk()->writeChunk(byte, parser.previous.line);
 }
 
-void Compiler::endCompiler() {
+ObjFunction* Compiler::endCompiler() {
     emitReturn();
+    ObjFunction* function = this->function;
+    
 #ifdef DEBUG_PRINT_CODE
     if(!parser.hadError) {
-        Disassembler::disassembleChunk(currentChunk(), vm, "code");
+        Disassembler::disassembleChunk(currentChunk(), vm, function->name != nullptr
+                                       ? function->name->chars : "<script>");
     }
 #endif
+    
+    return function;
 }
 
 void Compiler::condition(bool canAssign) {
@@ -295,8 +314,7 @@ void Compiler::expression() {
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
-bool Compiler::compile(Chunk* chunk) {
-    compilingChunk = chunk;
+ObjFunction* Compiler::compile() {
     
     parser.hadError = false;
     parser.panicMode = false;
@@ -307,8 +325,8 @@ bool Compiler::compile(Chunk* chunk) {
         declaration();
     }
     
-    endCompiler();
-    return !parser.hadError;
+    ObjFunction* function = endCompiler();
+    return parser.hadError ? nullptr : function;
 }
 
 ParseRule*  ParseRule::getRule(TokenType type) {

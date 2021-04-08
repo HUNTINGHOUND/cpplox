@@ -1,6 +1,7 @@
 #include "table.hpp"
 #include "memory.hpp"
 
+
 Table::Table() {
     count = 0;
     capacity = 0;

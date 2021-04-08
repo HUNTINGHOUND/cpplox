@@ -4,7 +4,11 @@
 #define value_h
 
 #include <vector>
-#include "object.hpp"
+
+class Obj;
+class ObjString;
+class ObjFunction;
+enum ObjType : short;
 
 enum ValueType{
     VAL_BOOL,
@@ -33,6 +37,7 @@ public:
     static bool is_obj(Value value);
     static bool is_string(Value value);
     static bool is_empty(Value value);
+    static bool is_function(Value value);
     static bool isObjType(Value value, ObjType type);
     
     static bool as_bool(Value value);
@@ -40,6 +45,7 @@ public:
     static Obj* as_obj(Value value);
     static ObjString* as_string(Value value);
     static char* as_c_string(Value value);
+    static ObjFunction* as_function(Value value);
 
     static Value bool_val(bool value);
     static Value nul_val();
@@ -52,14 +58,15 @@ public:
     static ObjType obj_type(Value value);
     static void printObject(Value value);
     static void printValue(Value value);
+    static void printFunction(ObjFunction* function);
     static uint32_t hashValue(Value value);
 };
 
 
 class ValueArray {
 public:
-    int count;
-    int capacity;
+    size_t count;
+    size_t capacity;
     Value* values;
     
     ValueArray();

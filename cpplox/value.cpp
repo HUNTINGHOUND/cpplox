@@ -1,6 +1,7 @@
 #include <iostream>
 #include "value.hpp"
 #include "memory.hpp"
+#include "object.hpp"
 
 ValueArray::ValueArray() {
     this->count = 0;
@@ -138,7 +139,18 @@ void Value::printObject(Value value) {
         case OBJ_STRING:
             std::cout << as_c_string(value);
             break;
+        case OBJ_FUNCTION:
+            printFunction(as_function(value));
+            break;
     }
+}
+
+void Value::printFunction(ObjFunction *function) {
+    if(function->name == nullptr) {
+        std::cout << "<script>";
+        return;
+    }
+    std::cout << "<fn " << function->name->chars << ">";
 }
 
 bool Value::is_empty(Value value) {
@@ -169,4 +181,12 @@ uint32_t Value::hashValue(Value value) {
         case VAL_OBJ: return as_string(value)->hash;
         case VAL_EMPTY: return 0;
     }
+}
+
+bool Value::is_function(Value value) {
+    return isObjType(value, OBJ_FUNCTION);
+}
+
+ObjFunction* Value::as_function(Value value) {
+    return (ObjFunction*)as_obj(value);
 }

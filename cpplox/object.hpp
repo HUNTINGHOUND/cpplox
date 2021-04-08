@@ -2,11 +2,18 @@
 #define object_h
 
 #include "flags.hpp"
+#include "chunk.hpp"
 
 class VM;
 
-enum ObjType{
-    OBJ_STRING
+enum ObjType : short{
+    OBJ_STRING,
+    OBJ_FUNCTION
+};
+
+enum FunctionType {
+    TYPE_FUNCTION,
+    TYPE_SCRIPT
 };
 
 class Obj {
@@ -33,4 +40,13 @@ public:
     static uint32_t hashString(const char* key, int length);
 };
 
+class ObjFunction : public Obj{
+    int arity;
+public:
+    Chunk chunk;
+    ObjString* name;
+    
+    static ObjFunction* newFunction();
+    
+};
 #endif /* object_h */

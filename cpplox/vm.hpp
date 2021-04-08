@@ -18,15 +18,24 @@ enum InterpretResult {
     INTERPRET_RUNTIME_ERROR
 };
 
+class CallFrame {
+public:
+    ObjFunction* function;
+    uint8_t* ip;
+    size_t slots;
+    
+    CallFrame(ObjFunction* function, uint8_t* ip, size_t slots);
+};
+
 class VM {
     
     InterpretResult run();
     
-    uint8_t read_byte();
+    uint8_t read_byte(CallFrame* frame);
     
-    Value read_constant();
+    Value read_constant(CallFrame* frame);
     
-    uint16_t read_short();
+    uint16_t read_short(CallFrame* frame);
     
     template <typename T, typename U>
     InterpretResult binary_op(Value (*valuetype)(T),std::function<T (U, U)> func);
@@ -43,7 +52,10 @@ class VM {
 public:
     Chunk* chunk;
     uint8_t* ip;
+    
+    std::deque<CallFrame> frames;
     std::deque<Value> stack;
+    
     Table strings;
     Table globalNames;
     ValueArray globalValues;

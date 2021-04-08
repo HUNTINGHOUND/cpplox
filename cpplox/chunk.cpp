@@ -53,7 +53,7 @@ int Chunk::addConstant(Value value) {
     return this->constants.count - 1;
 }
 
-int Chunk::getLine(int index) {
+int Chunk::getLine(size_t index) {
     int left = 0;
     int right = this->lineCount - 1;
     while(left < right - 1) {

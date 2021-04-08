@@ -69,7 +69,7 @@ public:
     void writeChunk(uint8_t byte, int line);
     
     //get which line in the source code the operation is compiled from, error report purpose
-    int getLine(int index);
+    int getLine(size_t index);
     
     //write a constant to the chunk and it location to the byte code
     void writeConstant(Value value, int line);

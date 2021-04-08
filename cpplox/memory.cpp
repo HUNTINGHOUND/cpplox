@@ -34,6 +34,12 @@ void freeObject(Obj* object) {
         case OBJ_STRING: {
             ObjString* string = (ObjString*) object;
             reallocate(object, sizeof(ObjString) + string->length + 1, 0);
+            break;
+        }
+        case OBJ_FUNCTION: {
+            ObjFunction* function = (ObjFunction*)object;
+            function->chunk.freeChunk();
+            reallocate(object, sizeof(ObjFunction), 0);
         }
     }
 }
