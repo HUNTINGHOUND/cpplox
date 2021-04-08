@@ -4,11 +4,19 @@
 
 void* reallocate(void* pointer, size_t oldsize, size_t newsize) {
     if (newsize == 0) {
-        free(pointer);
+        if(oldsize != 0) {
+            free(pointer);
+        }
         return nullptr;
     }
     
-    void* result = realloc(pointer, newsize);
+    void* result;
+    
+    if(oldsize == 0) {
+        result = malloc(newsize);
+    } else {
+        result = realloc(pointer, newsize);
+    }
     return result;
 }
 

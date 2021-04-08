@@ -8,18 +8,22 @@
 Chunk::Chunk() : constants() {
     this->count = 0;
     this->lineCount = 0;
+    this->capacity = 0;
+    this->lineCapacity = 0;
 }
 
 void Chunk::freeChunk() {
-    free_array<uint8_t>(this->code);
-    free_array<Line>(this->lines);
+    free_array<uint8_t>(this->code, this->capacity);
+    free_array<Line>(this->lines, this->capacity);
     this->constants.freeValueArray();
     Chunk();
 }
 
 void Chunk::writeChunk(uint8_t byte, int line) {
-    if (this->code.capacity() == this->count) {
-        grow_array<uint8_t>(this->code, grow_capacity(this->code.capacity()));
+    if (this->capacity == this->count) {
+        size_t newCapa = grow_capacity(this->capacity);
+        code = grow_array<uint8_t>(this->code, this->capacity ,newCapa);
+        this->capacity = newCapa;
     }
     
     this->code[this->count] = byte;
@@ -31,8 +35,10 @@ void Chunk::writeChunk(uint8_t byte, int line) {
         return;
     }
     
-    if(this->lines.capacity() == this->lineCount) {
-        grow_array<Line>(this->lines, grow_capacity(this->lines.capacity()));
+    if(this->lineCapacity == this->lineCount) {
+        size_t newlineCapa = grow_capacity(this->lineCapacity);
+        lines = grow_array<Line>(this->lines, this->lineCapacity, newlineCapa);
+        lineCapacity = newlineCapa;
     }
     Line linestart;
     linestart.line = line;

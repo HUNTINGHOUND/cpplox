@@ -27,14 +27,14 @@ inline size_t grow_capacity(size_t capacity) {
 
 //grow an array
 template <typename V>
-inline void grow_array(std::vector<V>& array, int newSize) {
-    array.resize(newSize);
+inline V* grow_array(V* pointer, size_t oldCount, size_t newCount) {
+    return (V*)reallocate(pointer, sizeof(V) * (oldCount), sizeof(V) * newCount);
 }
 
 //free an array
 template <typename V>
-inline void free_array(std::vector<V>& array) {
-    std::vector<V>().swap(array);
+inline void free_array(V* pointer, size_t oldCount) {
+    reallocate(pointer, sizeof(V) * (oldCount), 0);
 }
 
 template<typename T>

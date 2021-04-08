@@ -8,7 +8,6 @@ Table::Table() {
 }
 
 void Table::freeTable() {
-    free_array(entries);
 }
 
 bool Table::tableSet(Value key, Value value) {
@@ -67,7 +66,6 @@ void Table::adjustCapacity(int capacity) {
         count++;
     }
     
-    free_array(this->entries);
     this->entries = newEntries;
     this->capacity = capacity;
     

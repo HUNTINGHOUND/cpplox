@@ -4,12 +4,14 @@
 
 ValueArray::ValueArray() {
     this->count = 0;
+    this->capacity = 0;
 }
 
 void ValueArray::writeValueArray(Value value){
-    if (this->values.capacity() == this->count) {
-        size_t oldCapacity = this->values.capacity();
-        grow_array<Value>(this->values, grow_capacity(oldCapacity));
+    if (this->capacity == this->count) {
+        size_t newCapa = grow_capacity(capacity);
+        values = grow_array<Value>(this->values, this->capacity, newCapa);
+        capacity = newCapa;
     }
     
     this->values[this->count] = value;
@@ -17,7 +19,7 @@ void ValueArray::writeValueArray(Value value){
 }
 
 void ValueArray::freeValueArray(){
-    free_array(this->values);
+    free_array(this->values, this->capacity);
     ValueArray();
 }
 

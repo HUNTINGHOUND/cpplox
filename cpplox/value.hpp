@@ -59,7 +59,8 @@ public:
 class ValueArray {
 public:
     int count;
-    std::vector<Value> values;
+    int capacity;
+    Value* values;
     
     ValueArray();
     void writeValueArray(Value value);

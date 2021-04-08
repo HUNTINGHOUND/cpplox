@@ -170,7 +170,7 @@ void Compiler::emitConstant(Value value) {
 
 uint8_t Compiler::makeConstant(Value value) {
     int constant = currentChunk()->addConstant(value);
-    if (constant > currentChunk()->constants.values.max_size()) {
+    if (constant > 256) {
         parser.error("Too many constants in one chunk.");
         return 0;
     }
@@ -528,7 +528,7 @@ void Compiler::addLocal(Token name, bool isConst) {
     }
     
     if(localCount + 1 >= locals.capacity()) {
-        grow_array(locals, grow_capacity(locals.capacity()));
+        locals.resize(locals.capacity() == 0 ? 8 : locals.capacity() * 2);
     }
     
     Local* local = &locals[localCount++];

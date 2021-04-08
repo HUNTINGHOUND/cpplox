@@ -45,12 +45,14 @@ class Chunk {
 public:
     
     //current count of bytes in code
-    int count;
+    size_t count;
+    size_t capacity;
     //current count of lines(Data structure) in lines
-    int lineCount;
+    size_t lineCount;
+    size_t lineCapacity;
     
-    std::vector<uint8_t> code;
-    std::vector<Line> lines;
+    uint8_t* code;
+    Line* lines;
     
     //constants each chunk keeps
     ValueArray constants;
