@@ -8,7 +8,7 @@
 
 
 ParseRule rules[48] = {
-    [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, nullptr,   PREC_NONE},
+    [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, &Compiler::call,   PREC_NONE},
     [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_RIGHT_BRACE]   = {nullptr,     nullptr,   PREC_NONE},
@@ -889,4 +889,26 @@ void Compiler::_function(FunctionType type) {
     
     ObjFunction* function = compiler.endCompiler();
     emitBytes(OP_CONSTANT, makeConstant(Value::obj_val(function)));
+}
+
+void Compiler::call(bool canAssign) {
+    uint8_t argCount = argumentList();
+    emitBytes(OP_CALL, argCount);
+}
+
+uint8_t Compiler::argumentList() {
+    uint8_t argCount = 0;
+    if(!parser->check(TOKEN_RIGHT_PAREN)) {
+        do {
+            expression();
+            
+            if(argCount == 255) {
+                parser->error("Can't have more than 255 arguments.");
+            }
+            argCount++;
+        } while(match(TOKEN_COMMA));
+    }
+    
+    parser->consume(TOKEN_RIGHT_PAREN, "Expect ')' after argument");
+    return argCount;
 }

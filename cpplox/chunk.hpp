@@ -31,7 +31,8 @@ enum OpCode {
     OP_JUMP_IF_FALSE,
     OP_JUMP,
     OP_LOOP,
-    OP_DUP
+    OP_DUP,
+    OP_CALL
 };
 
 //Data structure that represent a line in source code

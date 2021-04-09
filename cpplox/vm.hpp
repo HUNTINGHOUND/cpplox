@@ -48,6 +48,9 @@ class VM {
     
     void runtimeError(const std::string& format, ... );
     
+    bool callValue(Value callee, int argCount);
+    
+    bool call(ObjFunction* function, int argCount);
     
 public:
     Chunk* chunk;

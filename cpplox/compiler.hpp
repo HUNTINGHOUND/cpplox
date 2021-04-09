@@ -179,6 +179,8 @@ class Compiler {
     
     void _function(FunctionType type);
     
+    uint8_t argumentList();
+    
 public:
     
     Scanner* scanner;
@@ -209,6 +211,7 @@ public:
     
     void _or(bool canAssign);
     
+    void call(bool canAssign);
     
     Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser);
     

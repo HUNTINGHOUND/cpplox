@@ -122,6 +122,8 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             return jumpInstruction("OP_LOOP", -1, chunk, offset);
         case OP_DUP:
             return simpleInstruction("OP_DUP", offset);
+        case OP_CALL:
+            return byteInstruction("OP_POP", chunk, offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

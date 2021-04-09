@@ -61,7 +61,7 @@ InterpretResult VM::interpret(const std::string& source) {
     if(function == nullptr) return INTERPRET_COMPILE_ERROR;
     
     stack.push_back(Value::obj_val(function));
-    frames.push_back(CallFrame(function, function->chunk.code, 0));
+    callValue(Value::obj_val(function), 0);
     
     return run();
 }
@@ -242,6 +242,14 @@ InterpretResult VM::run() {
             case OP_DUP:
                 stack.push_back(peek(0));
                 break;
+            case OP_CALL: {
+                int argCount = read_byte(frame);
+                if(!callValue(peek(argCount), argCount)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                frame = &frames.back();
+                break;
+            }
         }
     }
 }
@@ -280,11 +288,20 @@ void VM::runtimeError(const std::string& format, ... ) {
     vfprintf(stderr, format.c_str(), args);
     va_end(args);
     std::cerr << std::endl;
-
-    CallFrame* frame = &frames.back();
-    size_t instruction = frame->ip - frame->function->chunk.code - 1;
-    int line = frame->function->chunk.getLine(instruction);
-    std::cerr << "[line " << line << "] in script" << std::endl;
+    
+    for (int i = frames.size() - 1; i >= 0; i--) {
+        CallFrame* frame = &frames[i];
+        ObjFunction* function = frame->function;
+        
+        size_t instruction = frame->ip - function->chunk.code - 1;
+        std::cerr << "[line " << function->chunk.getLine(instruction) << "] in ";
+        
+        if(function->name == nullptr) {
+            std::cerr << "script" << std::endl;
+        } else {
+            std::cerr << function->name->chars << "()" << std::endl;
+        }
+    }
     
     stack = std::deque<Value>();
 }
@@ -292,4 +309,34 @@ void VM::runtimeError(const std::string& format, ... ) {
 uint16_t VM::read_short(CallFrame* frame) {
     frame->ip += 2;
     return (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]);
+}
+
+bool VM::callValue(Value callee, int argCount) {
+    if(Value::is_obj(callee)) {
+        switch (Value::obj_type(callee)) {
+            case OBJ_FUNCTION:
+                return call(Value::as_function(callee), argCount);
+                
+            default:
+                break;
+        }
+    }
+    
+    runtimeError("Can only call functions and classes.");
+    return false;
+}
+
+bool VM::call(ObjFunction *function, int argCount) {
+    if(argCount != function->arity) {
+        runtimeError("Expected %d arguments but got %d.", function->arity, argCount);
+        return false;
+    }
+    
+    if(frames.size() == frames.max_size()) {
+        runtimeError("Stack overflow.");
+        return false;
+    }
+    
+    frames.push_back(CallFrame(function, function->chunk.code, stack.size() - argCount - 1));
+    return true;
 }
