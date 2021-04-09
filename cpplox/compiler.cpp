@@ -65,7 +65,12 @@ bool identifierEqual(Token* a, Token* b) {
 
 Local::Local() : name(TOKEN_NUL, "", 0, 0, 0) {}
 
-Compiler::Compiler(const std::string& source, VM* vm, FunctionType type) : scanner(source), parser(&scanner){
+Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser) {
+    this->enclosing = enclosing;
+    
+    this->scanner = scanner;
+    this->parser = parser;
+    
     function = nullptr;
     this->type = type;
     
@@ -74,6 +79,10 @@ Compiler::Compiler(const std::string& source, VM* vm, FunctionType type) : scann
     this->vm = vm;
     
     function = ObjFunction::newFunction();
+    
+    if (type != TYPE_SCRIPT) {
+        function->name = ObjString::copyString(vm, parser->previous.source.c_str(), parser->previous.length);
+    }
     
     if(localCount + 1 >= locals.capacity()) {
         locals.resize(locals.capacity() == 0 ? 8 : locals.capacity() * 2);
@@ -143,7 +152,7 @@ Chunk* Compiler::currentChunk() {
 }
 
 void Compiler::emitByte(uint8_t byte) {
-    currentChunk()->writeChunk(byte, parser.previous.line);
+    currentChunk()->writeChunk(byte, parser->previous.line);
 }
 
 ObjFunction* Compiler::endCompiler() {
@@ -151,7 +160,7 @@ ObjFunction* Compiler::endCompiler() {
     ObjFunction* function = this->function;
     
 #ifdef DEBUG_PRINT_CODE
-    if(!parser.hadError) {
+    if(!parser->hadError) {
         Disassembler::disassembleChunk(currentChunk(), vm, function->name != nullptr
                                        ? function->name->chars : "<script>");
     }
@@ -163,7 +172,7 @@ ObjFunction* Compiler::endCompiler() {
 void Compiler::condition(bool canAssign) {
     parsePrecedence(PREC_CONDITIONAL);
     
-    parser.consume(TOKEN_COLON, "Expect ':' after conditional operator");
+    parser->consume(TOKEN_COLON, "Expect ':' after conditional operator");
     
     parsePrecedence(PREC_ASSIGNMENT);
     emitByte(OP_CONDITIONAL);
@@ -179,7 +188,7 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
 }
 
 void Compiler::number(bool canAssign) {
-    double value = atof(parser.previous.source.c_str());
+    double value = atof(parser->previous.source.c_str());
     emitConstant(Value::number_val(value));
 }
 
@@ -190,7 +199,7 @@ void Compiler::emitConstant(Value value) {
 uint8_t Compiler::makeConstant(Value value) {
     int constant = currentChunk()->addConstant(value);
     if (constant > 256) {
-        parser.error("Too many constants in one chunk.");
+        parser->error("Too many constants in one chunk.");
         return 0;
     }
     
@@ -199,11 +208,11 @@ uint8_t Compiler::makeConstant(Value value) {
 
 void Compiler::grouping(bool canAssign) {
     expression();
-    parser.consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression");
+    parser->consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression");
 }
 
 void Compiler::unary(bool canAssign) {
-    TokenType operatorType = parser.previous.type;
+    TokenType operatorType = parser->previous.type;
     
     parsePrecedence(PREC_UNARY);
     
@@ -221,14 +230,14 @@ void Compiler::unary(bool canAssign) {
 }
 
 void Compiler::string(bool canAssign) {
-    ObjString* string = ObjString::copyString(vm, parser.previous.source.c_str() + 1,
-                                              parser.previous.length - 2);
+    ObjString* string = ObjString::copyString(vm, parser->previous.source.c_str() + 1,
+                                              parser->previous.length - 2);
     
     emitConstant(Value::obj_val(string));
 }
 
 void Compiler::binary(bool canAssign) {
-    TokenType operatorType = parser.previous.type;
+    TokenType operatorType = parser->previous.type;
     
     ParseRule* rule = ParseRule::getRule(operatorType);
     parsePrecedence((Precedence)(rule->precedence + 1));
@@ -272,29 +281,29 @@ void Compiler::binary(bool canAssign) {
 
 
 void Compiler::parsePrecedence(Precedence precedence) {
-    parser.advance();
-    ParseFn prefixRule = ParseRule::getRule(parser.previous.type)->prefix;
+    parser->advance();
+    ParseFn prefixRule = ParseRule::getRule(parser->previous.type)->prefix;
     if (prefixRule == nullptr) {
-        parser.error("Expect Expression.");
+        parser->error("Expect Expression.");
         return;
     }
     
     bool canAssign = precedence <= PREC_ASSIGNMENT;
     std::invoke(prefixRule, *this, canAssign);
     
-    while (precedence <= ParseRule::getRule(parser.current.type)->precedence) {
-        parser.advance();
-        ParseFn infixRule = ParseRule::getRule(parser.previous.type)->infix;
+    while (precedence <= ParseRule::getRule(parser->current.type)->precedence) {
+        parser->advance();
+        ParseFn infixRule = ParseRule::getRule(parser->previous.type)->infix;
         std::invoke(infixRule, *this, canAssign);
     }
     
     if (canAssign && match(TOKEN_EQUAL)) {
-        parser.error("Invalid assignment target.");
+        parser->error("Invalid assignment target.");
     }
 }
 
 void Compiler::literal(bool canAssign) {
-    switch(parser.previous.type) {
+    switch(parser->previous.type) {
         case TOKEN_FALSE:
             emitByte(OP_FALSE);
             break;
@@ -314,19 +323,20 @@ void Compiler::expression() {
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
-ObjFunction* Compiler::compile() {
+ObjFunction* Compiler::compile(const std::string& src) {
+    scanner->setSource(src);
     
-    parser.hadError = false;
-    parser.panicMode = false;
+    parser->hadError = false;
+    parser->panicMode = false;
     
-    parser.advance();
+    parser->advance();
     
     while(!match(TOKEN_EOF)) {
         declaration();
     }
     
     ObjFunction* function = endCompiler();
-    return parser.hadError ? nullptr : function;
+    return parser->hadError ? nullptr : function;
 }
 
 ParseRule*  ParseRule::getRule(TokenType type) {
@@ -337,11 +347,13 @@ void Compiler::declaration() {
     bool isConst = false;
     if (match(TOKEN_VAR) || (isConst = match(TOKEN_CONST))) {
         varDeclaration(isConst);
+    } else if (match(TOKEN_FUN)) {
+        funDeclaration();
     } else {
         statement();
     }
     
-    if(parser.panicMode) synchronize();
+    if(parser->panicMode) synchronize();
 }
 
 void Compiler::statement() {
@@ -369,30 +381,30 @@ void Compiler::statement() {
 }
 
 bool Compiler::match(TokenType type) {
-    if(!parser.check(type)) return false;
-    parser.advance();
+    if(!parser->check(type)) return false;
+    parser->advance();
     return true;
 }
 
 void Compiler::printStatement() {
     expression();
-    parser.consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+    parser->consume(TOKEN_SEMICOLON, "Expect ';' after value.");
     emitByte(OP_PRINT);
 }
 
 void Compiler::expressionStatement() {
     expression();
-    parser.consume(TOKEN_SEMICOLON, "Expect ';' after expression");
+    parser->consume(TOKEN_SEMICOLON, "Expect ';' after expression");
     emitByte(OP_POP);
 }
 
 void Compiler::synchronize() {
-    parser.panicMode = false;
+    parser->panicMode = false;
     
-    while (parser.current.type != TOKEN_EOF) {
-        if(parser.previous.type == TOKEN_SEMICOLON) return;
+    while (parser->current.type != TOKEN_EOF) {
+        if(parser->previous.type == TOKEN_SEMICOLON) return;
         
-        switch(parser.current.type) {
+        switch(parser->current.type) {
             case TOKEN_CLASS:
             case TOKEN_FUN:
             case TOKEN_VAR:
@@ -409,7 +421,7 @@ void Compiler::synchronize() {
         }
         
         
-        parser.advance();
+        parser->advance();
     }
 }
 
@@ -422,18 +434,18 @@ void Compiler::varDeclaration(bool isConst) {
         emitByte(OP_NUL);;
     }
     
-    parser.consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+    parser->consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
     
     defineVariable(global);
 }
 
 uint8_t Compiler::parseVariable(const std::string& errorMessage, bool isConst) {
-    parser.consume(TOKEN_IDENTIFIER, errorMessage);
+    parser->consume(TOKEN_IDENTIFIER, errorMessage);
     
     declareVariable(isConst);
     if (scopeDepth > 0) return 0;
     
-    return identifierConstant(&parser.previous, isConst);
+    return identifierConstant(&parser->previous, isConst);
 }
 
 uint8_t Compiler::identifierConstant(Token *name, bool isConst) {
@@ -462,7 +474,7 @@ void Compiler::defineVariable(uint8_t global) {
 }
 
 void Compiler::variable(bool canAssign) {
-    namedVariable(parser.previous, canAssign);
+    namedVariable(parser->previous, canAssign);
 }
 
 void Compiler::namedVariable(Token name, bool canAssign) {
@@ -483,12 +495,12 @@ void Compiler::namedVariable(Token name, bool canAssign) {
             Value identifier = Value::obj_val(ObjString::copyString(vm, name.source.c_str(), name.length));
             vm->globalNames.tableGet(identifier, &index);
             if(index.isConst) {
-                parser.error("Cannot assign to constant variable.");
+                parser->error("Cannot assign to constant variable.");
                 return;
             }
         } else {
             if(locals[arg].isConst) {
-                parser.error("Cannot assign to constant variable.");
+                parser->error("Cannot assign to constant variable.");
                 return;
             }
         }
@@ -501,11 +513,11 @@ void Compiler::namedVariable(Token name, bool canAssign) {
 }
 
 void Compiler::block() {
-    while (!parser.check(TOKEN_RIGHT_BRACE) && !parser.check(TOKEN_EOF)) {
+    while (!parser->check(TOKEN_RIGHT_BRACE) && !parser->check(TOKEN_EOF)) {
         declaration();
     }
     
-    parser.consume(TOKEN_RIGHT_BRACE, "Expect '}' after block,");
+    parser->consume(TOKEN_RIGHT_BRACE, "Expect '}' after block,");
 }
 
 void Compiler::beginScope() {
@@ -524,7 +536,7 @@ void Compiler::endScope() {
 void Compiler::declareVariable(bool isConst) {
     if (scopeDepth == 0) return;
     
-    Token* name = &parser.previous;
+    Token* name = &parser->previous;
     for(int i = localCount - 1; i >= 0; i--) {
         Local* local = &locals[i];
         if (local->depth != -1 && local->depth < scopeDepth) {
@@ -532,7 +544,7 @@ void Compiler::declareVariable(bool isConst) {
         }
         
         if (identifierEqual(name, &local->name)) {
-            parser.error("Already variable with this name in this scope.");
+            parser->error("Already variable with this name in this scope.");
         }
     }
     
@@ -541,7 +553,7 @@ void Compiler::declareVariable(bool isConst) {
 
 void Compiler::addLocal(Token name, bool isConst) {
     if(localCount + 1 == locals.max_size()) {
-        parser.error("Too many local variables in function.");
+        parser->error("Too many local variables in function.");
         return;
     }
     
@@ -560,7 +572,7 @@ int Compiler::resolveLocal(Token* name) {
         Local* local = &locals[i];
         if (identifierEqual(name, &local->name)) {
             if(local->depth == -1) {
-                parser.error("Can't read local variable in its own initializer.");
+                parser->error("Can't read local variable in its own initializer.");
             }
             return i;
         }
@@ -570,13 +582,14 @@ int Compiler::resolveLocal(Token* name) {
 }
 
 void Compiler::markInitialized() {
+    if(scopeDepth == 0) return;
     locals[localCount - 1].depth = scopeDepth;
 }
 
 void Compiler::ifStatement() {
-    parser.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+    parser->consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
     expression();
-    parser.consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+    parser->consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
     
     int thenJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
@@ -601,7 +614,7 @@ int Compiler::emitJump(uint8_t instruction) {
 void Compiler::patchJump(int offset) {
     int jump = currentChunk()->count - offset - 2;
     if (jump > UINT16_MAX) {
-        parser.error("Too much code to jump over.");
+        parser->error("Too much code to jump over.");
     }
     
     currentChunk()->code[offset] = (jump >> 8) & 0xff;
@@ -641,9 +654,9 @@ void Compiler::whileStatement() {
     innermostLoopStart = currentChunk()->count;
     innermostLoopScopeDepth = scopeDepth;
     
-    parser.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+    parser->consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
     expression();
-    parser.consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition");
+    parser->consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition");
     
     int exitJump = emitJump(OP_JUMP_IF_FALSE);
     
@@ -665,7 +678,7 @@ void Compiler::emitLoop(int loopStart) {
     emitByte(OP_LOOP);
     
     int offset = currentChunk()->count - loopStart + 2;
-    if (offset > UINT16_MAX) parser.error("Loop body too large.");
+    if (offset > UINT16_MAX) parser->error("Loop body too large.");
     
     emitByte((offset >> 8) & 0xff);
     emitByte(offset & 0xff);
@@ -674,7 +687,7 @@ void Compiler::emitLoop(int loopStart) {
 void Compiler::forStatement() {
     beginScope();
     
-    parser.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for.");
+    parser->consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for.");
     bool isConst = false;
     if (match(TOKEN_SEMICOLON)) {
         
@@ -692,7 +705,7 @@ void Compiler::forStatement() {
     int exitJump = -1;
     if(!match(TOKEN_SEMICOLON)) {
         expression();
-        parser.consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+        parser->consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
         
         exitJump = emitJump(OP_JUMP_IF_FALSE);
         emitByte(OP_POP);//Popping the condition to keep the stack clean
@@ -704,7 +717,7 @@ void Compiler::forStatement() {
         int incrementStart = currentChunk()->count;
         expression();
         emitByte(OP_POP);
-        parser.consume(TOKEN_RIGHT_PAREN, "Expect ')'.");
+        parser->consume(TOKEN_RIGHT_PAREN, "Expect ')'.");
         
         emitLoop(innermostLoopStart);
         innermostLoopStart = incrementStart;
@@ -732,10 +745,10 @@ void Compiler::forStatement() {
 
 void Compiler::continueStatement() {
     if (innermostLoopScopeDepth == -1) {
-        parser.error("Cannot use 'continue' outside of a loop.");
+        parser->error("Cannot use 'continue' outside of a loop.");
     }
     
-    parser.consume(TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
+    parser->consume(TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
     
     for (int i = localCount - 1; i >= 0 && locals[i].depth > innermostLoopScopeDepth; i--) {
         emitByte(OP_POP);
@@ -746,10 +759,10 @@ void Compiler::continueStatement() {
 
 void Compiler::breakStatement() {
     if (innermostLoopScopeDepth == -1) {
-        parser.error("Cannot use 'break' outside of a loop");
+        parser->error("Cannot use 'break' outside of a loop");
     }
     
-    parser.consume(TOKEN_SEMICOLON, "Expect ';' after 'break'.");
+    parser->consume(TOKEN_SEMICOLON, "Expect ';' after 'break'.");
     
     for (int i = localCount - 1; i >= 0 && locals[i].depth > innermostLoopScopeDepth; i--) {
         emitByte(OP_POP);
@@ -765,10 +778,10 @@ void Compiler::switchStatement() {
 #define AFTER_DEFAULT 2
     
     
-    parser.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'switch'.");
+    parser->consume(TOKEN_LEFT_PAREN, "Expect '(' after 'switch'.");
     expression();
-    parser.consume(TOKEN_RIGHT_PAREN, "Expect ')' after value.");
-    parser.consume(TOKEN_LEFT_BRACE, "Exprect '{' before cases.");
+    parser->consume(TOKEN_RIGHT_PAREN, "Expect ')' after value.");
+    parser->consume(TOKEN_LEFT_BRACE, "Exprect '{' before cases.");
     
     beginScope();
     int surroundingLoopStart = innermostLoopStart;
@@ -780,20 +793,20 @@ void Compiler::switchStatement() {
     int previousCaseSkip = -1;
     int caseCount = 0;
     
-    while (!match(TOKEN_RIGHT_BRACE) && !parser.check(TOKEN_EOF)) {
+    while (!match(TOKEN_RIGHT_BRACE) && !parser->check(TOKEN_EOF)) {
         if(match(TOKEN_CASE) || match(TOKEN_DEFAULT)) {
-            TokenType caseType = parser.previous.type;
+            TokenType caseType = parser->previous.type;
             
             
             if (state == AFTER_DEFAULT) {
-                parser.error("Can't have another case or default after the default case.");
+                parser->error("Can't have another case or default after the default case.");
             }
             
             if(state == 1) {
                 int previousCaseEnds = emitJump(OP_JUMP);
                 caseCount++;
                 if(caseCount == MAX_CASES) {
-                    parser.error("Too many cases in switch statement");
+                    parser->error("Too many cases in switch statement");
                 }
                 
                 patchJump(previousCaseSkip);
@@ -808,7 +821,7 @@ void Compiler::switchStatement() {
                 emitByte(OP_DUP);
                 expression();
                 
-                parser.consume(TOKEN_COLON, "Expect ':' after case value.");
+                parser->consume(TOKEN_COLON, "Expect ':' after case value.");
                 
                 emitByte(OP_EQUAL);
                 previousCaseSkip = emitJump(OP_JUMP_IF_FALSE);
@@ -817,12 +830,12 @@ void Compiler::switchStatement() {
                 
             } else {
                 state = 2;
-                parser.consume(TOKEN_COLON, "Expect ':' after default.");
+                parser->consume(TOKEN_COLON, "Expect ':' after default.");
                 previousCaseSkip = -1;
             }
         } else {
             if(state == 0) {
-                parser.error("Cannot have statements before any case.");
+                parser->error("Cannot have statements before any case.");
             }
             statement();
         }
@@ -842,4 +855,38 @@ void Compiler::switchStatement() {
 #undef BEFORE_CASES
 #undef BEFORE_DEFAULT
 #undef AFTER_DEFAULT
+}
+
+void Compiler::funDeclaration() {
+    uint8_t global = parseVariable("Expect function name", false);
+    markInitialized();
+    _function(TYPE_FUNCTION);
+    defineVariable(global);
+}
+
+void Compiler::_function(FunctionType type) {
+    Compiler compiler(vm, type, this, scanner, parser);
+    compiler.beginScope();
+    
+    parser->consume(TOKEN_LEFT_PAREN, "Expect '(' after function name,");
+    
+    if(!compiler.parser->check(TOKEN_RIGHT_PAREN)) {
+        do {
+            compiler.function->arity++;
+            if(compiler.function->arity > 255) {
+                parser->errorAtCurrent("Can't have more than 255 paramethers.");
+            }
+            
+            uint8_t paramConstant = compiler.parseVariable("Expect parameter name.", false);
+            compiler.defineVariable(paramConstant);
+        } while (match(TOKEN_COMMA));
+    }
+    
+    parser->consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+    
+    parser->consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+    compiler.block();
+    
+    ObjFunction* function = compiler.endCompiler();
+    emitBytes(OP_CONSTANT, makeConstant(Value::obj_val(function)));
 }

@@ -20,11 +20,14 @@ Token Scanner::errorToken(const std::string& message) {
     return Token(TOKEN_ERROR, message, 0, message.length(), this->line);
 }
 
-Scanner::Scanner(const std::string& source) {
-    this->source = source;
+Scanner::Scanner() {
     start = 0;
     current = 0;
     line = 1;
+}
+
+void Scanner::setSource(const std::string &src) {
+    source = src;
 }
 
 char Scanner::advance() {

@@ -65,8 +65,9 @@ public:
     int current;
     int line;
     
-    Scanner(const std::string& source);
+    Scanner();
     Token scanToken();
+    void setSource(const std::string& src);
 };
 
 #endif /* scanner_hpp */

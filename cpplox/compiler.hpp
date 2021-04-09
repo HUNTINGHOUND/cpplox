@@ -36,13 +36,12 @@ class Parser{
     
     bool check(TokenType type);
     
-    
+    friend class Compiler;
+public:
     /// Constructor
     /// @param scanner scanner for the parser
     Parser(Scanner* scanner);
-    
-    friend class Compiler;
-    
+
     
 };
 
@@ -77,6 +76,8 @@ struct Break {
 class Compiler {
     
     VM* vm;
+    
+    Compiler* enclosing;
     
     ObjFunction* function;
     FunctionType type;
@@ -174,10 +175,14 @@ class Compiler {
     
     void switchStatement();
     
+    void funDeclaration();
+    
+    void _function(FunctionType type);
+    
 public:
     
-    Scanner scanner;
-    Parser parser;
+    Scanner* scanner;
+    Parser* parser;
     
     std::vector<Local> locals;
     int localCount;
@@ -205,13 +210,11 @@ public:
     void _or(bool canAssign);
     
     
-    /// Constructor
-    /// @param source source code to be compiled
-    Compiler(const std::string& source, VM* vm, FunctionType type);
+    Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser);
     
     
     /// Compile the source code passed to the constructor and write the byte code to the chunk given. Return false if parser encounters error
-    ObjFunction* compile();
+    ObjFunction* compile(const std::string& src);
 };
 
 using ParseFn = void (Compiler::*)(bool canAssign);

@@ -52,8 +52,11 @@ void VM::freeVM() {
 }
 
 InterpretResult VM::interpret(const std::string& source) {
-    Compiler compiler(source, this, TYPE_SCRIPT);
-    ObjFunction* function = compiler.compile();
+    Scanner scanner;
+    Parser parser(&scanner);
+    
+    Compiler compiler(this, TYPE_SCRIPT, nullptr, &scanner, &parser);
+    ObjFunction* function = compiler.compile(source);
     
     if(function == nullptr) return INTERPRET_COMPILE_ERROR;
     

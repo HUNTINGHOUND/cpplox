@@ -41,8 +41,8 @@ public:
 };
 
 class ObjFunction : public Obj{
-    int arity;
 public:
+    int arity;
     Chunk chunk;
     ObjString* name;
     
