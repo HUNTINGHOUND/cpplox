@@ -30,15 +30,13 @@ int Disassembler::constantLongInstruction(const char* name, Chunk* chunk, int of
 
 int Disassembler::globalVarInstruction(const char *name, Chunk* chunk, VM *vm, int offset) {
     uint8_t constant = chunk->code[offset + 1];
-    std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)constant << " '";
-    Value::printValue(vm->globalValues.values[constant]);
-    std::cout << "'" << std::endl;
+    std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)constant << std::endl;
     return offset + 2;
 }
 
 int Disassembler::byteInstruction(const char *name, Chunk *chunk, int offset) {
     uint8_t slot = chunk->code[offset + 1];
-    std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)slot << " '" << std::endl;
+    std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)slot << std::endl;
     return offset + 2;
 }
 
@@ -123,7 +121,7 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
         case OP_DUP:
             return simpleInstruction("OP_DUP", offset);
         case OP_CALL:
-            return byteInstruction("OP_POP", chunk, offset);
+            return byteInstruction("OP_CALL", chunk, offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

@@ -8,7 +8,7 @@
 
 
 ParseRule rules[48] = {
-    [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, &Compiler::call,   PREC_NONE},
+    [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, &Compiler::call,   PREC_CALL},
     [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_RIGHT_BRACE]   = {nullptr,     nullptr,   PREC_NONE},
@@ -179,6 +179,7 @@ void Compiler::condition(bool canAssign) {
 }
 
 void Compiler::emitReturn() {
+    emitByte(OP_NUL);
     emitByte(OP_RETURN);
 }
 
@@ -375,6 +376,8 @@ void Compiler::statement() {
         breakStatement();
     } else if(match(TOKEN_SWITCH)) {
         switchStatement();
+    } else if(match(TOKEN_RETURN)) {
+        returnStatement();
     } else {
         expressionStatement();
     }
@@ -911,4 +914,18 @@ uint8_t Compiler::argumentList() {
     
     parser->consume(TOKEN_RIGHT_PAREN, "Expect ')' after argument");
     return argCount;
+}
+
+void Compiler::returnStatement() {
+    if(type == TYPE_SCRIPT) {
+        parser->error("Can't return from top-level code");
+    }
+    
+    if(match(TOKEN_SEMICOLON)) {
+        emitReturn();
+    } else {
+        expression();
+        parser->consume(TOKEN_SEMICOLON, "Expect ';' after return.");
+        emitByte(OP_RETURN);
+    }
 }

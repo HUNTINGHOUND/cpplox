@@ -181,6 +181,8 @@ class Compiler {
     
     uint8_t argumentList();
     
+    void returnStatement();
+    
 public:
     
     Scanner* scanner;

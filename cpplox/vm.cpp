@@ -170,8 +170,22 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_RETURN: {
-                //Exit interpreter
-                return INTERPRET_OK;
+                Value result = stack.back();
+                stack.pop_back();
+                
+                frames.pop_back();
+                if(frames.size() == 0) {
+                    stack.pop_back();
+                    return INTERPRET_OK;
+                }
+                
+                while(stack.size() != frame->slots) {
+                    stack.pop_back();
+                }
+                stack.push_back(result);
+                
+                frame = &frames.back();
+                break;
             }
             case OP_NUL:
                 stack.push_back(Value::nul_val());
