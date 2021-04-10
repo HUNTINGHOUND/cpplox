@@ -189,7 +189,7 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
 }
 
 void Compiler::number(bool canAssign) {
-    double value = atof(parser->previous.source.c_str());
+    double value = std::stod(parser->previous.source);
     emitConstant(Value::number_val(value));
 }
 

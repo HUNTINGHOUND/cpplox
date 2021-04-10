@@ -55,13 +55,13 @@ void runFile(VM* vm, const char* path) {
 int main(int argc, const char* argv[]) {
     
     VM vm;
-
+    
     if(argc == 1) {
         repl(&vm);
     } else if(argc == 2) {
         runFile(&vm, argv[1]);
     } else {
-        std::cerr << "Usage: clox [path]\n";
+        std::cerr << "Usage: cpplox [path]\n";
         exit(64);
     }
     
