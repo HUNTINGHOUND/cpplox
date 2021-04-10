@@ -1,5 +1,6 @@
 #include "vm.hpp"
 #include "debug.hpp"
+#include "config.h"
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -55,6 +56,8 @@ void runFile(VM* vm, const char* path) {
 int main(int argc, const char* argv[]) {
     
     VM vm;
+    
+    std::cout << "cpplox: Version " << PROJECT_VER_MAJOR << "." << PROJECT_VER_MINOR << std::endl;
     
     if(argc == 1) {
         repl(&vm);
