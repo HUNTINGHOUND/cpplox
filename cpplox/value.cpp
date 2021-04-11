@@ -142,6 +142,9 @@ void Value::printObject(Value value) {
         case OBJ_FUNCTION:
             printFunction(as_function(value));
             break;
+        case OBJ_NATIVE:
+            std::cout << "<native fn>";
+            break;
     }
 }
 
@@ -189,4 +192,12 @@ bool Value::is_function(Value value) {
 
 ObjFunction* Value::as_function(Value value) {
     return (ObjFunction*)as_obj(value);
+}
+
+bool Value::is_native(Value value) {
+    return isObjType(value, OBJ_NATIVE);
+}
+
+ObjNative* Value::as_native(Value value) {
+    return (ObjNative*)as_obj(value);
 }

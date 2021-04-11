@@ -6,7 +6,48 @@
 #include "object.hpp"
 #include <iostream>
 #include <cstdio>
-#include <cstdarg>
+
+//NATIVE FUNCTIONS====================================================>
+
+bool VM::clockNative(int argCount, Value *args) {
+    args[-1] = Value::number_val((double)clock() / CLOCKS_PER_SEC);
+    return true;
+}
+
+bool VM::errNative(int argCount, Value* args) {
+    args[-1] = Value::obj_val(ObjString::copyString(this, "Error.", 6));
+    return false;
+}
+
+bool VM::runtimeErrNative(int argCount, Value *args) {
+    ObjString* errMessage = Value::as_string(args[0]);
+    args[-1] = Value::obj_val(ObjString::copyString(this, errMessage->chars, errMessage->length));
+    return false;
+}
+
+bool VM::getLineNative(int argCount, Value *args) {
+    try {
+        std::string get;
+        getline(std::cin, get);
+        args[-1] = Value::obj_val(ObjString::copyString(this, get.c_str(), get.length()));
+        return true;
+    } catch(std::exception& e) {
+        args[-1] = Value::obj_val(ObjString::copyString(this, e.what(), (int)strlen(e.what())));
+        return false;
+    }
+}
+
+//====================================================================>
+
+VM::VM() : strings(), globalNames(), globalValues(){
+    std::deque<Value>().swap(stack);
+    objects = nullptr;
+    
+    defineNative("clock", &VM::clockNative, 0);
+    defineNative("error", &VM::errNative, 0);
+    defineNative("runtimeError", &VM::runtimeErrNative, 1);
+    defineNative("getLine", &VM::getLineNative, 0);
+}
 
 uint8_t VM::read_byte(CallFrame* frame) {
     return *frame->ip++;
@@ -25,7 +66,6 @@ CallFrame::CallFrame(ObjFunction* function, uint8_t* ip, size_t slots) {
 template <typename T, typename U>
 InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func) {
     
-    
     if(!Value::is_number(peek(0)) || !Value::is_number(peek(1))) {
         runtimeError("Operands must be numbers.");
         return INTERPRET_RUNTIME_ERROR;
@@ -37,11 +77,6 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
     Value v = std::invoke(*valuetype, func(a,b));
     stack.push_back(v);
     return INTERPRET_OK;
-}
-
-VM::VM() : strings(), globalNames(), globalValues(){
-    std::deque<Value>().swap(stack);
-    objects = nullptr;
 }
 
 void VM::freeVM() {
@@ -299,6 +334,7 @@ Value VM::peek(int distance) {
 void VM::runtimeError(const std::string& format, ... ) {
     va_list args;
     va_start(args, format);
+    std::cerr << "Runtime Error: ";
     vfprintf(stderr, format.c_str(), args);
     va_end(args);
     std::cerr << std::endl;
@@ -330,6 +366,25 @@ bool VM::callValue(Value callee, int argCount) {
         switch (Value::obj_type(callee)) {
             case OBJ_FUNCTION:
                 return call(Value::as_function(callee), argCount);
+            case OBJ_NATIVE: {
+                ObjNative* native = Value::as_native(callee);
+                
+                if(argCount != native->arity) {
+                    runtimeError("Expected %d arguments but got %d.", native->arity, argCount);
+                    return false;
+                }
+                
+                bool res = std::invoke(native->function, *this, argCount, &stack[stack.size() - 1] - argCount + 1);
+                if(res) {
+                    for(int i = 0; i < argCount; i++) {
+                        stack.pop_back();
+                    }
+                    return true;
+                } else {
+                    runtimeError(Value::as_string(stack[stack.size() - argCount - 1])->chars);
+                    return false;
+                }
+            }
                 
             default:
                 break;
@@ -354,3 +409,13 @@ bool VM::call(ObjFunction *function, int argCount) {
     frames.push_back(CallFrame(function, function->chunk.code, stack.size() - argCount - 1));
     return true;
 }
+
+void VM::defineNative(const std::string& name, NativeFn function, int arity) {
+    stack.push_back(Value::obj_val(ObjString::copyString(this, name.c_str(), (int)strlen(name.c_str()))));
+    stack.push_back(Value::obj_val(ObjNative::newNative(function,arity)));
+    globalValues.writeValueArray(stack[1]);
+    globalNames.tableSet(stack[0], Value::number_val(globalValues.count - 1));
+    stack.pop_back();
+    stack.pop_back();
+}
+

@@ -8,7 +8,8 @@ class VM;
 
 enum ObjType : short{
     OBJ_STRING,
-    OBJ_FUNCTION
+    OBJ_FUNCTION,
+    OBJ_NATIVE
 };
 
 enum FunctionType {
@@ -49,4 +50,15 @@ public:
     static ObjFunction* newFunction();
     
 };
+
+using NativeFn = bool(VM::*)(int argCount, Value* args);
+
+class ObjNative : public Obj {
+public:
+    int arity;
+    NativeFn function;
+    
+    static ObjNative* newNative(NativeFn function, int arity);
+};
+
 #endif /* object_h */

@@ -8,7 +8,10 @@
 class Obj;
 class ObjString;
 class ObjFunction;
+class ObjNative;
 enum ObjType : short;
+class VM;
+
 
 enum ValueType{
     VAL_BOOL,
@@ -38,6 +41,7 @@ public:
     static bool is_string(Value value);
     static bool is_empty(Value value);
     static bool is_function(Value value);
+    static bool is_native(Value value);
     static bool isObjType(Value value, ObjType type);
     
     static bool as_bool(Value value);
@@ -46,6 +50,7 @@ public:
     static ObjString* as_string(Value value);
     static char* as_c_string(Value value);
     static ObjFunction* as_function(Value value);
+    static ObjNative* as_native(Value value);
 
     static Value bool_val(bool value);
     static Value nul_val();

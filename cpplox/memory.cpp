@@ -41,6 +41,9 @@ void freeObject(Obj* object) {
             function->chunk.freeChunk();
             reallocate(object, sizeof(ObjFunction), 0);
         }
+        case OBJ_NATIVE:
+            reallocate(object, sizeof(ObjNative), 0);
+            break;
     }
 }
 

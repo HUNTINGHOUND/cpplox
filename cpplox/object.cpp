@@ -64,3 +64,10 @@ ObjFunction* ObjFunction::newFunction() {
     function->chunk = Chunk();
     return function;
 }
+
+ObjNative* ObjNative::newNative(NativeFn function, int arity) {
+    ObjNative* native = allocate_obj<ObjNative>(OBJ_NATIVE, 0);
+    native->function = function;
+    native->arity = arity;
+    return native;
+}

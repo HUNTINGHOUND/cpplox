@@ -8,6 +8,7 @@
 #include "table.hpp"
 #include <queue>
 #include <cstdarg>
+#include <ctime>
 
 #define STACK_MAX 256
 
@@ -51,6 +52,18 @@ class VM {
     bool callValue(Value callee, int argCount);
     
     bool call(ObjFunction* function, int argCount);
+    
+    void defineNative(const std::string& name, NativeFn function, int arity);
+    
+    //Native functions
+    
+    bool clockNative(int argCount, Value *args);
+    
+    bool errNative(int argCount, Value* args);
+    
+    bool runtimeErrNative(int argCount, Value* args);
+    
+    bool getLineNative(int argCount, Value* args);
     
 public:
     Chunk* chunk;
