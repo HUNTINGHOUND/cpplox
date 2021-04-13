@@ -200,8 +200,6 @@ InterpretResult VM::run() {
             case OP_CONSTANT: {
                 Value constant = read_constant(frame);
                 stack.push_back(constant);
-                Value::printValue(constant);
-                std::cout << std::endl;
                 break;
             }
             case OP_RETURN: {

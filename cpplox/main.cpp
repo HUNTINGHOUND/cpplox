@@ -41,7 +41,7 @@ std::string readFile(const char* path) {
         exit(74);
     }
     
-    return "";
+    return source;
 }
 
 void runFile(VM* vm, const char* path) {
