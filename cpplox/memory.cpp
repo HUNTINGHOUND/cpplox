@@ -44,6 +44,15 @@ void freeObject(Obj* object) {
         case OBJ_NATIVE:
             reallocate(object, sizeof(ObjNative), 0);
             break;
+        case OBJ_UPVALUE:
+            reallocate(object, sizeof(ObjUpvalue), 0);
+            break;
+        case OBJ_CLOSURE: {
+            ObjClosure* closure = (ObjClosure*) object;
+            free_array<ObjUpvalue*>(closure->upvalues, closure->upvalueCount);
+            reallocate(object, sizeof(ObjClosure), 0);
+            break;
+        }
     }
 }
 

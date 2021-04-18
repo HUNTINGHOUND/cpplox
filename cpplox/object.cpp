@@ -60,6 +60,7 @@ ObjFunction* ObjFunction::newFunction() {
     ObjFunction* function = allocate_obj<ObjFunction>(OBJ_FUNCTION, 0);
     
     function->arity = 0;
+    function->upvalueCount = 0;
     function->name = nullptr;
     function->chunk = Chunk();
     return function;
@@ -70,4 +71,25 @@ ObjNative* ObjNative::newNative(NativeFn function, int arity) {
     native->function = function;
     native->arity = arity;
     return native;
+}
+
+ObjClosure* ObjClosure::newClosure(ObjFunction* function) {
+    ObjUpvalue** upvalues = allocate<ObjUpvalue*>(function->upvalueCount);
+    for (int i = 0; i < function->upvalueCount; i++) {
+        upvalues[i] = NULL;
+    }
+    
+    ObjClosure* closure = allocate_obj<ObjClosure>(OBJ_CLOSURE, 0);
+    closure->function = function;
+    closure->upvalues = upvalues;
+    closure->upvalueCount = function->upvalueCount;
+    return closure;
+}
+
+ObjUpvalue* ObjUpvalue::newUpvalue(Value* slot) {
+    ObjUpvalue* upvalue = allocate_obj<ObjUpvalue>(OBJ_UPVALUE, 0);
+    upvalue->next = nullptr;
+    upvalue->location = slot;
+    upvalue->closed = Value::nul_val();
+    return upvalue;
 }

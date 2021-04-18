@@ -9,6 +9,7 @@ class Obj;
 class ObjString;
 class ObjFunction;
 class ObjNative;
+class ObjClosure;
 enum ObjType : short;
 class VM;
 
@@ -42,6 +43,7 @@ public:
     static bool is_empty(Value value);
     static bool is_function(Value value);
     static bool is_native(Value value);
+    static bool is_closure(Value value);
     static bool isObjType(Value value, ObjType type);
     
     static bool as_bool(Value value);
@@ -51,6 +53,7 @@ public:
     static char* as_c_string(Value value);
     static ObjFunction* as_function(Value value);
     static ObjNative* as_native(Value value);
+    static ObjClosure* as_closure(Value value);
 
     static Value bool_val(bool value);
     static Value nul_val();

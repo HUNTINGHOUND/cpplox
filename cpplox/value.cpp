@@ -145,6 +145,12 @@ void Value::printObject(Value value) {
         case OBJ_NATIVE:
             std::cout << "<native fn>";
             break;
+        case OBJ_CLOSURE:
+            printFunction(as_closure(value)->function);
+            break;
+        case OBJ_UPVALUE:
+            std::cout << "upvalue";
+            break;
     }
 }
 
@@ -200,4 +206,12 @@ bool Value::is_native(Value value) {
 
 ObjNative* Value::as_native(Value value) {
     return (ObjNative*)as_obj(value);
+}
+
+bool Value::is_closure(Value value) {
+    return isObjType(value, OBJ_CLOSURE);
+}
+
+ObjClosure* Value::as_closure(Value value) {
+    return (ObjClosure*)as_obj(value);
 }

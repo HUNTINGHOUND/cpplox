@@ -9,7 +9,9 @@ class VM;
 enum ObjType : short{
     OBJ_STRING,
     OBJ_FUNCTION,
-    OBJ_NATIVE
+    OBJ_NATIVE,
+    OBJ_CLOSURE,
+    OBJ_UPVALUE
 };
 
 enum FunctionType {
@@ -44,6 +46,7 @@ public:
 class ObjFunction : public Obj{
 public:
     int arity;
+    int upvalueCount;
     Chunk chunk;
     ObjString* name;
     
@@ -59,6 +62,25 @@ public:
     NativeFn function;
     
     static ObjNative* newNative(NativeFn function, int arity);
+};
+
+class ObjUpvalue : public Obj {
+public:
+    Value* location;
+    
+    ObjUpvalue* next;
+    Value closed;
+    
+    static ObjUpvalue* newUpvalue(Value* slot);
+};
+
+class ObjClosure : public Obj {
+public:
+    ObjFunction* function;
+    ObjUpvalue** upvalues;
+    int upvalueCount;
+    
+    static ObjClosure* newClosure(ObjFunction* function);
 };
 
 #endif /* object_h */

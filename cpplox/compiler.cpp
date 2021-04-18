@@ -63,7 +63,11 @@ bool identifierEqual(Token* a, Token* b) {
     return a->source.compare(b->source) == 0;
 }
 
-Local::Local() : name(TOKEN_NUL, "", 0, 0, 0) {}
+Local::Local() : name(TOKEN_NUL, "", 0, 0, 0) {
+    this->depth = -1;
+    this->isConst = false;
+    this->isCaptured = false;
+}
 
 Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser) {
     this->enclosing = enclosing;
@@ -486,6 +490,9 @@ void Compiler::namedVariable(Token name, bool canAssign) {
     if (arg != -1) {
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
+    } else if((arg = resolveUpvalue(&name)) != -1) {
+        getOp = OP_GET_UPVALUE;
+        setOp = OP_SET_UPVALUE;
     } else {
         arg = identifierConstant(&name, false);
         getOp = OP_GET_GLOBAL;
@@ -531,8 +538,11 @@ void Compiler::endScope() {
     scopeDepth--;
     
     while (localCount > 0 && locals[localCount - 1].depth > scopeDepth) {
-        emitByte(OP_POP);
-        localCount--;
+        if (locals[localCount - 1].isCaptured) {
+            emitByte(OP_CLOSE_UPVALUE);
+        } else {
+            emitByte(OP_POP);
+        }
     }
 }
 
@@ -566,7 +576,6 @@ void Compiler::addLocal(Token name, bool isConst) {
     
     Local* local = &locals[localCount++];
     local->name = name;
-    local->depth = -1;
     local->isConst = isConst;
 }
 
@@ -891,7 +900,18 @@ void Compiler::_function(FunctionType type) {
     compiler.block();
     
     ObjFunction* function = compiler.endCompiler();
-    emitBytes(OP_CONSTANT, makeConstant(Value::obj_val(function)));
+    
+    uint8_t functionConstant = makeConstant(Value::obj_val(function));
+    if(function->upvalueCount > 0) {
+        emitBytes(OP_CLOSURE, makeConstant(Value::obj_val(function)));
+        
+        for(int i = 0; i < function->upvalueCount; i++) {
+            emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
+            emitByte(compiler.upvalues[i].index);
+        }
+    } else {
+        emitBytes(OP_CONSTANT, functionConstant);
+    }
 }
 
 void Compiler::call(bool canAssign) {
@@ -928,4 +948,39 @@ void Compiler::returnStatement() {
         parser->consume(TOKEN_SEMICOLON, "Expect ';' after return.");
         emitByte(OP_RETURN);
     }
+}
+
+int Compiler::resolveUpvalue(Token *name) {
+    if(enclosing == NULL) return -1;
+    
+    int local = enclosing->resolveLocal(name);
+    if(local != -1) {
+        return addUpvalue((uint8_t)local, true);
+    }
+    
+    int upvalue = enclosing->resolveUpvalue(name);
+    if(upvalue != -1) {
+        return addUpvalue((uint8_t)upvalue, false);
+    }
+    
+    return -1;
+}
+
+int Compiler::addUpvalue(uint8_t index, bool isLocal) {
+    int upvalueCount = function->upvalueCount;
+    
+    for (int i = 0; i < upvalueCount; i++) {
+        Upvalue* upvalue = &upvalues[i];
+        if(upvalue->index == index && upvalue->isLocal == isLocal) {
+            return i; 
+        }
+    }
+    
+    if(upvalueCount == upvalues.max_size()) {
+        parser->error("Too many closure variable in function");
+        return 0;
+    }
+    
+    upvalues.push_back(Upvalue{index, isLocal});
+    return function->upvalueCount++;
 }

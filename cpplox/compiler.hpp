@@ -63,7 +63,8 @@ enum Precedence {
 struct Local {
     Token name;
     int depth;
-    bool isConst = false;
+    bool isConst;
+    bool isCaptured;
     Local();
 };
 
@@ -72,6 +73,10 @@ struct Break {
     int depth;
 };
 
+struct Upvalue {
+    uint8_t index;
+    bool isLocal;
+};
 
 class Compiler {
     
@@ -83,6 +88,8 @@ class Compiler {
     FunctionType type;
     
     std::vector<Break> breakStatements;
+    
+    std::vector<Upvalue> upvalues;
     
     int innermostLoopStart = -1;
     int innermostLoopScopeDepth = 0;
@@ -182,6 +189,10 @@ class Compiler {
     uint8_t argumentList();
     
     void returnStatement();
+    
+    int resolveUpvalue(Token* name);
+    
+    int addUpvalue(uint8_t index, bool isLocal);
     
 public:
     

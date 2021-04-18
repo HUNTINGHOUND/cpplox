@@ -122,6 +122,29 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             return simpleInstruction("OP_DUP", offset);
         case OP_CALL:
             return byteInstruction("OP_CALL", chunk, offset);
+        case OP_GET_UPVALUE:
+            return byteInstruction("OP_GET_UPVALUE", chunk, offset);
+        case OP_SET_UPVALUE:
+            return byteInstruction("OP_SET_UPVALUE", chunk, offset);
+        case OP_CLOSURE: {
+            offset++;
+            uint8_t constant = chunk->code[offset];
+            std::cout << std::left << std::setw(16) << "OP_CLOSURE" << std::right << std::setw(4) << constant << " ";
+            Value::printValue(chunk->constants.values[constant]);
+            std::cout << std::endl;
+            
+            ObjFunction* function = Value::as_function(
+                                                       chunk->constants.values[constant]);
+            for(int j = 0; j < function->upvalueCount; j++) {
+                int isLocal = chunk->code[offset++];
+                int index = chunk->code[offset++];
+                std::cout << std::right << std::setw(4) << offset - 2;
+                std::cout << "    |                     " << (isLocal ? "local" : "upvalue") << " " << index << std::endl;
+            }
+            return offset + 1;
+        }
+        case OP_CLOSE_UPVALUE:
+            return simpleInstruction("OP_CLOSE_UPVALUE", offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

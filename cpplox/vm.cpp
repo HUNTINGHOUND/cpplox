@@ -42,6 +42,7 @@ bool VM::getLineNative(int argCount, Value *args) {
 VM::VM() : strings(), globalNames(), globalValues(){
     std::deque<Value>().swap(stack);
     objects = nullptr;
+    openUpvalues = nullptr;
     
     defineNative("clock", &VM::clockNative, 0);
     defineNative("error", &VM::errNative, 0);
@@ -54,10 +55,10 @@ uint8_t VM::read_byte(CallFrame* frame) {
 }
 
 Value VM::read_constant(CallFrame* frame) {
-    return frame->function->chunk.constants.values[read_byte(frame)];
+    return getFrameFunction(frame)->chunk.constants.values[read_byte(frame)];
 }
 
-CallFrame::CallFrame(ObjFunction* function, uint8_t* ip, size_t slots) {
+CallFrame::CallFrame(Obj* function, uint8_t* ip, size_t slots) {
     this->function = function;
     this->ip = ip;
     this->slots = slots;
@@ -96,7 +97,10 @@ InterpretResult VM::interpret(const std::string& source) {
     if(function == nullptr) return INTERPRET_COMPILE_ERROR;
     
     stack.push_back(Value::obj_val(function));
-    callValue(Value::obj_val(function), 0);
+    ObjClosure* closure = ObjClosure::newClosure(function);
+    stack.pop_back();
+    stack.push_back(Value::obj_val(closure));
+    callValue(Value::obj_val(closure), 0);
     
     return run();
 }
@@ -117,8 +121,8 @@ InterpretResult VM::run() {
         }
         std::cout << std::endl;
         
-        uint8_t* start = frame->function->chunk.code;
-        Disassembler::disassembleInstruction(&frame->function->chunk, this, (int)(frame->ip - start));
+        uint8_t* start = getFrameFunction(frame)->chunk.code;
+        Disassembler::disassembleInstruction(&getFrameFunction(frame)->chunk, this, (int)(frame->ip - start));
         
 #endif
         
@@ -205,6 +209,8 @@ InterpretResult VM::run() {
             case OP_RETURN: {
                 Value result = stack.back();
                 stack.pop_back();
+                
+                closeUpvalues(&stack[frame->slots]);
                 
                 frames.pop_back();
                 if(frames.size() == 0) {
@@ -297,6 +303,35 @@ InterpretResult VM::run() {
                 frame = &frames.back();
                 break;
             }
+            case OP_CLOSURE: {
+                ObjFunction* function = Value::as_function(read_constant(frame));
+                ObjClosure* closure = ObjClosure::newClosure(function);
+                stack.push_back(Value::obj_val(closure));
+                for(int i = 0; i < closure->upvalueCount; i++) {
+                    uint8_t isLocal = read_byte(frame);
+                    uint8_t index = read_byte(frame);
+                    if (isLocal) {
+                        closure->upvalues[i] = captureUpvalue(frame->slots + index);
+                    } else {
+                        closure->upvalues[i] = ((ObjClosure*)frame->function)->upvalues[index];
+                    }
+                }
+                break;
+            }
+            case OP_GET_UPVALUE: {
+                uint8_t slot = read_byte(frame);
+                stack.push_back(*((ObjClosure*)frame->function)->upvalues[slot]->location);
+                break;
+            }
+            case OP_SET_UPVALUE: {
+                uint8_t slot = read_byte(frame);
+                *((ObjClosure*)frame->function)->upvalues[slot]->location = peek(0);
+                break;
+            }
+            case OP_CLOSE_UPVALUE:
+                closeUpvalues(&stack.back());
+                stack.pop_back();
+                break;
         }
     }
 }
@@ -339,7 +374,7 @@ void VM::runtimeError(const std::string& format, ... ) {
     
     for (int i = frames.size() - 1; i >= 0; i--) {
         CallFrame* frame = &frames[i];
-        ObjFunction* function = frame->function;
+        ObjFunction* function = getFrameFunction(frame);
         
         size_t instruction = frame->ip - function->chunk.code - 1;
         std::cerr << "[line " << function->chunk.getLine(instruction) << "] in ";
@@ -362,8 +397,6 @@ uint16_t VM::read_short(CallFrame* frame) {
 bool VM::callValue(Value callee, int argCount) {
     if(Value::is_obj(callee)) {
         switch (Value::obj_type(callee)) {
-            case OBJ_FUNCTION:
-                return call(Value::as_function(callee), argCount);
             case OBJ_NATIVE: {
                 ObjNative* native = Value::as_native(callee);
                 
@@ -383,7 +416,10 @@ bool VM::callValue(Value callee, int argCount) {
                     return false;
                 }
             }
-                
+            case OBJ_CLOSURE:
+                return callClosure(Value::as_closure(callee), argCount);
+            case OBJ_FUNCTION:
+                return callFunction(Value::as_function(callee), argCount);
             default:
                 break;
         }
@@ -393,7 +429,15 @@ bool VM::callValue(Value callee, int argCount) {
     return false;
 }
 
-bool VM::call(ObjFunction *function, int argCount) {
+bool VM::callClosure(ObjClosure *closure, int argCount) {
+    return call((Obj*)closure, closure->function, argCount);
+}
+
+bool VM::callFunction(ObjFunction *function, int argCount) {
+    return call((Obj*)function, function, argCount);
+}
+
+bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
     if(argCount != function->arity) {
         runtimeError("Expected %d arguments but got %d.", function->arity, argCount);
         return false;
@@ -404,7 +448,7 @@ bool VM::call(ObjFunction *function, int argCount) {
         return false;
     }
     
-    frames.push_back(CallFrame(function, function->chunk.code, stack.size() - argCount - 1));
+    frames.push_back(CallFrame(callee, function->chunk.code, stack.size() - argCount - 1));
     return true;
 }
 
@@ -417,3 +461,41 @@ void VM::defineNative(const std::string& name, NativeFn function, int arity) {
     stack.pop_back();
 }
 
+ObjUpvalue* VM::captureUpvalue(int localIndex) {
+    ObjUpvalue* prevUpvalue = nullptr;
+    ObjUpvalue* upvalue = openUpvalues;
+    
+    while (upvalue != nullptr && upvalue->location > &stack[localIndex]) {
+        prevUpvalue = upvalue;
+        upvalue = upvalue->next;
+    }
+    
+    if (upvalue != nullptr && upvalue->location == &stack[localIndex])
+        return upvalue;
+    
+    ObjUpvalue* createdUpvalue = ObjUpvalue::newUpvalue(&stack[localIndex]);
+    createdUpvalue->next = upvalue;
+    if(prevUpvalue == nullptr)
+        openUpvalues = createdUpvalue;
+    else
+        prevUpvalue->next = createdUpvalue;
+    
+    return createdUpvalue;
+}
+
+void VM::closeUpvalues(Value *last) {
+    while (openUpvalues != nullptr && openUpvalues->location >= last) {
+        ObjUpvalue* upvalue = openUpvalues;
+        upvalue->closed = *upvalue->location;
+        upvalue->location = &upvalue->closed;
+        openUpvalues = upvalue->next;
+    }
+}
+
+ObjFunction* VM::getFrameFunction(CallFrame *frame) {
+    if(frame->function->type == OBJ_FUNCTION) {
+        return (ObjFunction*)frame->function;
+    } else {
+        return ((ObjClosure*)frame->function)->function;
+    }
+}

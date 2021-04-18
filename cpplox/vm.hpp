@@ -21,11 +21,11 @@ enum InterpretResult {
 
 class CallFrame {
 public:
-    ObjFunction* function;
+    Obj* function;
     uint8_t* ip;
     size_t slots;
     
-    CallFrame(ObjFunction* function, uint8_t* ip, size_t slots);
+    CallFrame(Obj* function, uint8_t* ip, size_t slots);
 };
 
 class VM {
@@ -51,9 +51,19 @@ class VM {
     
     bool callValue(Value callee, int argCount);
     
-    bool call(ObjFunction* function, int argCount);
+    bool call(Obj* callee, ObjFunction* function, int argCount);
+    
+    bool callClosure(ObjClosure* closure, int argCount);
+    
+    bool callFunction(ObjFunction* function, int argCount);
     
     void defineNative(const std::string& name, NativeFn function, int arity);
+    
+    ObjUpvalue* captureUpvalue(int localIndex);
+    
+    void closeUpvalues(Value* last);
+    
+    ObjFunction* getFrameFunction(CallFrame* frame);
     
     //Native functions
     
@@ -65,9 +75,12 @@ class VM {
     
     bool getLineNative(int argCount, Value* args);
     
+    
 public:
     Chunk* chunk;
     uint8_t* ip;
+    
+    ObjUpvalue* openUpvalues;
     
     std::deque<CallFrame> frames;
     std::deque<Value> stack;
