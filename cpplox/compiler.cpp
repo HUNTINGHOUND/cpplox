@@ -82,7 +82,9 @@ Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scan
     this->scopeDepth = 0;
     this->vm = vm;
     
-    function = ObjFunction::newFunction();
+    vm->current = this;
+    
+    function = ObjFunction::newFunction(vm);
     
     if (type != TYPE_SCRIPT) {
         function->name = ObjString::copyString(vm, parser->previous.source.c_str(), parser->previous.length);
@@ -162,6 +164,8 @@ void Compiler::emitByte(uint8_t byte) {
 ObjFunction* Compiler::endCompiler() {
     emitReturn();
     ObjFunction* function = this->function;
+    
+    vm->current = enclosing;
     
 #ifdef DEBUG_PRINT_CODE
     if(!parser->hadError) {
@@ -543,6 +547,7 @@ void Compiler::endScope() {
         } else {
             emitByte(OP_POP);
         }
+        localCount--;
     }
 }
 
@@ -955,6 +960,7 @@ int Compiler::resolveUpvalue(Token *name) {
     
     int local = enclosing->resolveLocal(name);
     if(local != -1) {
+        enclosing->locals[local].isCaptured = true;
         return addUpvalue((uint8_t)local, true);
     }
     
@@ -983,4 +989,12 @@ int Compiler::addUpvalue(uint8_t index, bool isLocal) {
     
     upvalues.push_back(Upvalue{index, isLocal});
     return function->upvalueCount++;
+}
+
+void Compiler::markCompilerRoots() {
+    Compiler* compiler = this;
+    while(compiler != nullptr) {
+        markObject(vm, (Obj*)compiler->function);
+        compiler = compiler->enclosing;
+    }
 }

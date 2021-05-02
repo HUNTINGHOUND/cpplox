@@ -5,24 +5,24 @@
 #include "chunk.hpp"
 #include "memory.hpp"
 
-Chunk::Chunk() : constants() {
+Chunk::Chunk(VM* vm) : constants(vm) {
     this->count = 0;
     this->lineCount = 0;
     this->capacity = 0;
     this->lineCapacity = 0;
+    this->vm = vm;
 }
 
 void Chunk::freeChunk() {
     free_array<uint8_t>(this->code, this->capacity);
     free_array<Line>(this->lines, this->capacity);
     this->constants.freeValueArray();
-    Chunk();
 }
 
 void Chunk::writeChunk(uint8_t byte, int line) {
     if (this->capacity == this->count) {
         size_t newCapa = grow_capacity(this->capacity);
-        code = grow_array<uint8_t>(this->code, this->capacity ,newCapa);
+        code = grow_array<uint8_t>(this->code, this->capacity ,newCapa, vm);
         this->capacity = newCapa;
     }
     
@@ -37,7 +37,7 @@ void Chunk::writeChunk(uint8_t byte, int line) {
     
     if(this->lineCapacity == this->lineCount) {
         size_t newlineCapa = grow_capacity(this->lineCapacity);
-        lines = grow_array<Line>(this->lines, this->lineCapacity, newlineCapa);
+        lines = grow_array<Line>(this->lines, this->lineCapacity, newlineCapa, vm);
         lineCapacity = newlineCapa;
     }
     Line linestart;

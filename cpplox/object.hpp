@@ -21,14 +21,15 @@ enum FunctionType {
 
 class Obj {
     
-    static Obj* allocateObject(size_t size, ObjType type);
+    static Obj* allocateObject(size_t size, ObjType type, VM* vm);
     
 public:
     ObjType type;
     Obj* next;
+    bool isMarked;
     
     template<typename T>
-    static T* allocate_obj(ObjType objectType, size_t extra);
+    static T* allocate_obj(ObjType objectType, size_t extra, VM* vm);
 };
 
 class ObjString : public Obj {
@@ -50,7 +51,7 @@ public:
     Chunk chunk;
     ObjString* name;
     
-    static ObjFunction* newFunction();
+    static ObjFunction* newFunction(VM* vm);
     
 };
 
@@ -61,7 +62,7 @@ public:
     int arity;
     NativeFn function;
     
-    static ObjNative* newNative(NativeFn function, int arity);
+    static ObjNative* newNative(NativeFn function, int arity, VM* vm);
 };
 
 class ObjUpvalue : public Obj {
@@ -71,7 +72,7 @@ public:
     ObjUpvalue* next;
     Value closed;
     
-    static ObjUpvalue* newUpvalue(Value* slot);
+    static ObjUpvalue* newUpvalue(Value* slot, VM* vm);
 };
 
 class ObjClosure : public Obj {
@@ -80,7 +81,7 @@ public:
     ObjUpvalue** upvalues;
     int upvalueCount;
     
-    static ObjClosure* newClosure(ObjFunction* function);
+    static ObjClosure* newClosure(ObjFunction* function, VM* vm);
 };
 
 #endif /* object_h */

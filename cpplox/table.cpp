@@ -125,3 +125,13 @@ ObjString* Table::tableFindString(const char *chars, int length, uint32_t hash) 
         index = (index + 1) % capacity;
     }
 }
+
+void Table::removeWhite() {
+    for(int i = 0; i < capacity; i++) {
+        Entry* entry = &entries[i];
+        if(Value::is_empty(entry->key) &&
+           !(Value::as_obj(entry->key)->isMarked)) {
+            
+        }
+    }
+}

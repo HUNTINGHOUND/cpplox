@@ -3,15 +3,16 @@
 #include "memory.hpp"
 #include "object.hpp"
 
-ValueArray::ValueArray() {
+ValueArray::ValueArray(VM* vm) {
     this->count = 0;
     this->capacity = 0;
+    this->vm = vm;
 }
 
 void ValueArray::writeValueArray(Value value){
     if (this->capacity == this->count) {
         size_t newCapa = grow_capacity(capacity);
-        values = grow_array<Value>(this->values, this->capacity, newCapa);
+        values = grow_array<Value>(this->values, this->capacity, newCapa, vm);
         capacity = newCapa;
     }
     
@@ -21,7 +22,6 @@ void ValueArray::writeValueArray(Value value){
 
 void ValueArray::freeValueArray(){
     free_array(this->values, this->capacity);
-    ValueArray();
 }
 
 void Value::printValue(Value value) {

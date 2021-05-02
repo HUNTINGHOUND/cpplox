@@ -80,11 +80,12 @@ struct Upvalue {
 
 class Compiler {
     
-    VM* vm;
+    ObjFunction* function;
     
     Compiler* enclosing;
     
-    ObjFunction* function;
+    VM* vm;
+    
     FunctionType type;
     
     std::vector<Break> breakStatements;
@@ -225,6 +226,8 @@ public:
     void _or(bool canAssign);
     
     void call(bool canAssign);
+    
+    void markCompilerRoots();
     
     Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser);
     

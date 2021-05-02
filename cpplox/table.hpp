@@ -39,6 +39,7 @@ public:
     void tableAddAll(Table* from);
     bool tableGet(Value key, Value* value);
     bool tableDelete(Value key);
+    void removeWhite();
     ObjString* tableFindString(const char* chars, int length, uint32_t hash);
 };
 

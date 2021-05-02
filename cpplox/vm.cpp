@@ -39,10 +39,12 @@ bool VM::getLineNative(int argCount, Value *args) {
 
 //====================================================================>
 
-VM::VM() : strings(), globalNames(), globalValues(){
+VM::VM() : strings(), globalNames(), globalValues(this){
     std::deque<Value>().swap(stack);
     objects = nullptr;
     openUpvalues = nullptr;
+    byteAllocated = 0;
+    nextGC = 1024 * 1024;
     
     defineNative("clock", &VM::clockNative, 0);
     defineNative("error", &VM::errNative, 0);
@@ -97,7 +99,7 @@ InterpretResult VM::interpret(const std::string& source) {
     if(function == nullptr) return INTERPRET_COMPILE_ERROR;
     
     stack.push_back(Value::obj_val(function));
-    ObjClosure* closure = ObjClosure::newClosure(function);
+    ObjClosure* closure = ObjClosure::newClosure(function, this);
     stack.pop_back();
     stack.push_back(Value::obj_val(closure));
     callValue(Value::obj_val(closure), 0);
@@ -305,7 +307,7 @@ InterpretResult VM::run() {
             }
             case OP_CLOSURE: {
                 ObjFunction* function = Value::as_function(read_constant(frame));
-                ObjClosure* closure = ObjClosure::newClosure(function);
+                ObjClosure* closure = ObjClosure::newClosure(function, this);
                 stack.push_back(Value::obj_val(closure));
                 for(int i = 0; i < closure->upvalueCount; i++) {
                     uint8_t isLocal = read_byte(frame);
@@ -345,7 +347,7 @@ void VM::concatenate() {
     stack.pop_back();
     
     int length = a->length + b->length;
-    char* newString = allocate<char>(length + 1);
+    char* newString = allocate<char>(length + 1, this);
     memcpy(newString, a->chars, a->length);
     memcpy(newString+ a->length, b->chars, b->length);
     newString[length] = '\0';
@@ -454,7 +456,7 @@ bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
 
 void VM::defineNative(const std::string& name, NativeFn function, int arity) {
     stack.push_back(Value::obj_val(ObjString::copyString(this, name.c_str(), (int)strlen(name.c_str()))));
-    stack.push_back(Value::obj_val(ObjNative::newNative(function,arity)));
+    stack.push_back(Value::obj_val(ObjNative::newNative(function,arity, this)));
     globalValues.writeValueArray(stack[1]);
     globalNames.tableSet(stack[0], Value::number_val(globalValues.count - 1));
     stack.pop_back();
@@ -473,7 +475,7 @@ ObjUpvalue* VM::captureUpvalue(int localIndex) {
     if (upvalue != nullptr && upvalue->location == &stack[localIndex])
         return upvalue;
     
-    ObjUpvalue* createdUpvalue = ObjUpvalue::newUpvalue(&stack[localIndex]);
+    ObjUpvalue* createdUpvalue = ObjUpvalue::newUpvalue(&stack[localIndex], this);
     createdUpvalue->next = upvalue;
     if(prevUpvalue == nullptr)
         openUpvalues = createdUpvalue;

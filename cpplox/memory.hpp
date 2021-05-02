@@ -5,7 +5,7 @@
 #include "vm.hpp"
 
 //central allocation method that helps keep track of memory usage
-void* reallocate(void* pointer, size_t oldsize, size_t newsize);
+void* reallocate(void* pointer, size_t oldsize, size_t newsize, VM* vm);
 /*
  oldSize           newSize           Operation
  0                 Non-zero          Allocate new block.
@@ -17,7 +17,7 @@ void* reallocate(void* pointer, size_t oldsize, size_t newsize);
 //Free objects from heap space
 void freeObjects(VM* vm);
 
-void freeObject(Obj* object);
+void freeObject(Obj* object, VM* vm);
 
 
 //return the expanded capacity size
@@ -27,20 +27,34 @@ inline size_t grow_capacity(size_t capacity) {
 
 //grow an array
 template <typename V>
-inline V* grow_array(V* pointer, size_t oldCount, size_t newCount) {
-    return (V*)reallocate(pointer, sizeof(V) * (oldCount), sizeof(V) * newCount);
+inline V* grow_array(V* pointer, size_t oldCount, size_t newCount, VM* vm) {
+    return (V*)reallocate(pointer, sizeof(V) * (oldCount), sizeof(V) * newCount, vm);
 }
 
 //free an array
 template <typename V>
 inline void free_array(V* pointer, size_t oldCount) {
-    reallocate(pointer, sizeof(V) * (oldCount), 0);
+    reallocate(pointer, sizeof(V) * (oldCount), 0, nullptr);
 }
 
 template<typename T>
-inline T* allocate(int count) {
-    return (T*)reallocate(nullptr, 0, sizeof(T) * count);
+inline T* allocate(int count, VM* vm) {
+    return (T*)reallocate(nullptr, 0, sizeof(T) * count, vm);
 }
 
+void markValue(VM* vm, Value value);
+void markObject(VM* vm, Obj* object);
+void markGlobal(Table* table, VM* vm);
+void markCompilerRoots(Compiler* compiler);
+void traceReferences(VM* vm);
+void blackenObject(Obj* object, VM* vm);
+void markArray(VM* vm, ValueArray* array);
+void sweep(VM* vm);
+
+class GarbageCollector {
+    static void markRoots(VM* vm);
+public:
+    static void collectGarbage(VM* vm);
+};
 
 #endif /* memory_h */

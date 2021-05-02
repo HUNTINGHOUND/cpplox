@@ -72,12 +72,13 @@ public:
 
 
 class ValueArray {
+    VM* vm;
 public:
     size_t count;
     size_t capacity;
     Value* values;
     
-    ValueArray();
+    ValueArray(VM* vm);
     void writeValueArray(Value value);
     void freeValueArray();
     

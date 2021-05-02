@@ -12,6 +12,7 @@
 
 #define STACK_MAX 256
 
+class Compiler;
 
 enum InterpretResult {
     INTERPRET_OK,
@@ -77,6 +78,8 @@ class VM {
     
     
 public:
+    Compiler* current;
+    
     Chunk* chunk;
     uint8_t* ip;
     
@@ -84,6 +87,10 @@ public:
     
     std::deque<CallFrame> frames;
     std::deque<Value> stack;
+    std::deque<Obj*> grayStack;
+    
+    size_t byteAllocated;
+    size_t nextGC;
     
     Table strings;
     Table globalNames;

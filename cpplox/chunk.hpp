@@ -4,6 +4,8 @@
 #include "value.hpp"
 #include <vector>
 
+class VM;
+
 enum OpCode {
     OP_CONSTANT,
     OP_CONSTANT_LONG,
@@ -47,6 +49,8 @@ struct Line{
 
 class Chunk {
     
+    VM* vm;
+    
 public:
     
     //current count of bytes in code
@@ -65,7 +69,7 @@ public:
     //adds a constant to the constant vector return position added
     int addConstant(Value value);
     
-    Chunk();
+    Chunk(VM* vm);
     
     //free chunk from memory
     void freeChunk();
