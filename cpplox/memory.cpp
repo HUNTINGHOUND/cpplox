@@ -103,7 +103,7 @@ void GarbageCollector::markRoots(VM* vm) {
         markObject(vm, vm->frames[i].function);
     }
     
-    for(ObjUpvalue* upvalue = vm->openUpvalues; upvalue != nullptr; upvalue = upvalue->next) {
+    for(ObjUpvalue* upvalue = vm->openUpvalues; upvalue != nullptr; upvalue = upvalue->nextUp) {
         markObject(vm, (Obj*)upvalue);
     }
     

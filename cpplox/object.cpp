@@ -25,6 +25,9 @@ Obj* Obj::allocateObject(size_t size, ObjType type, VM* vm) {
     object->type = type;
     object->isMarked = false;
     
+    object->next = vm->objects;
+    vm->objects = object;
+    
 #ifdef DEBUG_LOG_GC
     std::cout << (void*)object << " allocate " << size << " for " << type << std::endl;
 #endif
@@ -37,10 +40,11 @@ ObjString* ObjString::makeString(VM* vm, int length, uint32_t hash) {
     string->length = length;
     string->hash = hash;
     
-    string->next = vm->objects;
-    vm->objects = string;
+    vm->stack.push_back(Value::obj_val(string));
     
     vm->strings.tableSet(Value::obj_val(string), Value::nul_val());
+    
+    vm->stack.pop_back();
     
     return string;
 }
@@ -93,7 +97,7 @@ ObjClosure* ObjClosure::newClosure(ObjFunction* function, VM* vm) {
 
 ObjUpvalue* ObjUpvalue::newUpvalue(Value* slot, VM* vm) {
     ObjUpvalue* upvalue = allocate_obj<ObjUpvalue>(OBJ_UPVALUE, 0, vm);
-    upvalue->next = nullptr;
+    upvalue->nextUp = nullptr;
     upvalue->location = slot;
     upvalue->closed = Value::nul_val();
     return upvalue;

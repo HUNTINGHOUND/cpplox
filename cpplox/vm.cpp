@@ -340,11 +340,8 @@ InterpretResult VM::run() {
 
 
 void VM::concatenate() {
-    ObjString* b = Value::as_string(stack.back());
-    stack.pop_back();
-    
-    ObjString* a = Value::as_string(stack.back());
-    stack.pop_back();
+    ObjString* b = Value::as_string(peek(0));
+    ObjString* a = Value::as_string(peek(1));
     
     int length = a->length + b->length;
     char* newString = allocate<char>(length + 1, this);
@@ -353,6 +350,9 @@ void VM::concatenate() {
     newString[length] = '\0';
     
     ObjString* result = ObjString::copyString(this, newString, length);
+    
+    stack.pop_back();
+    stack.pop_back();
     
     
     stack.push_back(Value::obj_val(result));
@@ -469,7 +469,7 @@ ObjUpvalue* VM::captureUpvalue(int localIndex) {
     
     while (upvalue != nullptr && upvalue->location > &stack[localIndex]) {
         prevUpvalue = upvalue;
-        upvalue = upvalue->next;
+        upvalue = upvalue->nextUp;
     }
     
     if (upvalue != nullptr && upvalue->location == &stack[localIndex])
@@ -490,7 +490,7 @@ void VM::closeUpvalues(Value *last) {
         ObjUpvalue* upvalue = openUpvalues;
         upvalue->closed = *upvalue->location;
         upvalue->location = &upvalue->closed;
-        openUpvalues = upvalue->next;
+        openUpvalues = upvalue->nextUp;
     }
 }
 

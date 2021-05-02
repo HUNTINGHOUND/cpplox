@@ -69,7 +69,7 @@ class ObjUpvalue : public Obj {
 public:
     Value* location;
     
-    ObjUpvalue* next;
+    ObjUpvalue* nextUp;
     Value closed;
     
     static ObjUpvalue* newUpvalue(Value* slot, VM* vm);
