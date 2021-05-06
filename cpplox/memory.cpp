@@ -6,7 +6,7 @@
 #include <iostream>
 
 void* reallocate(void* pointer, size_t oldsize, size_t newsize, VM* vm) {
-    vm->byteAllocated += newsize - oldsize;
+    vm->bytesAllocated += newsize - oldsize;
     
     if(newsize > oldsize) {
 #ifdef DEBUG_STRESS_GC
@@ -14,7 +14,7 @@ void* reallocate(void* pointer, size_t oldsize, size_t newsize, VM* vm) {
 #endif
     }
     
-    if(vm->byteAllocated > vm->nextGC) {
+    if(vm->bytesAllocated > vm->nextGC) {
         GarbageCollector::collectGarbage(vm);
     }
     
@@ -59,6 +59,7 @@ void freeObject(Obj* object, VM* vm) {
             ObjFunction* function = (ObjFunction*)object;
             function->chunk.freeChunk();
             reallocate(object, sizeof(ObjFunction), 0, vm);
+            break;
         }
         case OBJ_NATIVE:
             reallocate(object, sizeof(ObjNative), 0, vm);
@@ -68,7 +69,7 @@ void freeObject(Obj* object, VM* vm) {
             break;
         case OBJ_CLOSURE: {
             ObjClosure* closure = (ObjClosure*) object;
-            free_array<ObjUpvalue*>(closure->upvalues, closure->upvalueCount);
+            free_array<ObjUpvalue*>(closure->upvalues, closure->upvalueCount, vm);
             reallocate(object, sizeof(ObjClosure), 0, vm);
             break;
         }
@@ -83,10 +84,12 @@ void GarbageCollector::collectGarbage(VM* vm) {
     
     markRoots(vm);
     traceReferences(vm);
-    vm->strings.removeWhite();
+    vm->strings.removeWhite(vm);
     sweep(vm);
     
-    vm->nextGC = vm->byteAllocated * GC_HEAP_GROW_FACTOR;
+    vm->nextGC = vm->bytesAllocated * GC_HEAP_GROW_FACTOR;
+    
+    vm->marker = !vm->marker;
     
 #ifdef DEBUG_LOG_GC
     std::cout << "-- gc end" << std::endl;
@@ -108,7 +111,7 @@ void GarbageCollector::markRoots(VM* vm) {
     }
     
     markGlobal(&vm->globalNames, vm);
-    vm->current->markCompilerRoots();
+    if(vm->current != nullptr) vm->current->markCompilerRoots();
 }
 
 void markGlobal(Table* table, VM* vm) {
@@ -128,8 +131,8 @@ void markValue(VM* vm, Value value) {
 
 void markObject(VM* vm, Obj* object) {
     if(object == nullptr) return;
-    if(object->isMarked) return;
-    object->isMarked = true;
+    if(object->mark == vm->marker) return;
+    object->mark = vm->marker;
     
     vm->grayStack.push_back(object);
     
@@ -189,8 +192,7 @@ void sweep(VM* vm) {
     Obj* previous = nullptr;
     Obj* object = vm->objects;
     while(object != nullptr) {
-        if(object->isMarked) {
-            object->isMarked = false;
+        if(object->mark == vm->marker) {
             previous = object;
             object = object->next;
         } else {

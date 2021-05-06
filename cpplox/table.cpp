@@ -126,12 +126,12 @@ ObjString* Table::tableFindString(const char *chars, int length, uint32_t hash) 
     }
 }
 
-void Table::removeWhite() {
+void Table::removeWhite(VM* vm) {
     for(int i = 0; i < capacity; i++) {
         Entry* entry = &entries[i];
         if(Value::is_empty(entry->key) &&
-           !(Value::as_obj(entry->key)->isMarked)) {
-            
+           Value::as_obj(entry->key)->mark != vm->marker) {
+            tableDelete(entry->key);
         }
     }
 }

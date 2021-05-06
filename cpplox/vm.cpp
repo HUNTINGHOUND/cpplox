@@ -40,11 +40,12 @@ bool VM::getLineNative(int argCount, Value *args) {
 //====================================================================>
 
 VM::VM() : strings(), globalNames(), globalValues(this){
-    std::deque<Value>().swap(stack);
+    current = nullptr;
     objects = nullptr;
     openUpvalues = nullptr;
-    byteAllocated = 0;
+    bytesAllocated = 0;
     nextGC = 1024 * 1024;
+    marker = true;
     
     defineNative("clock", &VM::clockNative, 0);
     defineNative("error", &VM::errNative, 0);

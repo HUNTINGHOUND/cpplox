@@ -26,7 +26,7 @@ class Obj {
 public:
     ObjType type;
     Obj* next;
-    bool isMarked;
+    bool mark;
     
     template<typename T>
     static T* allocate_obj(ObjType objectType, size_t extra, VM* vm);

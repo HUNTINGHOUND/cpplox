@@ -89,7 +89,7 @@ public:
     std::deque<Value> stack;
     std::deque<Obj*> grayStack;
     
-    size_t byteAllocated;
+    size_t bytesAllocated;
     size_t nextGC;
     
     Table strings;
@@ -97,6 +97,8 @@ public:
     ValueArray globalValues;
     
     Obj* objects;
+    
+    bool marker;
     
     VM();
     void freeVM();

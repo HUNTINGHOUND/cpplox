@@ -1,6 +1,7 @@
 #include "object.hpp"
 #include "memory.hpp"
 #include "vm.hpp"
+#include <iostream>
 
 
 uint32_t ObjString::hashString(const char* key, int length) {
@@ -23,7 +24,7 @@ T* Obj::allocate_obj(ObjType objectType, size_t extra, VM* vm) {
 Obj* Obj::allocateObject(size_t size, ObjType type, VM* vm) {
     Obj* object = (Obj*)reallocate(nullptr, 0, size, vm);
     object->type = type;
-    object->isMarked = false;
+    object->mark = false;
     
     object->next = vm->objects;
     vm->objects = object;

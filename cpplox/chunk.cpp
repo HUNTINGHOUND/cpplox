@@ -14,8 +14,8 @@ Chunk::Chunk(VM* vm) : constants(vm) {
 }
 
 void Chunk::freeChunk() {
-    free_array<uint8_t>(this->code, this->capacity);
-    free_array<Line>(this->lines, this->capacity);
+    free_array<uint8_t>(this->code, this->capacity, vm);
+    free_array<Line>(this->lines, this->capacity, vm);
     this->constants.freeValueArray();
 }
 

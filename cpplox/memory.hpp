@@ -33,8 +33,8 @@ inline V* grow_array(V* pointer, size_t oldCount, size_t newCount, VM* vm) {
 
 //free an array
 template <typename V>
-inline void free_array(V* pointer, size_t oldCount) {
-    reallocate(pointer, sizeof(V) * (oldCount), 0, nullptr);
+inline void free_array(V* pointer, size_t oldCount, VM* vm) {
+    reallocate(pointer, sizeof(V) * (oldCount), 0, vm);
 }
 
 template<typename T>

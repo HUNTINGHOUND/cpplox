@@ -21,7 +21,7 @@ void ValueArray::writeValueArray(Value value){
 }
 
 void ValueArray::freeValueArray(){
-    free_array(this->values, this->capacity);
+    free_array(this->values, this->capacity, vm);
 }
 
 void Value::printValue(Value value) {
