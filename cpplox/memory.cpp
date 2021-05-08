@@ -46,7 +46,7 @@ void freeObjects(VM* vm) {
 
 void freeObject(Obj* object, VM* vm) {
 #ifdef DEBUG_LOG_GC
-    std::cout << (void*)object << "free type " << object->type << std::endl;
+    std::cout << (void*)object << " free type " << object->type << std::endl;
 #endif
     
     switch (object->type) {
@@ -71,6 +71,10 @@ void freeObject(Obj* object, VM* vm) {
             ObjClosure* closure = (ObjClosure*) object;
             free_array<ObjUpvalue*>(closure->upvalues, closure->upvalueCount, vm);
             reallocate(object, sizeof(ObjClosure), 0, vm);
+            break;
+        }
+        case OBJ_CLASS: {
+            reallocate(object, sizeof(ObjClass),0,vm);
             break;
         }
     }
@@ -152,13 +156,18 @@ void traceReferences(VM* vm) {
 }
 
 void blackenObject(Obj* object, VM* vm) {
-#ifdef DEBUG_LOB_GC
+#ifdef DEBUG_LOG_GC
     std::cout << (void*)object << " blacken ";
     Value::printValue(Value::obj_val(object));
     std::cout << std::endl;
 #endif
     
     switch (object->type) {
+        case OBJ_CLASS: {
+            ObjClass* _class = (ObjClass*) object;
+            markObject(vm, (Obj*)_class->name);
+            break;
+        }
         case OBJ_CLOSURE: {
             ObjClosure* closure = (ObjClosure*)object;
             markObject(vm, (Obj*)closure->function);

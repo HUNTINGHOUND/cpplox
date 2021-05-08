@@ -151,6 +151,9 @@ void Value::printObject(Value value) {
         case OBJ_UPVALUE:
             std::cout << "upvalue";
             break;
+        case OBJ_CLASS:
+            std::cout << as_class(value)->name->chars;
+            break;
     }
 }
 
@@ -214,4 +217,12 @@ bool Value::is_closure(Value value) {
 
 ObjClosure* Value::as_closure(Value value) {
     return (ObjClosure*)as_obj(value);
+}
+
+bool Value::is_class(Value value) {
+    return isObjType(value, OBJ_CLASS);
+}
+
+ObjClass* Value::as_class(Value value) {
+    return (ObjClass*)as_obj(value);
 }

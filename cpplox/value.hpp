@@ -10,6 +10,7 @@ class ObjString;
 class ObjFunction;
 class ObjNative;
 class ObjClosure;
+class ObjClass;
 enum ObjType : short;
 class VM;
 
@@ -44,6 +45,7 @@ public:
     static bool is_function(Value value);
     static bool is_native(Value value);
     static bool is_closure(Value value);
+    static bool is_class(Value value);
     static bool isObjType(Value value, ObjType type);
     
     static bool as_bool(Value value);
@@ -54,6 +56,7 @@ public:
     static ObjFunction* as_function(Value value);
     static ObjNative* as_native(Value value);
     static ObjClosure* as_closure(Value value);
+    static ObjClass* as_class(Value value);
 
     static Value bool_val(bool value);
     static Value nul_val();

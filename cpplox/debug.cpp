@@ -145,6 +145,8 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
         }
         case OP_CLOSE_UPVALUE:
             return simpleInstruction("OP_CLOSE_UPVALUE", offset);
+        case OP_CLASS:
+            return simpleInstruction("OP_CLASS", offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

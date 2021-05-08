@@ -195,6 +195,8 @@ class Compiler {
     
     int addUpvalue(uint8_t index, bool isLocal);
     
+    void classDeclaration();
+    
 public:
     
     Scanner* scanner;

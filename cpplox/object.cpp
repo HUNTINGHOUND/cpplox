@@ -103,3 +103,9 @@ ObjUpvalue* ObjUpvalue::newUpvalue(Value* slot, VM* vm) {
     upvalue->closed = Value::nul_val();
     return upvalue;
 }
+
+ObjClass* ObjClass::newClass(ObjString* name, VM* vm) {
+    ObjClass* _class = Obj::allocate_obj<ObjClass>(OBJ_CLASS, 0, vm);
+    _class->name = name;
+    return _class;
+}

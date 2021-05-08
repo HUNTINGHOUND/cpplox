@@ -358,6 +358,8 @@ void Compiler::declaration() {
         varDeclaration(isConst);
     } else if (match(TOKEN_FUN)) {
         funDeclaration();
+    } else if (match(TOKEN_CLASS)) {
+        classDeclaration();
     } else {
         statement();
     }
@@ -997,4 +999,16 @@ void Compiler::markCompilerRoots() {
         markObject(vm, (Obj*)compiler->function);
         compiler = compiler->enclosing;
     }
+}
+
+void Compiler::classDeclaration() {
+    parser->consume(TOKEN_IDENTIFIER, "Expect class name.");
+    uint8_t nameConstant = identifierConstant(&parser->previous, false);
+    declareVariable(false);
+    
+    emitBytes(OP_CLASS, nameConstant);
+    defineVariable(nameConstant);
+    
+    parser->consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+    parser->consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
 }

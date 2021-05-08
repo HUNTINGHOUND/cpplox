@@ -39,6 +39,8 @@ class VM {
     
     uint16_t read_short(CallFrame* frame);
     
+    ObjString* read_string(CallFrame* frame);
+    
     template <typename T, typename U>
     InterpretResult binary_op(Value (*valuetype)(T),std::function<T (U, U)> func);
     

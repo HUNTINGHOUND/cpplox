@@ -61,6 +61,10 @@ Value VM::read_constant(CallFrame* frame) {
     return getFrameFunction(frame)->chunk.constants.values[read_byte(frame)];
 }
 
+ObjString* VM::read_string(CallFrame *frame) {
+    return Value::as_string(globalValues.values[read_byte(frame)]);
+}
+
 CallFrame::CallFrame(Obj* function, uint8_t* ip, size_t slots) {
     this->function = function;
     this->ip = ip;
@@ -331,10 +335,15 @@ InterpretResult VM::run() {
                 *((ObjClosure*)frame->function)->upvalues[slot]->location = peek(0);
                 break;
             }
-            case OP_CLOSE_UPVALUE:
+            case OP_CLOSE_UPVALUE: {
                 closeUpvalues(&stack.back());
                 stack.pop_back();
                 break;
+            }
+            case OP_CLASS: {
+                stack.push_back(Value::obj_val(ObjClass::newClass(read_string(frame), this)));
+                break;
+            }
         }
     }
 }

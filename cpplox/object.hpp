@@ -11,7 +11,8 @@ enum ObjType : short{
     OBJ_FUNCTION,
     OBJ_NATIVE,
     OBJ_CLOSURE,
-    OBJ_UPVALUE
+    OBJ_UPVALUE,
+    OBJ_CLASS
 };
 
 enum FunctionType {
@@ -83,5 +84,13 @@ public:
     
     static ObjClosure* newClosure(ObjFunction* function, VM* vm);
 };
+
+class ObjClass : public Obj {
+public:
+    ObjString* name;
+    
+    static ObjClass* newClass(ObjString* name, VM* vm);
+};
+
 
 #endif /* object_h */
