@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "vm.hpp"
+#include "object.hpp"
 
 //central allocation method that helps keep track of memory usage
 void* reallocate(void* pointer, size_t oldsize, size_t newsize, VM* vm);
@@ -46,6 +47,7 @@ void markValue(VM* vm, Value value);
 void markObject(VM* vm, Obj* object);
 void markGlobal(Table* table, VM* vm);
 void markCompilerRoots(Compiler* compiler);
+void markTable(VM* vm, Table* table);
 void traceReferences(VM* vm);
 void blackenObject(Obj* object, VM* vm);
 void markArray(VM* vm, ValueArray* array);

@@ -432,6 +432,12 @@ bool VM::callValue(Value callee, int argCount) {
                 return callClosure(Value::as_closure(callee), argCount);
             case OBJ_FUNCTION:
                 return callFunction(Value::as_function(callee), argCount);
+            case OBJ_CLASS: {
+                ObjClass* _class = Value::as_class(callee);
+                Value* back = &stack.back();
+                back[-argCount] = Value::obj_val(ObjInstance::newInstance(_class, this));
+                return true;
+            }
             default:
                 break;
         }

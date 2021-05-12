@@ -1,5 +1,6 @@
 #include "table.hpp"
 #include "memory.hpp"
+#include "object.hpp"
 
 
 Table::Table() {

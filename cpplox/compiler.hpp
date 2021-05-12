@@ -5,6 +5,8 @@
 #include "scanner.hpp"
 #include "vm.hpp"
 
+enum FunctionType : short;
+
 
 class Parser{
     Token current;

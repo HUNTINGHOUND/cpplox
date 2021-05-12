@@ -1,6 +1,7 @@
 #include "object.hpp"
 #include "memory.hpp"
 #include "vm.hpp"
+#include "table.hpp"
 #include <iostream>
 
 
@@ -24,7 +25,7 @@ T* Obj::allocate_obj(ObjType objectType, size_t extra, VM* vm) {
 Obj* Obj::allocateObject(size_t size, ObjType type, VM* vm) {
     Obj* object = (Obj*)reallocate(nullptr, 0, size, vm);
     object->type = type;
-    object->mark = false;
+    object->mark = !vm->marker;
     
     object->next = vm->objects;
     vm->objects = object;
@@ -108,4 +109,11 @@ ObjClass* ObjClass::newClass(ObjString* name, VM* vm) {
     ObjClass* _class = Obj::allocate_obj<ObjClass>(OBJ_CLASS, 0, vm);
     _class->name = name;
     return _class;
+}
+
+ObjInstance* ObjInstance::newInstance(ObjClass *_class, VM* vm) {
+    ObjInstance* instance = allocate_obj<ObjInstance>(OBJ_INSTANCE, 0, vm);
+    instance->_class = _class;
+    instance->fields = Table();
+    return instance;
 }

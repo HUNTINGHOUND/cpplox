@@ -3,6 +3,7 @@
 
 #include "flags.hpp"
 #include "chunk.hpp"
+#include "table.hpp"
 
 class VM;
 
@@ -12,10 +13,11 @@ enum ObjType : short{
     OBJ_NATIVE,
     OBJ_CLOSURE,
     OBJ_UPVALUE,
-    OBJ_CLASS
+    OBJ_CLASS,
+    OBJ_INSTANCE
 };
 
-enum FunctionType {
+enum FunctionType : short{
     TYPE_FUNCTION,
     TYPE_SCRIPT
 };
@@ -92,5 +94,12 @@ public:
     static ObjClass* newClass(ObjString* name, VM* vm);
 };
 
+class ObjInstance : public Obj {
+public:
+    ObjClass* _class;
+    Table fields;
+    
+    static ObjInstance* newInstance(ObjClass* _class, VM* vm);
+};
 
 #endif /* object_h */

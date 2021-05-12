@@ -77,6 +77,12 @@ void freeObject(Obj* object, VM* vm) {
             reallocate(object, sizeof(ObjClass),0,vm);
             break;
         }
+        case OBJ_INSTANCE: {
+            ObjInstance* instance = (ObjInstance*)object;
+            instance->fields.freeTable();
+            reallocate(object, sizeof(ObjInstance), 0, vm);
+            break;
+        }
     }
 }
 
@@ -163,8 +169,13 @@ void blackenObject(Obj* object, VM* vm) {
 #endif
     
     switch (object->type) {
+        case OBJ_INSTANCE: {
+            ObjInstance* instance = (ObjInstance*)object;
+            markObject(vm, (Obj*)instance->_class);
+            
+        }
         case OBJ_CLASS: {
-            ObjClass* _class = (ObjClass*) object;
+            ObjClass* _class = (ObjClass*)object;
             markObject(vm, (Obj*)_class->name);
             break;
         }
@@ -194,6 +205,14 @@ void blackenObject(Obj* object, VM* vm) {
 void markArray(VM* vm, ValueArray* array) {
     for(int i = 0; i < array->count; i++) {
         markValue(vm, array->values[i]);
+    }
+}
+
+void markTable(VM* vm, Table* table) {
+    for(int i = 0; i < table->capacity; i++) {
+        Entry* entry = &table->entries[i];
+        markValue(vm, entry->key);
+        markValue(vm, entry->value);
     }
 }
 

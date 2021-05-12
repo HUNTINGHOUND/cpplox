@@ -6,6 +6,7 @@
 
 #include "chunk.hpp"
 #include "table.hpp"
+#include "object.hpp"
 #include <queue>
 #include <cstdarg>
 #include <ctime>

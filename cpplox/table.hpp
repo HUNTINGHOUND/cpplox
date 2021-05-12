@@ -11,7 +11,6 @@
 #include "flags.hpp"
 #include "value.hpp"
 #include <vector>
-#include "object.hpp"
 
 #define TABLE_MAX_LOAD 0.65
 

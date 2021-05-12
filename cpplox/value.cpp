@@ -154,6 +154,8 @@ void Value::printObject(Value value) {
         case OBJ_CLASS:
             std::cout << as_class(value)->name->chars;
             break;
+        case OBJ_INSTANCE:
+            std::cout << as_instance(value)->_class->name->chars << " instance";
     }
 }
 
@@ -225,4 +227,12 @@ bool Value::is_class(Value value) {
 
 ObjClass* Value::as_class(Value value) {
     return (ObjClass*)as_obj(value);
+}
+
+bool Value::is_instance(Value value) {
+    return isObjType(value, OBJ_INSTANCE);
+}
+
+ObjInstance* Value::as_instance(Value value) {
+    return (ObjInstance*)as_obj(value);
 }
