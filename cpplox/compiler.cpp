@@ -13,7 +13,7 @@ ParseRule rules[48] = {
     [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_RIGHT_BRACE]   = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_COMMA]         = {nullptr,     nullptr,   PREC_NONE},
-    [TOKEN_DOT]           = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_DOT]           = {nullptr,     &Compiler::dot,   PREC_CALL},
     [TOKEN_MINUS]         = {&Compiler::unary, &Compiler::binary, PREC_TERM},
     [TOKEN_PLUS]          = {nullptr,     &Compiler::binary, PREC_TERM},
     [TOKEN_SEMICOLON]     = {nullptr,     nullptr,   PREC_NONE},
@@ -458,10 +458,10 @@ uint8_t Compiler::parseVariable(const std::string& errorMessage, bool isConst) {
     declareVariable(isConst);
     if (scopeDepth > 0) return 0;
     
-    return identifierConstant(&parser->previous, isConst);
+    return globalConstant(&parser->previous, isConst);
 }
 
-uint8_t Compiler::identifierConstant(Token *name, bool isConst) {
+uint8_t Compiler::globalConstant(Token *name, bool isConst) {
     Value index;
     Value identifier = Value::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length));
     if (vm->globalNames.tableGet(identifier, &index)) {
@@ -500,7 +500,7 @@ void Compiler::namedVariable(Token name, bool canAssign) {
         getOp = OP_GET_UPVALUE;
         setOp = OP_SET_UPVALUE;
     } else {
-        arg = identifierConstant(&name, false);
+        arg = globalConstant(&name, false);
         getOp = OP_GET_GLOBAL;
         setOp = OP_SET_GLOBAL;
     }
@@ -1003,12 +1003,37 @@ void Compiler::markCompilerRoots() {
 
 void Compiler::classDeclaration() {
     parser->consume(TOKEN_IDENTIFIER, "Expect class name.");
-    uint8_t nameConstant = identifierConstant(&parser->previous, false);
+    uint8_t global = globalConstant(&parser->previous, false);
     declareVariable(false);
     
-    emitBytes(OP_CLASS, nameConstant);
-    defineVariable(nameConstant);
+    uint8_t name = addIdentifierConstant(&parser->previous);
+    emitBytes(OP_CLASS, name);
+    defineVariable(global);
     
     parser->consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
     parser->consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+}
+
+void Compiler::dot(bool canAssign) {
+    parser->consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
+    uint8_t name = addIdentifierConstant(&parser->previous);
+    
+    if(canAssign && match(TOKEN_EQUAL)) {
+        expression();
+        emitBytes(OP_SET_PROPERTY, name);
+    } else
+        emitBytes(OP_GET_PROPERTY, name);
+}
+
+uint8_t Compiler::addIdentifierConstant(Token *name) {
+    ObjString* string = ObjString::copyString(vm, name->source.c_str(), name->length);
+    Value indexValue;
+    
+    if(stringConstants.tableGet(Value::obj_val(string),&indexValue)) {
+        return (uint8_t)Value::as_number(indexValue);
+    }
+    
+    uint8_t index = makeConstant(Value::obj_val(string));
+    stringConstants.tableSet(Value::obj_val(string), Value::number_val((double)index));
+    return index;
 }

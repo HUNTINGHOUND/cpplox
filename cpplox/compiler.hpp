@@ -145,7 +145,9 @@ class Compiler {
     
     uint8_t parseVariable(const std::string& errorMessage, bool isConst);
     
-    uint8_t identifierConstant(Token* name, bool isConst);
+    uint8_t globalConstant(Token* name, bool isConst);
+    
+    uint8_t addIdentifierConstant(Token* name);
     
     void defineVariable(uint8_t global);
     
@@ -208,6 +210,8 @@ public:
     int localCount;
     int scopeDepth;
     
+    Table stringConstants;
+    
     
     void number(bool canAssign);
     
@@ -230,6 +234,8 @@ public:
     void _or(bool canAssign);
     
     void call(bool canAssign);
+    
+    void dot(bool canAssign);
     
     void markCompilerRoots();
     

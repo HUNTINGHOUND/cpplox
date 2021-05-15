@@ -39,7 +39,9 @@ enum OpCode {
     OP_GET_UPVALUE,
     OP_SET_UPVALUE,
     OP_CLOSE_UPVALUE,
-    OP_CLASS
+    OP_CLASS,
+    OP_SET_PROPERTY,
+    OP_GET_PROPERTY
 };
 
 //Data structure that represent a line in source code

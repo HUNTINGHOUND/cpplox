@@ -62,8 +62,9 @@ Value VM::read_constant(CallFrame* frame) {
 }
 
 ObjString* VM::read_string(CallFrame *frame) {
-    return Value::as_string(globalValues.values[read_byte(frame)]);
+    return Value::as_string(read_constant(frame));
 }
+
 
 CallFrame::CallFrame(Obj* function, uint8_t* ip, size_t slots) {
     this->function = function;
@@ -342,6 +343,40 @@ InterpretResult VM::run() {
             }
             case OP_CLASS: {
                 stack.push_back(Value::obj_val(ObjClass::newClass(read_string(frame), this)));
+                break;
+            }
+            case OP_GET_PROPERTY: {
+                if(!Value::is_instance(peek(0))) {
+                    runtimeError("Cannot reference property of non-instances.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                ObjInstance* instance = Value::as_instance(peek(0));
+                ObjString* name = read_string(frame);
+                
+                Value value;
+                if (instance->fields.tableGet(Value::obj_val(name), &value)) {
+                    stack.pop_back();
+                    stack.push_back(value);
+                    break;
+                }
+                
+                runtimeError("Undefined property '%s'.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            case OP_SET_PROPERTY: {
+                if(!Value::is_instance(peek(1))) {
+                    runtimeError("Cannot reference property of non-instances.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                ObjInstance* instance = Value::as_instance(peek(1));
+                instance->fields.tableSet(Value::obj_val(read_string(frame)), peek(0));
+                
+                Value value = stack.back();
+                stack.pop_back();
+                stack.pop_back();
+                stack.push_back(value);
                 break;
             }
         }

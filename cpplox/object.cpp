@@ -114,6 +114,5 @@ ObjClass* ObjClass::newClass(ObjString* name, VM* vm) {
 ObjInstance* ObjInstance::newInstance(ObjClass *_class, VM* vm) {
     ObjInstance* instance = allocate_obj<ObjInstance>(OBJ_INSTANCE, 0, vm);
     instance->_class = _class;
-    instance->fields = Table();
     return instance;
 }
