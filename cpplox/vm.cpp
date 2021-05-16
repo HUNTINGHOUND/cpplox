@@ -37,6 +37,23 @@ bool VM::getLineNative(int argCount, Value *args) {
     }
 }
 
+bool VM::hasFieldNative(int argCount, Value* args) {
+    if(!Value::is_instance(args[0])) {
+        args[-1] = Value::obj_val(ObjString::copyString(this, "Expected first argument to be a class instance.", 47));
+        return false;
+    }
+    
+    if(!Value::is_string(args[1])) {
+        args[-1] = Value::obj_val(ObjString::copyString(this, "Expected second argument to be a string.", 40));
+        return false;
+    }
+    
+    ObjInstance* instance = Value::as_instance(args[0]);
+    Value dummy;
+    args[-1] = Value::bool_val(instance->fields.tableGet(args[1], &dummy));
+    return true;
+}
+
 //====================================================================>
 
 VM::VM() : strings(), globalNames(), globalValues(this){
@@ -51,6 +68,13 @@ VM::VM() : strings(), globalNames(), globalValues(this){
     defineNative("error", &VM::errNative, 0);
     defineNative("runtimeError", &VM::runtimeErrNative, 1);
     defineNative("getLine", &VM::getLineNative, 0);
+    defineNative("hasField", &VM::hasFieldNative, 2);
+}
+
+void VM::resetStacks() {
+    std::deque<Value>().swap(stack);
+    std::deque<CallFrame>().swap(frames);
+    openUpvalues = nullptr;
 }
 
 uint8_t VM::read_byte(CallFrame* frame) {
@@ -433,7 +457,7 @@ void VM::runtimeError(const std::string& format, ... ) {
         }
     }
     
-    stack = std::deque<Value>();
+    resetStacks();
 }
 
 uint16_t VM::read_short(CallFrame* frame) {

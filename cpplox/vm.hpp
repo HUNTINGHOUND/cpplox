@@ -69,6 +69,8 @@ class VM {
     
     ObjFunction* getFrameFunction(CallFrame* frame);
     
+    void resetStacks();
+    
     //Native functions
     
     bool clockNative(int argCount, Value *args);
@@ -79,6 +81,7 @@ class VM {
     
     bool getLineNative(int argCount, Value* args);
     
+    bool hasFieldNative(int argCount, Value* args);
     
 public:
     Compiler* current;

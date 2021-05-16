@@ -6,7 +6,6 @@
 Table::Table() {
     count = 0;
     capacity = 0;
-    entries = std::vector<Entry>();
 }
 
 void Table::freeTable() {
@@ -18,7 +17,7 @@ bool Table::tableSet(Value key, Value value) {
         adjustCapacity(newCapacity);
     }
     
-    Entry* entry = findEntry(entries, key);
+    Entry* entry = findEntry(entries, key, this->capacity);
     
     bool isNewKey = entry->key.type == VAL_EMPTY;
     if (isNewKey && Value::is_nul(entry->value)) count++;
@@ -28,8 +27,8 @@ bool Table::tableSet(Value key, Value value) {
     return isNewKey;
 }
 
-Entry* Table::findEntry(std::vector<Entry>& entries, Value key) {
-    uint32_t index = Value::hashValue(key) % entries.capacity();
+Entry* Table::findEntry(std::vector<Entry>& entries, Value key, int capacity) {
+    uint32_t index = Value::hashValue(key) % capacity;
     Entry* tombstone = nullptr;
     
     while(true) {
@@ -50,9 +49,9 @@ Entry* Table::findEntry(std::vector<Entry>& entries, Value key) {
     }
 }
 
-void Table::adjustCapacity(int capacity) {
-    std::vector<Entry> newEntries(capacity);
-    for(int i = 0; i < capacity; i++) {
+void Table::adjustCapacity(int newCapacity) {
+    std::vector<Entry> newEntries(newCapacity);
+    for(int i = 0; i < newCapacity; i++) {
         newEntries[i].key = Value::empty_val();
         newEntries[i].value = Value::nul_val();
     }
@@ -62,14 +61,14 @@ void Table::adjustCapacity(int capacity) {
         Entry* entry = &entries[i];
         if(Value::is_empty(entry->key)) continue;
         
-        Entry* dest = findEntry(newEntries, entry->key);
+        Entry* dest = findEntry(newEntries, entry->key, newCapacity);
         dest->key = entry->key;
         dest->value = entry->value;
         count++;
     }
     
-    this->entries = newEntries;
-    this->capacity = capacity;
+    this->entries.swap(newEntries);
+    this->capacity = newCapacity;
     
 }
 
@@ -85,7 +84,7 @@ void Table::tableAddAll(Table* from) {
 bool Table::tableGet(Value key, Value *value) {
     if (count == 0) return false;
     
-    Entry* entry = findEntry(entries, key);
+    Entry* entry = findEntry(entries, key, this->capacity);
     if(Value::is_empty(entry->key)) return false;
     
     *value = entry->value;
@@ -95,7 +94,7 @@ bool Table::tableGet(Value key, Value *value) {
 bool Table::tableDelete(Value key) {
     if (count == 0) return false;
     
-    Entry* entry = findEntry(entries, key);
+    Entry* entry = findEntry(entries, key, this->capacity);
     if(Value::is_empty(entry->key)) return false;
     
     entry->key = Value::empty_val();

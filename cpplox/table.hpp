@@ -15,13 +15,13 @@
 #define TABLE_MAX_LOAD 0.65
 
 struct Entry {
-    Value key;
-    Value value;
+    Value key = Value::empty_val();
+    Value value = Value::empty_val();
 };
 
 class Table {
     
-    Entry* findEntry(std::vector<Entry>& entries, Value key);
+    Entry* findEntry(std::vector<Entry>& entries, Value key, int capacity);
     void adjustCapacity(int capacity);
     
 public:
