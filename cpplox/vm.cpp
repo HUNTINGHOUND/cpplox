@@ -54,6 +54,36 @@ bool VM::hasFieldNative(int argCount, Value* args) {
     return true;
 }
 
+bool VM::getFieldNative(int argCount, Value *args) {
+    if(!Value::is_instance(args[0])) {
+        args[-1] = Value::obj_val(ObjString::copyString(this, "Expected first argument to be a class instance.", 47));
+        return false;
+    }
+    
+    if(!Value::is_string(args[1])) {
+        args[-1] = Value::obj_val(ObjString::copyString(this, "Expected second argument to be a string.", 40));
+        return false;
+    }
+    
+    
+    ObjInstance* instance = Value::as_instance(args[0]);
+    Value field;
+    if(instance->fields.tableGet(args[1], &field)) {
+        args[-1] = field;
+        return true;
+    } else {
+        args[-1] = Value::obj_val(ObjString::copyString(this, "Instance does not contain given field.", 38));
+        return false;
+    }
+}
+
+bool VM::setFieldNative(int argCount, Value *args) {
+    ObjInstance* instance = Value::as_instance(args[0]);
+    instance->fields.tableSet(args[1], args[2]);
+    args[-1] = args[2];
+    return true;
+}
+
 //====================================================================>
 
 VM::VM() : strings(), globalNames(), globalValues(this){
@@ -69,6 +99,8 @@ VM::VM() : strings(), globalNames(), globalValues(this){
     defineNative("runtimeError", &VM::runtimeErrNative, 1);
     defineNative("getLine", &VM::getLineNative, 0);
     defineNative("hasField", &VM::hasFieldNative, 2);
+    defineNative("getField", &VM::getFieldNative, 2);
+    defineNative("setField", &VM::setFieldNative, 3);
 }
 
 void VM::resetStacks() {

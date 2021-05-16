@@ -83,6 +83,10 @@ class VM {
     
     bool hasFieldNative(int argCount, Value* args);
     
+    bool getFieldNative(int argCount, Value* args);
+    
+    bool setFieldNative(int argCount, Value* args);
+    
 public:
     Compiler* current;
     
