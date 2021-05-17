@@ -3,12 +3,15 @@
 #include "object.hpp"
 
 
-Table::Table() {
+Table::Table(VM* vm) {
+    this->vm = vm;
     count = 0;
     capacity = 0;
+    entries = nullptr;
 }
 
 void Table::freeTable() {
+    free_array(entries, capacity, vm);
 }
 
 bool Table::tableSet(Value key, Value value) {
@@ -27,7 +30,7 @@ bool Table::tableSet(Value key, Value value) {
     return isNewKey;
 }
 
-Entry* Table::findEntry(std::vector<Entry>& entries, Value key, int capacity) {
+Entry* Table::findEntry(Entry* entries, Value key, int capacity) {
     uint32_t index = Value::hashValue(key) % capacity;
     Entry* tombstone = nullptr;
     
@@ -50,7 +53,7 @@ Entry* Table::findEntry(std::vector<Entry>& entries, Value key, int capacity) {
 }
 
 void Table::adjustCapacity(int newCapacity) {
-    std::vector<Entry> newEntries(newCapacity);
+    Entry* newEntries = allocate<Entry>(newCapacity, vm);
     for(int i = 0; i < newCapacity; i++) {
         newEntries[i].key = Value::empty_val();
         newEntries[i].value = Value::nul_val();
@@ -67,7 +70,7 @@ void Table::adjustCapacity(int newCapacity) {
         count++;
     }
     
-    this->entries.swap(newEntries);
+    this->entries = newEntries;
     this->capacity = newCapacity;
     
 }
@@ -129,7 +132,7 @@ ObjString* Table::tableFindString(const char *chars, int length, uint32_t hash) 
 void Table::removeWhite(VM* vm) {
     for(int i = 0; i < capacity; i++) {
         Entry* entry = &entries[i];
-        if(Value::is_empty(entry->key) &&
+        if(!Value::is_empty(entry->key) &&
            Value::as_obj(entry->key)->mark != vm->marker) {
             tableDelete(entry->key);
         }

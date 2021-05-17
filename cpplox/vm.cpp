@@ -86,7 +86,7 @@ bool VM::setFieldNative(int argCount, Value *args) {
 
 //====================================================================>
 
-VM::VM() : strings(), globalNames(), globalValues(this){
+VM::VM() : strings(this), globalNames(this), globalValues(this){
     current = nullptr;
     objects = nullptr;
     openUpvalues = nullptr;
@@ -434,6 +434,22 @@ InterpretResult VM::run() {
                 stack.pop_back();
                 stack.push_back(value);
                 break;
+            }
+            case OP_DEL: {
+                if(!Value::is_instance(peek(0))) {
+                    runtimeError("Cannot reference property of non-instances.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                ObjInstance* instance = Value::as_instance(peek(0));
+                ObjString* name = read_string(frame);
+                if(instance->fields.tableDelete(Value::obj_val(name))) {
+                    stack.pop_back();
+                    break;
+                }
+                
+                runtimeError("Undefined Property '%s'.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
             }
         }
     }

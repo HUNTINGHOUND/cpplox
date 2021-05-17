@@ -7,7 +7,7 @@
 #endif
 
 
-ParseRule rules[48] = {
+ParseRule rules[49] = {
     [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, &Compiler::call,   PREC_CALL},
     [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
@@ -54,6 +54,7 @@ ParseRule rules[48] = {
     [TOKEN_SWITCH]        = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_CASE]          = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_DEFAULT]       = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_DEL]           = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_ERROR]         = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
 };
@@ -69,7 +70,7 @@ Local::Local() : name(TOKEN_NUL, "", 0, 0, 0) {
     this->isCaptured = false;
 }
 
-Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser) {
+Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser) : stringConstants(vm) {
     this->enclosing = enclosing;
     
     this->scanner = scanner;
@@ -388,6 +389,8 @@ void Compiler::statement() {
         switchStatement();
     } else if(match(TOKEN_RETURN)) {
         returnStatement();
+    } else if(match(TOKEN_DEL)) {
+        delStatement();
     } else {
         expressionStatement();
     }
@@ -469,11 +472,12 @@ uint8_t Compiler::globalConstant(Token *name, bool isConst) {
     }
     
     uint8_t newIndex = (uint8_t)vm->globalValues.count;
-    vm->globalValues.writeValueArray(Value::empty_val());
-    
     Value v = Value::number_val((double)newIndex);
     if(isConst) v.isConst = true;
     vm->globalNames.tableSet(identifier, v);
+    
+    vm->globalValues.writeValueArray(Value::empty_val());
+    
     return newIndex;
 }
 
@@ -487,20 +491,20 @@ void Compiler::defineVariable(uint8_t global) {
 }
 
 void Compiler::variable(bool canAssign) {
-    namedVariable(parser->previous, canAssign);
+    namedVariable(&parser->previous, canAssign);
 }
 
-void Compiler::namedVariable(Token name, bool canAssign) {
+void Compiler::namedVariable(Token* name, bool canAssign) {
     uint8_t getOp, setOp;
-    int arg = resolveLocal(&name);
+    int arg = resolveLocal(name);
     if (arg != -1) {
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
-    } else if((arg = resolveUpvalue(&name)) != -1) {
+    } else if((arg = resolveUpvalue(name)) != -1) {
         getOp = OP_GET_UPVALUE;
         setOp = OP_SET_UPVALUE;
     } else {
-        arg = globalConstant(&name, false);
+        arg = globalConstant(name, false);
         getOp = OP_GET_GLOBAL;
         setOp = OP_SET_GLOBAL;
     }
@@ -508,7 +512,7 @@ void Compiler::namedVariable(Token name, bool canAssign) {
     if (canAssign && match(TOKEN_EQUAL)) {
         if(setOp == OP_SET_GLOBAL) {
             Value index;
-            Value identifier = Value::obj_val(ObjString::copyString(vm, name.source.c_str(), name.length));
+            Value identifier = Value::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length));
             vm->globalNames.tableGet(identifier, &index);
             if(index.isConst) {
                 parser->error("Cannot assign to constant variable.");
@@ -1036,4 +1040,17 @@ uint8_t Compiler::addIdentifierConstant(Token *name) {
     uint8_t index = makeConstant(Value::obj_val(string));
     stringConstants.tableSet(Value::obj_val(string), Value::number_val((double)index));
     return index;
+}
+
+void Compiler::delStatement() {
+    parser->consume(TOKEN_IDENTIFIER, "Can only delete fields from a class instance.");
+    variable(true);
+    
+    parser->consume(TOKEN_DOT, "Can only delete fields.");
+    parser->consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
+    
+    uint8_t name = addIdentifierConstant(&parser->previous);
+    emitBytes(OP_DEL, name);
+    
+    parser->consume(TOKEN_SEMICOLON, "Expect ';' after del statement.");
 }

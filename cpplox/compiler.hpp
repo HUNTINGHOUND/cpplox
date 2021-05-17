@@ -151,7 +151,7 @@ class Compiler {
     
     void defineVariable(uint8_t global);
     
-    void namedVariable(Token name, bool canAssign);
+    void namedVariable(Token* name, bool canAssign);
     
     void beginScope();
     
@@ -200,6 +200,8 @@ class Compiler {
     int addUpvalue(uint8_t index, bool isLocal);
     
     void classDeclaration();
+    
+    void delStatement();
     
 public:
     

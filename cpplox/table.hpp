@@ -21,18 +21,21 @@ struct Entry {
 
 class Table {
     
-    Entry* findEntry(std::vector<Entry>& entries, Value key, int capacity);
+    VM* vm;
+    Entry* findEntry(Entry* entries, Value key, int capacity);
     void adjustCapacity(int capacity);
     
 public:
     
     int count;
     int capacity;
-    std::vector<Entry> entries;
+    
+    //consider replacing with pointer array
+    Entry* entries;
     
 
     
-    Table();
+    Table(VM* vm);
     void freeTable();
     bool tableSet(Value key, Value value);
     void tableAddAll(Table* from);

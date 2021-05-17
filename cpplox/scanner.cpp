@@ -131,17 +131,25 @@ TokenType Scanner::identifierType() {
                                 case 'n':
                                     if(current - start > 3) {
                                         switch (source[start + 3]) {
-                                            case 's':
-                                                return checkKeyword(4, 1, "t", TOKEN_CONST);
-                                            case 't':
-                                                return checkKeyword(4, 4, "inue", TOKEN_CONTINUE);
+                                            case 's': return checkKeyword(4, 1, "t", TOKEN_CONST);
+                                            case 't': return checkKeyword(4, 4, "inue", TOKEN_CONTINUE);
                                         }
                                     }
                             }
                         }
                 }
             }
-        case 'd': return checkKeyword(1, 6, "efault", TOKEN_DEFAULT);
+        case 'd': if (current - start > 1) {
+            switch (source[start + 1]) {
+                case 'e':
+                    if(current - start > 2) {
+                        switch (source[start + 2]) {
+                            case 'f': return checkKeyword(1, 4, "ault", TOKEN_DEFAULT);
+                            case 'l': return TOKEN_DEL;
+                        }
+                    }
+            }
+        }
         case 'e': return checkKeyword(1, 3, "lse", TOKEN_ELSE);
         case 'f':
             if (current - start > 1) {
@@ -159,10 +167,8 @@ TokenType Scanner::identifierType() {
         case 's':
             if(current - start > 1) {
                 switch(source[start + 1]) {
-                    case 'w':
-                        return checkKeyword(2, 4, "itch", TOKEN_SWITCH);
-                    case 'u':
-                        return checkKeyword(2, 3, "per", TOKEN_SUPER);
+                    case 'w': return checkKeyword(2, 4, "itch", TOKEN_SWITCH);
+                    case 'u': return checkKeyword(2, 3, "per", TOKEN_SUPER);
                 }
             }
         case 't':
