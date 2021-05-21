@@ -71,6 +71,10 @@ class VM {
     
     void resetStacks();
     
+    void defineMethod(ObjString* name);
+    
+    bool bindMethod(ObjClass* _class, ObjString* name);
+    
     //Native functions
     
     bool clockNative(int argCount, Value *args);

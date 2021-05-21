@@ -1007,6 +1007,7 @@ void Compiler::markCompilerRoots() {
 
 void Compiler::classDeclaration() {
     parser->consume(TOKEN_IDENTIFIER, "Expect class name.");
+    Token* className = &parser->previous;
     uint8_t global = globalConstant(&parser->previous, false);
     declareVariable(false);
     
@@ -1014,8 +1015,13 @@ void Compiler::classDeclaration() {
     emitBytes(OP_CLASS, name);
     defineVariable(global);
     
+    namedVariable(className, false);
     parser->consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+    while(!parser->check(TOKEN_RIGHT_BRACE) && !parser->check(TOKEN_EOF)) {
+        method();
+    }
     parser->consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+    emitByte(OP_POP);
 }
 
 void Compiler::dot(bool canAssign) {
@@ -1053,4 +1059,13 @@ void Compiler::delStatement() {
     emitBytes(OP_DEL, name);
     
     parser->consume(TOKEN_SEMICOLON, "Expect ';' after del statement.");
+}
+
+void Compiler::method() {
+    parser->consume(TOKEN_IDENTIFIER, "Expect method name.");
+    uint8_t constant = addIdentifierConstant(&parser->previous);
+    
+    FunctionType type = TYPE_FUNCTION;
+    _function(type);
+    emitBytes(OP_METHOD, constant);
 }

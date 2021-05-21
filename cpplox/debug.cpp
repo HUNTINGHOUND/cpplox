@@ -153,6 +153,8 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             return constantInstruction("OP_GET_PROPERTY", chunk, offset);
         case OP_DEL:
             return constantInstruction("OP_DEL", chunk, offset);
+        case OP_METHOD:
+            return constantInstruction("OP_METHOD", chunk, offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

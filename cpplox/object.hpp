@@ -14,7 +14,8 @@ enum ObjType : short{
     OBJ_CLOSURE,
     OBJ_UPVALUE,
     OBJ_CLASS,
-    OBJ_INSTANCE
+    OBJ_INSTANCE,
+    OBJ_BOUND_METHOD
 };
 
 enum FunctionType : short{
@@ -90,6 +91,7 @@ public:
 class ObjClass : public Obj {
 public:
     ObjString* name;
+    Table methods;
     
     static ObjClass* newClass(ObjString* name, VM* vm);
 };
@@ -100,6 +102,14 @@ public:
     Table fields;
     
     static ObjInstance* newInstance(ObjClass* _class, VM* vm);
+};
+
+class ObjBoundMethod : public Obj {
+public:
+    Value receiver;
+    Obj* method;
+    
+    static ObjBoundMethod* newBoundMethod(Value receiver, Obj* method, VM* vm);
 };
 
 #endif /* object_h */

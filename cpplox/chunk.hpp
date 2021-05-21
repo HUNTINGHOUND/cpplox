@@ -42,7 +42,8 @@ enum OpCode {
     OP_CLASS,
     OP_SET_PROPERTY,
     OP_GET_PROPERTY,
-    OP_DEL
+    OP_DEL,
+    OP_METHOD
 };
 
 //Data structure that represent a line in source code

@@ -12,6 +12,7 @@ class ObjNative;
 class ObjClosure;
 class ObjClass;
 class ObjInstance;
+class ObjBoundMethod;
 enum ObjType : short;
 class VM;
 
@@ -48,6 +49,7 @@ public:
     static bool is_closure(Value value);
     static bool is_class(Value value);
     static bool is_instance(Value value);
+    static bool is_bound_method(Value value);
     static bool isObjType(Value value, ObjType type);
     
     static bool as_bool(Value value);
@@ -60,6 +62,7 @@ public:
     static ObjClosure* as_closure(Value value);
     static ObjClass* as_class(Value value);
     static ObjInstance* as_instance(Value value);
+    static ObjBoundMethod* as_bound_method(Value value);
 
     static Value bool_val(bool value);
     static Value nul_val();
@@ -74,7 +77,9 @@ public:
     static void printValue(Value value);
     static void printFunction(ObjFunction* function);
     static uint32_t hashValue(Value value);
-};
+    
+    static ObjFunction* get_function(Value value);
+}; 
 
 
 class ValueArray {

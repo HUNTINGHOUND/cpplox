@@ -136,6 +136,9 @@ char* Value::as_c_string(Value value) {
 
 void Value::printObject(Value value) {
     switch(obj_type(value)) {
+        case OBJ_BOUND_METHOD:
+            printFunction(get_function(value));
+            break;
         case OBJ_STRING:
             std::cout << as_c_string(value);
             break;
@@ -235,4 +238,31 @@ bool Value::is_instance(Value value) {
 
 ObjInstance* Value::as_instance(Value value) {
     return (ObjInstance*)as_obj(value);
+}
+
+bool Value::is_bound_method(Value value) {
+    return isObjType(value, OBJ_BOUND_METHOD);
+}
+
+ObjBoundMethod* Value::as_bound_method(Value value) {
+    return ((ObjBoundMethod*)Value::as_obj(value));
+}
+
+ObjFunction* Value::get_function(Value value) {
+    Obj* obj = as_obj(value);
+    if(obj->type == OBJ_FUNCTION) {
+        return as_function(value);
+    } else if(obj->type == OBJ_CLOSURE) {
+        return as_closure(value)->function;
+    } else if(obj->type == OBJ_BOUND_METHOD) {
+        ObjBoundMethod* bound = as_bound_method(value);
+        if(bound->method->type == OBJ_FUNCTION) {
+            return (ObjFunction*)(bound->method);
+        } else {
+            ObjClosure* closure = (ObjClosure*)(bound->method);
+            return closure->function;
+        }
+    } else {
+        return nullptr;
+    }
 }

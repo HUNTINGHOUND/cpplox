@@ -203,6 +203,8 @@ class Compiler {
     
     void delStatement();
     
+    void method();
+    
 public:
     
     Scanner* scanner;

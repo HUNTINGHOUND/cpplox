@@ -108,6 +108,7 @@ ObjUpvalue* ObjUpvalue::newUpvalue(Value* slot, VM* vm) {
 ObjClass* ObjClass::newClass(ObjString* name, VM* vm) {
     ObjClass* _class = Obj::allocate_obj<ObjClass>(OBJ_CLASS, 0, vm);
     _class->name = name;
+    _class->methods = Table(vm);
     return _class;
 }
 
@@ -116,4 +117,11 @@ ObjInstance* ObjInstance::newInstance(ObjClass *_class, VM* vm) {
     instance->_class = _class;
     instance->fields = Table(vm);
     return instance;
+}
+
+ObjBoundMethod* ObjBoundMethod::newBoundMethod(Value receiver, Obj *method, VM* vm) {
+    ObjBoundMethod* bound = allocate_obj<ObjBoundMethod>(OBJ_BOUND_METHOD, 0, vm);
+    bound->method = method;
+    bound->receiver = receiver;
+    return bound;
 }

@@ -417,8 +417,11 @@ InterpretResult VM::run() {
                     break;
                 }
                 
-                runtimeError("Undefined property '%s'.", name->chars);
-                return INTERPRET_RUNTIME_ERROR;
+                if(!bindMethod(instance->_class, name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                break;
             }
             case OP_SET_PROPERTY: {
                 if(!Value::is_instance(peek(1))) {
@@ -450,6 +453,10 @@ InterpretResult VM::run() {
                 
                 runtimeError("Undefined Property '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
+            }
+            case OP_METHOD: {
+                defineMethod(read_string(frame));
+                break;
             }
         }
     }
@@ -516,6 +523,10 @@ uint16_t VM::read_short(CallFrame* frame) {
 bool VM::callValue(Value callee, int argCount) {
     if(Value::is_obj(callee)) {
         switch (Value::obj_type(callee)) {
+            case OBJ_BOUND_METHOD: {
+                ObjBoundMethod* bound = Value::as_bound_method(callee);
+                return call((Obj*)bound->method, Value::get_function(callee), argCount);
+            }
             case OBJ_NATIVE: {
                 ObjNative* native = Value::as_native(callee);
                 
@@ -623,4 +634,26 @@ ObjFunction* VM::getFrameFunction(CallFrame *frame) {
     } else {
         return ((ObjClosure*)frame->function)->function;
     }
+}
+
+void VM::defineMethod(ObjString *name) {
+    Value method = peek(0);
+    ObjClass* _class = Value::as_class(peek(1));
+    _class->methods.tableSet(Value::obj_val(name), method);
+    stack.pop_back();
+    
+}
+
+bool VM::bindMethod(ObjClass *_class, ObjString *name) {
+    Value method;
+    if(!_class->methods.tableGet(Value::obj_val(name), &method)) {
+        runtimeError("Undefined property '%s'.", name->chars);
+        return false;
+    }
+    
+    ObjBoundMethod* bound = ObjBoundMethod::newBoundMethod(peek(0), Value::as_obj(method), this);
+    
+    stack.pop_back();
+    stack.push_back(Value::obj_val(bound));
+    return true;
 }
