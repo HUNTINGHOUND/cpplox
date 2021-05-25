@@ -44,7 +44,7 @@ ParseRule rules[49] = {
     [TOKEN_PRINT]         = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_RETURN]        = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_SUPER]         = {nullptr,     nullptr,   PREC_NONE},
-    [TOKEN_THIS]          = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_THIS]          = {&Compiler::_this,       nullptr,   PREC_NONE},
     [TOKEN_TRUE]          = {&Compiler::literal,     nullptr,   PREC_NONE},
     [TOKEN_VAR]           = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_CONST]         = {nullptr,     nullptr,   PREC_NONE},
@@ -97,8 +97,14 @@ Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scan
     
     Local* local = &locals[localCount++];
     local->depth = 0;
-    local->name.source = "";
-    local->name.length = 0;
+    
+    if (type != TYPE_FUNCTION) {
+        local->name.source = "this";
+        local->name.length = 4;
+    } else {
+        local->name.source = "";
+        local->name.length = 0;
+    }
 }
 
 Parser::Parser(Scanner* scanner) : current(TOKEN_NUL, "", 0, 0, 0), previous(TOKEN_NUL, "", 0, 0, 0){
@@ -188,7 +194,11 @@ void Compiler::condition(bool canAssign) {
 }
 
 void Compiler::emitReturn() {
-    emitByte(OP_NUL);
+    if(type == TYPE_INITIALIZER) {
+        emitBytes(OP_GET_LOCAL, 0);
+    } else {
+        emitByte(OP_NUL);
+    }
     emitByte(OP_RETURN);
 }
 
@@ -955,6 +965,9 @@ void Compiler::returnStatement() {
     if(match(TOKEN_SEMICOLON)) {
         emitReturn();
     } else {
+        if(type == TYPE_INITIALIZER) {
+            parser->error("Can't return a value from an initializer.");
+        }
         expression();
         parser->consume(TOKEN_SEMICOLON, "Expect ';' after return.");
         emitByte(OP_RETURN);
@@ -1015,6 +1028,10 @@ void Compiler::classDeclaration() {
     emitBytes(OP_CLASS, name);
     defineVariable(global);
     
+    ClassCompiler classCompiler;
+    classCompiler.enclosing = vm->currentClass;
+    vm->currentClass = & classCompiler;
+    
     namedVariable(className, false);
     parser->consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
     while(!parser->check(TOKEN_RIGHT_BRACE) && !parser->check(TOKEN_EOF)) {
@@ -1022,6 +1039,8 @@ void Compiler::classDeclaration() {
     }
     parser->consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
     emitByte(OP_POP);
+    
+    vm->currentClass = vm->currentClass->enclosing;
 }
 
 void Compiler::dot(bool canAssign) {
@@ -1065,7 +1084,20 @@ void Compiler::method() {
     parser->consume(TOKEN_IDENTIFIER, "Expect method name.");
     uint8_t constant = addIdentifierConstant(&parser->previous);
     
-    FunctionType type = TYPE_FUNCTION;
+    FunctionType type = TYPE_METHOD;
+    
+    if(parser->previous.length == 4 && parser->previous.source.compare("init") == 0) {
+        type = TYPE_INITIALIZER;
+    }
+    
     _function(type);
     emitBytes(OP_METHOD, constant);
+}
+
+void Compiler::_this(bool canAssign) {
+    if(vm->currentClass == nullptr) {
+        parser->error("Can't use 'this' outside of a class.");
+        return;
+    }
+    variable(false);
 }

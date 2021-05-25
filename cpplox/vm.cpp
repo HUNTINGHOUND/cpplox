@@ -88,11 +88,15 @@ bool VM::setFieldNative(int argCount, Value *args) {
 
 VM::VM() : strings(this), globalNames(this), globalValues(this){
     current = nullptr;
+    currentClass = nullptr;
     objects = nullptr;
     openUpvalues = nullptr;
     bytesAllocated = 0;
     nextGC = 1024 * 1024;
     marker = true;
+    
+    initString = nullptr;
+    initString = ObjString::copyString(this, "init", 4);
     
     defineNative("clock", &VM::clockNative, 0);
     defineNative("error", &VM::errNative, 0);
@@ -146,6 +150,7 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
 
 void VM::freeVM() {
     strings.freeTable();
+    initString = nullptr;
     globalNames.freeTable();
     globalValues.freeValueArray();
     freeObjects(this);
@@ -525,6 +530,9 @@ bool VM::callValue(Value callee, int argCount) {
         switch (Value::obj_type(callee)) {
             case OBJ_BOUND_METHOD: {
                 ObjBoundMethod* bound = Value::as_bound_method(callee);
+                auto it = stack.end();
+                it[-argCount - 1] = bound->receiver;
+                
                 return call((Obj*)bound->method, Value::get_function(callee), argCount);
             }
             case OBJ_NATIVE: {
@@ -554,6 +562,15 @@ bool VM::callValue(Value callee, int argCount) {
                 ObjClass* _class = Value::as_class(callee);
                 Value* back = &stack.back();
                 back[-argCount] = Value::obj_val(ObjInstance::newInstance(_class, this));
+                
+                Value initializer;
+                if (_class->methods.tableGet(Value::obj_val(initString), &initializer)) {
+                    return call(Value::as_obj(initializer), Value::get_function(initializer), argCount);
+                } else if(argCount != 0) {
+                    runtimeError("Expected 0 argument but got %d.", argCount);
+                    return false;
+                }
+                
                 return true;
             }
             default:

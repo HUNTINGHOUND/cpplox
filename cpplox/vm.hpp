@@ -14,6 +14,7 @@
 #define STACK_MAX 256
 
 class Compiler;
+class ClassCompiler;
 
 enum InterpretResult {
     INTERPRET_OK,
@@ -93,6 +94,7 @@ class VM {
     
 public:
     Compiler* current;
+    ClassCompiler* currentClass;
     
     Chunk* chunk;
     uint8_t* ip;
@@ -109,6 +111,8 @@ public:
     Table strings;
     Table globalNames;
     ValueArray globalValues;
+    
+    ObjString* initString;
     
     Obj* objects;
     

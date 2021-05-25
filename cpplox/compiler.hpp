@@ -241,6 +241,8 @@ public:
     
     void dot(bool canAssign);
     
+    void _this(bool canAssign);
+    
     void markCompilerRoots();
     
     Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser);
@@ -261,5 +263,9 @@ public:
     static ParseRule* getRule(TokenType type);
 };
 
+class ClassCompiler {
+public:
+    ClassCompiler* enclosing;
+};
 
 #endif /* compiler_hpp */

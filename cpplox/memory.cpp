@@ -128,6 +128,7 @@ void GarbageCollector::markRoots(VM* vm) {
     
     markGlobal(&vm->globalNames, vm);
     if(vm->current != nullptr) vm->current->markCompilerRoots();
+    markObject(vm, (Obj*)vm->initString);
 }
 
 void markGlobal(Table* table, VM* vm) {
