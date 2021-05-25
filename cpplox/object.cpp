@@ -109,6 +109,7 @@ ObjClass* ObjClass::newClass(ObjString* name, VM* vm) {
     ObjClass* _class = Obj::allocate_obj<ObjClass>(OBJ_CLASS, 0, vm);
     _class->name = name;
     _class->methods = Table(vm);
+    _class->initializer = nullptr;
     return _class;
 }
 

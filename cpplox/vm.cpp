@@ -463,8 +463,46 @@ InterpretResult VM::run() {
                 defineMethod(read_string(frame));
                 break;
             }
+            case OP_INVOKE: {
+                ObjString* method = read_string(frame);
+                int argCount = read_byte(frame);
+                if(!invoke(method, argCount)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                frame = &frames.back();
+                break;
+            }
         }
     }
+}
+
+bool VM::invoke(ObjString *name, int argCount) {
+    Value receiver = peek(argCount);
+    if(!Value::is_instance(receiver)) {
+        runtimeError("Only instances have methods.");
+        return false;
+    }
+    
+    ObjInstance* instance = Value::as_instance(receiver);
+    
+    Value value;
+    if (instance->fields.tableGet(Value::obj_val(name), &value)) {
+        stack.end()[-argCount - 1] = value;
+        return callValue(value, argCount);
+    }
+    
+    return invokeFromClass(instance->_class, name, argCount);
+}
+
+bool VM::invokeFromClass(ObjClass *_class, ObjString *name, int argCount) {
+    Value method;
+    if (!_class->methods.tableGet(Value::obj_val(name), &method)) {
+        runtimeError("Undefined property '%s'.", name->chars);
+        return false;
+    }
+    
+    return call(Value::as_obj(method), Value::get_value_function(method), argCount);
 }
 
 
@@ -533,7 +571,7 @@ bool VM::callValue(Value callee, int argCount) {
                 auto it = stack.end();
                 it[-argCount - 1] = bound->receiver;
                 
-                return call((Obj*)bound->method, Value::get_function(callee), argCount);
+                return call((Obj*)bound->method, Value::get_value_function(callee), argCount);
             }
             case OBJ_NATIVE: {
                 ObjNative* native = Value::as_native(callee);
@@ -563,9 +601,8 @@ bool VM::callValue(Value callee, int argCount) {
                 Value* back = &stack.back();
                 back[-argCount] = Value::obj_val(ObjInstance::newInstance(_class, this));
                 
-                Value initializer;
-                if (_class->methods.tableGet(Value::obj_val(initString), &initializer)) {
-                    return call(Value::as_obj(initializer), Value::get_function(initializer), argCount);
+                if (_class->initializer) {
+                    return call(_class->initializer, Value::get_obj_function(_class->initializer), argCount);
                 } else if(argCount != 0) {
                     runtimeError("Expected 0 argument but got %d.", argCount);
                     return false;
@@ -657,6 +694,7 @@ void VM::defineMethod(ObjString *name) {
     Value method = peek(0);
     ObjClass* _class = Value::as_class(peek(1));
     _class->methods.tableSet(Value::obj_val(name), method);
+    if(name == initString) _class->initializer = Value::as_obj(method);
     stack.pop_back();
     
 }

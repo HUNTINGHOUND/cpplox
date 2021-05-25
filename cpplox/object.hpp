@@ -94,6 +94,7 @@ class ObjClass : public Obj {
 public:
     ObjString* name;
     Table methods;
+    Obj* initializer;
     
     static ObjClass* newClass(ObjString* name, VM* vm);
 };

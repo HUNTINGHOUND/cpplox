@@ -4,12 +4,12 @@
 #include "debug.hpp"
 #include "value.hpp"
 
-int Disassembler::simpleInstruction(const char* name, int offset) {
+int Disassembler::simpleInstruction(const std::string& name, int offset) {
     std::cout << name << std::endl;
     return offset + 1;
 }
 
-int Disassembler::constantInstruction(const char* name, Chunk* chunk, int offset) {
+int Disassembler::constantInstruction(const std::string& name, Chunk* chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)constant << " '";
     Value::printValue(chunk->constants.values[constant]);
@@ -17,7 +17,7 @@ int Disassembler::constantInstruction(const char* name, Chunk* chunk, int offset
     return offset + 2;
 }
 
-int Disassembler::constantLongInstruction(const char* name, Chunk* chunk, int offset) {
+int Disassembler::constantLongInstruction(const std::string& name, Chunk* chunk, int offset) {
     uint32_t constant = chunk->code[offset + 1];
     constant |= chunk->code[offset + 2] << 8;
     constant |= chunk->code[offset + 3] << 16;
@@ -28,19 +28,19 @@ int Disassembler::constantLongInstruction(const char* name, Chunk* chunk, int of
     return offset + 5;
 }
 
-int Disassembler::globalVarInstruction(const char *name, Chunk* chunk, VM *vm, int offset) {
+int Disassembler::globalVarInstruction(const std::string& name, Chunk* chunk, VM *vm, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)constant << std::endl;
     return offset + 2;
 }
 
-int Disassembler::byteInstruction(const char *name, Chunk *chunk, int offset) {
+int Disassembler::byteInstruction(const std::string& name, Chunk *chunk, int offset) {
     uint8_t slot = chunk->code[offset + 1];
     std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)slot << std::endl;
     return offset + 2;
 }
 
-int Disassembler::jumpInstruction(const char *name, int sign, Chunk *chunk, int offset) {
+int Disassembler::jumpInstruction(const std::string& name, int sign, Chunk *chunk, int offset) {
     uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8);
     jump |= chunk->code[offset + 2];
     std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)offset << " "
@@ -48,13 +48,23 @@ int Disassembler::jumpInstruction(const char *name, int sign, Chunk *chunk, int 
     return offset + 3;
 }
 
-void Disassembler::disassembleChunk(Chunk* chunk, VM* vm, const char* name) {
+int Disassembler::invokeInstruction(const std::string &name,Chunk *chunk, int offset) {
+    uint8_t constant = chunk->code[offset + 1];
+    uint8_t argCount = chunk->code[offset + 2];
+    std::cout << std::left << std::setw(16) << name << " (" << std::setw(0) << argCount << " args) '" << std::setw(4) << constant;
+    Value::printValue(chunk->constants.values[constant]);
+    std::cout << std::setw(0) << "'" << std::endl;
+    return offset + 3;
+}
+
+void Disassembler::disassembleChunk(Chunk* chunk, VM* vm, const std::string& name) {
     std::cout << "== " << name << " ==" << std::endl;
     
     for (int offset = 0; offset < chunk->count;) {
         offset = disassembleInstruction(chunk, vm, offset);
     }
 }
+
 
 int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
     std::cout << std::setw(4) << offset << " ";
@@ -155,6 +165,8 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             return constantInstruction("OP_DEL", chunk, offset);
         case OP_METHOD:
             return constantInstruction("OP_METHOD", chunk, offset);
+        case OP_INVOKE:
+            return invokeInstruction("OP_INVOKE", chunk, offset);
         default:
             std::cout << "Unknown instruction " << instruction <<std::endl;
             return offset + 1;

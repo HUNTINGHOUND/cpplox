@@ -92,6 +92,10 @@ class VM {
     
     bool setFieldNative(int argCount, Value* args);
     
+    bool invoke(ObjString* name, int argCount);
+    
+    bool invokeFromClass(ObjClass* _class, ObjString* name, int argCount);
+    
 public:
     Compiler* current;
     ClassCompiler* currentClass;

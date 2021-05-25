@@ -78,7 +78,8 @@ public:
     static void printFunction(ObjFunction* function);
     static uint32_t hashValue(Value value);
     
-    static ObjFunction* get_function(Value value);
+    static ObjFunction* get_value_function(Value value);
+    static ObjFunction* get_obj_function(Obj* obj);
 }; 
 
 

@@ -137,7 +137,7 @@ char* Value::as_c_string(Value value) {
 void Value::printObject(Value value) {
     switch(obj_type(value)) {
         case OBJ_BOUND_METHOD:
-            printFunction(get_function(value));
+            printFunction(get_value_function(value));
             break;
         case OBJ_STRING:
             std::cout << as_c_string(value);
@@ -248,7 +248,7 @@ ObjBoundMethod* Value::as_bound_method(Value value) {
     return ((ObjBoundMethod*)Value::as_obj(value));
 }
 
-ObjFunction* Value::get_function(Value value) {
+ObjFunction* Value::get_value_function(Value value) {
     Obj* obj = as_obj(value);
     if(obj->type == OBJ_FUNCTION) {
         return as_function(value);
@@ -256,6 +256,24 @@ ObjFunction* Value::get_function(Value value) {
         return as_closure(value)->function;
     } else if(obj->type == OBJ_BOUND_METHOD) {
         ObjBoundMethod* bound = as_bound_method(value);
+        if(bound->method->type == OBJ_FUNCTION) {
+            return (ObjFunction*)(bound->method);
+        } else {
+            ObjClosure* closure = (ObjClosure*)(bound->method);
+            return closure->function;
+        }
+    } else {
+        return nullptr;
+    }
+}
+
+ObjFunction* Value::get_obj_function(Obj* obj) {
+    if(obj->type == OBJ_FUNCTION) {
+        return (ObjFunction*)obj;
+    } else if(obj->type == OBJ_CLOSURE) {
+        return ((ObjClosure*)obj)->function;
+    } else if(obj->type == OBJ_BOUND_METHOD) {
+        ObjBoundMethod* bound = (ObjBoundMethod*)obj;
         if(bound->method->type == OBJ_FUNCTION) {
             return (ObjFunction*)(bound->method);
         } else {
