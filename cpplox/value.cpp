@@ -229,7 +229,8 @@ bool Value::is_class(Value value) {
 }
 
 ObjClass* Value::as_class(Value value) {
-    return (ObjClass*)as_obj(value);
+    if(value.type == OBJ_CLASS) return (ObjClass*)as_obj(value);
+    return nullptr;
 }
 
 bool Value::is_instance(Value value) {

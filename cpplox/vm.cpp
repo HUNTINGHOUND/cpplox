@@ -473,6 +473,42 @@ InterpretResult VM::run() {
                 frame = &frames.back();
                 break;
             }
+            case OP_INHERIT: {
+                ObjClass* superclass = Value::as_class(peek(1));
+                if(!superclass) {
+                    runtimeError("Superclass must be a class.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                ObjClass* subclass = Value::as_class(peek(0));
+                
+                subclass->methods.tableAddAll(&superclass->methods);
+                stack.pop_back();
+            }
+            case OP_GET_SUPER: {
+                ObjString* name = read_string(frame);
+                ObjClass* superclass = Value::as_class(stack.back());
+                stack.pop_back();
+                
+                if (!bindMethod(superclass, name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                break;
+            }
+            case OP_SUPER_INVOKE: {
+                ObjString* method = read_string(frame);
+                int argCount = read_byte(frame);
+                ObjClass* superclass = Value::as_class(stack.back());
+                stack.pop_back();
+                
+                if(!invokeFromClass(superclass, method, argCount)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                frame = &frames.back();
+                break;
+            }
         }
     }
 }

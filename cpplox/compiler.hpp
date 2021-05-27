@@ -243,6 +243,8 @@ public:
     
     void _this(bool canAssign);
     
+    void super(bool canAssign);
+    
     void markCompilerRoots();
     
     Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser);
@@ -266,6 +268,7 @@ public:
 class ClassCompiler {
 public:
     ClassCompiler* enclosing;
+    bool hasSuperclass;
 };
 
 #endif /* compiler_hpp */

@@ -39,6 +39,7 @@ struct Token {
     int line;
     
     Token(TokenType type, const std::string& source, int start, int length, int line);
+    static Token createToken(const std::string& text);
 };
 
 class Scanner {

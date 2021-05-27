@@ -43,7 +43,7 @@ ParseRule rules[49] = {
     [TOKEN_OR]            = {nullptr,     &Compiler::_or,   PREC_OR},
     [TOKEN_PRINT]         = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_RETURN]        = {nullptr,     nullptr,   PREC_NONE},
-    [TOKEN_SUPER]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_SUPER]         = {&Compiler::super,     nullptr,   PREC_NONE},
     [TOKEN_THIS]          = {&Compiler::_this,       nullptr,   PREC_NONE},
     [TOKEN_TRUE]          = {&Compiler::literal,     nullptr,   PREC_NONE},
     [TOKEN_VAR]           = {nullptr,     nullptr,   PREC_NONE},
@@ -1029,8 +1029,26 @@ void Compiler::classDeclaration() {
     defineVariable(global);
     
     ClassCompiler classCompiler;
+    classCompiler.hasSuperclass = false;
     classCompiler.enclosing = vm->currentClass;
-    vm->currentClass = & classCompiler;
+    vm->currentClass = &classCompiler;
+    
+    if (match(TOKEN_LESS)) {
+        parser->consume(TOKEN_IDENTIFIER, "Expect superclass name.");
+        variable(false);
+        
+        if(identifierEqual(className, &parser->previous)) {
+            parser->error("A class can't inherit from itself.");
+        }
+        
+        beginScope();
+        addLocal(Token::createToken("super"), true);
+        defineVariable(0);
+        
+        namedVariable(className, false);
+        emitByte(OP_INHERIT);
+        classCompiler.hasSuperclass = true;
+    }
     
     namedVariable(className, false);
     parser->consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
@@ -1039,6 +1057,10 @@ void Compiler::classDeclaration() {
     }
     parser->consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
     emitByte(OP_POP);
+    
+    if(classCompiler.hasSuperclass) {
+        endScope();
+    }
     
     vm->currentClass = vm->currentClass->enclosing;
 }
@@ -1105,4 +1127,28 @@ void Compiler::_this(bool canAssign) {
         return;
     }
     variable(false);
+}
+
+void Compiler::super(bool canAssign) {
+    if(!vm->currentClass) {
+        parser->error("Can't use 'super' outside of a class.");
+    } else if (!vm->currentClass->hasSuperclass) {
+        parser->error("Can't use 'super' int a class with no superclass.");
+    }
+    parser->consume(TOKEN_DOT, "Expect ',' after 'super'");
+    parser->consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
+    uint8_t name = addIdentifierConstant(&parser->previous);
+    
+    Token t = Token::createToken("this");
+    Token s = Token::createToken("super");
+    namedVariable(&t, false);
+    if(match(TOKEN_LEFT_PAREN)) {
+        uint8_t argCount = argumentList();
+        namedVariable(&s, false);
+        emitBytes(OP_SUPER_INVOKE, name);
+        emitByte(argCount);
+    } else {
+        namedVariable(&s, false);
+        emitBytes(OP_GET_SUPER, name);
+    }
 }

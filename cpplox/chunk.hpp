@@ -44,7 +44,10 @@ enum OpCode {
     OP_GET_PROPERTY,
     OP_DEL,
     OP_METHOD,
-    OP_INVOKE
+    OP_INVOKE,
+    OP_INHERIT,
+    OP_GET_SUPER,
+    OP_SUPER_INVOKE
 };
 
 //Data structure that represent a line in source code

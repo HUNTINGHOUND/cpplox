@@ -239,3 +239,9 @@ Token Scanner::scanToken() {
     
     return errorToken("Unexpected character.");
 }
+
+
+Token Token::createToken(const std::string& text) {
+    Token token(TOKEN_IDENTIFIER, text, 0, text.size(), 0);
+    return token;
+}
