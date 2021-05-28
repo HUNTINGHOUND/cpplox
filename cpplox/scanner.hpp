@@ -35,10 +35,10 @@ enum TokenType {
 struct Token {
     TokenType type;
     std::string source;
-    int length;
+    size_t length;
     int line;
     
-    Token(TokenType type, const std::string& source, int start, int length, int line);
+    Token(TokenType type, const std::string& source, int start, size_t length, int line);
     static Token createToken(const std::string& text);
 };
 

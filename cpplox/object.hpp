@@ -40,14 +40,14 @@ public:
 
 class ObjString : public Obj {
     
-    static ObjString* makeString(VM* vm, int length, uint32_t hash);
+    static ObjString* makeString(VM* vm, size_t length, uint32_t hash);
     
 public:
-    int length;
+    size_t length;
     uint32_t hash;
     char chars[];
-    static ObjString* copyString(VM* vm, const char* chars, int length);
-    static uint32_t hashString(const char* key, int length);
+    static ObjString* copyString(VM* vm, const char* chars, size_t length);
+    static uint32_t hashString(const char* key, size_t length);
 };
 
 class ObjFunction : public Obj{

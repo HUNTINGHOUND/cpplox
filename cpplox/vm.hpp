@@ -64,7 +64,7 @@ class VM {
     
     void defineNative(const std::string& name, NativeFn function, int arity);
     
-    ObjUpvalue* captureUpvalue(int localIndex);
+    ObjUpvalue* captureUpvalue(size_t localIndex);
     
     void closeUpvalues(Value* last);
     

@@ -39,7 +39,7 @@ inline void free_array(V* pointer, size_t oldCount, VM* vm) {
 }
 
 template<typename T>
-inline T* allocate(int count, VM* vm) {
+inline T* allocate(size_t count, VM* vm) {
     return (T*)reallocate(nullptr, 0, sizeof(T) * count, vm);
 }
 

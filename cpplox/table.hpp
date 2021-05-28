@@ -22,15 +22,14 @@ struct Entry {
 class Table {
     
     VM* vm;
-    Entry* findEntry(Entry* entries, Value key, int capacity);
-    void adjustCapacity(int capacity);
+    Entry* findEntry(Entry* entries, Value key, size_t capacity);
+    void adjustCapacity(size_t capacity);
     
 public:
     
     int count;
-    int capacity;
+    size_t capacity;
     
-    //consider replacing with pointer array
     Entry* entries;
     
 
@@ -42,7 +41,7 @@ public:
     bool tableGet(Value key, Value* value);
     bool tableDelete(Value key);
     void removeWhite(VM* vm);
-    ObjString* tableFindString(const char* chars, int length, uint32_t hash);
+    ObjString* tableFindString(const char* chars, size_t length, uint32_t hash);
 };
 
 #endif /* table_h */

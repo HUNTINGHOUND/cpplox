@@ -16,7 +16,7 @@ void Table::freeTable() {
 
 bool Table::tableSet(Value key, Value value) {
     if(count + 1 > capacity * TABLE_MAX_LOAD) {
-        int newCapacity = grow_capacity(capacity);
+        size_t newCapacity = grow_capacity(capacity);
         adjustCapacity(newCapacity);
     }
     
@@ -30,8 +30,8 @@ bool Table::tableSet(Value key, Value value) {
     return isNewKey;
 }
 
-Entry* Table::findEntry(Entry* entries, Value key, int capacity) {
-    uint32_t index = Value::hashValue(key) % capacity;
+Entry* Table::findEntry(Entry* entries, Value key, size_t capacity) {
+    uint32_t index = Value::hashValue(key) & (capacity - 1);
     Entry* tombstone = nullptr;
     
     while(true) {
@@ -48,11 +48,11 @@ Entry* Table::findEntry(Entry* entries, Value key, int capacity) {
             return entry;
         }
         
-        index = (index + 1) % capacity;
+        index = (index + 1) & (capacity - 1);
     }
 }
 
-void Table::adjustCapacity(int newCapacity) {
+void Table::adjustCapacity(size_t newCapacity) {
     Entry* newEntries = allocate<Entry>(newCapacity, vm);
     for(int i = 0; i < newCapacity; i++) {
         newEntries[i].key = Value::empty_val();
@@ -106,10 +106,10 @@ bool Table::tableDelete(Value key) {
     return true;
 }
 
-ObjString* Table::tableFindString(const char *chars, int length, uint32_t hash) {
+ObjString* Table::tableFindString(const char *chars, size_t length, uint32_t hash) {
     if (count == 0) return nullptr;
     
-    uint32_t index = hash % capacity;
+    uint32_t index = hash & (capacity - 1);
     
     while(true) {
         Entry* entry = &entries[index];
@@ -125,7 +125,7 @@ ObjString* Table::tableFindString(const char *chars, int length, uint32_t hash) 
             }
         }
         
-        index = (index + 1) % capacity;
+        index = (index + 1) & (capacity - 1);
     }
 }
 

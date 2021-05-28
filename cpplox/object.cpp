@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-uint32_t ObjString::hashString(const char* key, int length) {
+uint32_t ObjString::hashString(const char* key, size_t length) {
     uint32_t hash = 2166136261u;
 
     for (int i = 0; i < length; i++) {
@@ -37,7 +37,7 @@ Obj* Obj::allocateObject(size_t size, ObjType type, VM* vm) {
     return object;
 }
 
-ObjString* ObjString::makeString(VM* vm, int length, uint32_t hash) {
+ObjString* ObjString::makeString(VM* vm, size_t length, uint32_t hash) {
     ObjString* string = Obj::allocate_obj<ObjString>(OBJ_STRING, sizeof(char) * (length + 1), vm);
     string->length = length;
     string->hash = hash;
@@ -51,7 +51,7 @@ ObjString* ObjString::makeString(VM* vm, int length, uint32_t hash) {
     return string;
 }
 
-ObjString* ObjString::copyString(VM* vm, const char* chars, int length) {
+ObjString* ObjString::copyString(VM* vm, const char* chars, size_t length) {
     uint32_t hash = hashString(chars, length);
     ObjString* interned = vm->strings.tableFindString(chars, length,
                                              hash);

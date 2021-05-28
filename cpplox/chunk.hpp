@@ -52,8 +52,8 @@ enum OpCode {
 
 //Data structure that represent a line in source code
 struct Line{
-    int start;
-    int line;
+    size_t start;
+    size_t line;
 };
 
 class Chunk {

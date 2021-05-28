@@ -71,7 +71,7 @@ struct Local {
 };
 
 struct Break {
-    int position;
+    size_t position;
     int depth;
 };
 
@@ -169,9 +169,9 @@ class Compiler {
     
     void ifStatement();
     
-    int emitJump(uint8_t instruction);
+    size_t emitJump(uint8_t instruction);
     
-    void patchJump(int offset);
+    void patchJump(size_t offset);
     
     void whileStatement();
     

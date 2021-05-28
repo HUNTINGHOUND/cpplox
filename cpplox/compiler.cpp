@@ -121,7 +121,7 @@ void Parser::errorAt(Token* token, const std::string& message) {
     } else if (token->type == TOKEN_ERROR) {
         //nothing
     } else {
-        fprintf(stderr, " at '%.*s'", token->length, token->source.c_str());
+        std::cerr << " at " << token->source;
     }
     
     std::cerr << ": " << message << std::endl;
@@ -624,11 +624,11 @@ void Compiler::ifStatement() {
     expression();
     parser->consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
     
-    int thenJump = emitJump(OP_JUMP_IF_FALSE);
+    size_t thenJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
     statement();
     
-    int elseJump = emitJump(OP_JUMP);
+    size_t elseJump = emitJump(OP_JUMP);
     
     patchJump(thenJump);
     emitByte(OP_POP);
@@ -637,15 +637,15 @@ void Compiler::ifStatement() {
     patchJump(elseJump);
 }
 
-int Compiler::emitJump(uint8_t instruction) {
+size_t Compiler::emitJump(uint8_t instruction) {
     emitByte(instruction);
     emitByte(0xff);
     emitByte(0xff);
     return currentChunk()->count - 2;
 }
 
-void Compiler::patchJump(int offset) {
-    int jump = currentChunk()->count - offset - 2;
+void Compiler::patchJump(size_t offset) {
+    size_t jump = currentChunk()->count - offset - 2;
     if (jump > UINT16_MAX) {
         parser->error("Too much code to jump over.");
     }
@@ -655,14 +655,14 @@ void Compiler::patchJump(int offset) {
 }
 
 void Compiler::patchBreaks() {
-    for(int i = breakStatements.size() - 1; i >= 0 && breakStatements[i].depth >= innermostLoopScopeDepth; i--) {
+    for(int i = (int)breakStatements.size() - 1; i >= 0 && breakStatements[i].depth >= innermostLoopScopeDepth; i--) {
         patchJump(breakStatements[i].position);
         breakStatements.pop_back();
     }
 }
 
 void Compiler::_and(bool canAssign) {
-    int endJump = emitJump(OP_JUMP_IF_FALSE);
+    size_t endJump = emitJump(OP_JUMP_IF_FALSE);
     
     emitByte(OP_POP);
     parsePrecedence(PREC_AND);
@@ -671,8 +671,8 @@ void Compiler::_and(bool canAssign) {
 }
 
 void Compiler::_or(bool canAssign) {
-    int elseJump = emitJump(OP_JUMP_IF_FALSE);
-    int endJump = emitJump(OP_JUMP);
+    size_t elseJump = emitJump(OP_JUMP_IF_FALSE);
+    size_t endJump = emitJump(OP_JUMP);
     
     patchJump(elseJump);
     emitByte(OP_POP);
@@ -684,14 +684,14 @@ void Compiler::_or(bool canAssign) {
 void Compiler::whileStatement() {
     int surroundingLoopStart = innermostLoopStart;
     int surroundingLoopScopeDepth = innermostLoopScopeDepth;
-    innermostLoopStart = currentChunk()->count;
+    innermostLoopStart = (int)currentChunk()->count;
     innermostLoopScopeDepth = scopeDepth;
     
     parser->consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
     expression();
     parser->consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition");
     
-    int exitJump = emitJump(OP_JUMP_IF_FALSE);
+    size_t exitJump = emitJump(OP_JUMP_IF_FALSE);
     
     emitByte(OP_POP);
     statement();
@@ -710,7 +710,7 @@ void Compiler::whileStatement() {
 void Compiler::emitLoop(int loopStart) {
     emitByte(OP_LOOP);
     
-    int offset = currentChunk()->count - loopStart + 2;
+    int offset = (int)currentChunk()->count - loopStart + 2;
     if (offset > UINT16_MAX) parser->error("Loop body too large.");
     
     emitByte((offset >> 8) & 0xff);
@@ -732,7 +732,7 @@ void Compiler::forStatement() {
     
     int surroundingLoopStart = innermostLoopStart;
     int surroundingLoopScopeDepth = innermostLoopScopeDepth;
-    innermostLoopStart = currentChunk()->count;
+    innermostLoopStart = (int)currentChunk()->count;
     innermostLoopScopeDepth = scopeDepth;
     
     int exitJump = -1;
@@ -740,14 +740,14 @@ void Compiler::forStatement() {
         expression();
         parser->consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
         
-        exitJump = emitJump(OP_JUMP_IF_FALSE);
+        exitJump = (int)emitJump(OP_JUMP_IF_FALSE);
         emitByte(OP_POP);//Popping the condition to keep the stack clean
     }
     
     if(!match(TOKEN_RIGHT_PAREN)) {
-        int bodyJump = emitJump(OP_JUMP);
+        size_t bodyJump = emitJump(OP_JUMP);
         
-        int incrementStart = currentChunk()->count;
+        int incrementStart = (int)currentChunk()->count;
         expression();
         emitByte(OP_POP);
         parser->consume(TOKEN_RIGHT_PAREN, "Expect ')'.");
@@ -819,7 +819,7 @@ void Compiler::switchStatement() {
     beginScope();
     int surroundingLoopStart = innermostLoopStart;
     int surroundingLoopScopeDepth = innermostLoopScopeDepth;
-    innermostLoopStart = currentChunk()->count;
+    innermostLoopStart = (int)currentChunk()->count;
     innermostLoopScopeDepth = scopeDepth;
     
     int state = BEFORE_CASES;
@@ -836,7 +836,7 @@ void Compiler::switchStatement() {
             }
             
             if(state == 1) {
-                int previousCaseEnds = emitJump(OP_JUMP);
+                size_t previousCaseEnds = emitJump(OP_JUMP);
                 caseCount++;
                 if(caseCount == MAX_CASES) {
                     parser->error("Too many cases in switch statement");
@@ -857,7 +857,7 @@ void Compiler::switchStatement() {
                 parser->consume(TOKEN_COLON, "Expect ':' after case value.");
                 
                 emitByte(OP_EQUAL);
-                previousCaseSkip = emitJump(OP_JUMP_IF_FALSE);
+                previousCaseSkip = (int)emitJump(OP_JUMP_IF_FALSE);
                 
                 emitByte(OP_POP);
                 

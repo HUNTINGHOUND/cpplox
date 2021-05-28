@@ -1,7 +1,7 @@
 #include "scanner.hpp"
 
 
-Token::Token(TokenType type, const std::string& source, int start, int length, int line) {
+Token::Token(TokenType type, const std::string& source, int start, size_t length, int line) {
     this->type = type;
     this->source = source.substr(start, length);
     this->length = length;

@@ -38,6 +38,9 @@ void Value::printValue(Value value) {
         case VAL_OBJ:
             printObject(value);
             break;
+        case VAL_EMPTY:
+            std::cout << "empty";
+            break;
     }
 }
 
@@ -229,7 +232,7 @@ bool Value::is_class(Value value) {
 }
 
 ObjClass* Value::as_class(Value value) {
-    if(value.type == OBJ_CLASS) return (ObjClass*)as_obj(value);
+    if(value.as.obj->type == OBJ_CLASS) return (ObjClass*)as_obj(value);
     return nullptr;
 }
 

@@ -546,7 +546,7 @@ void VM::concatenate() {
     ObjString* b = Value::as_string(peek(0));
     ObjString* a = Value::as_string(peek(1));
     
-    int length = a->length + b->length;
+    size_t length = a->length + b->length;
     char* newString = allocate<char>(length + 1, this);
     memcpy(newString, a->chars, a->length);
     memcpy(newString+ a->length, b->chars, b->length);
@@ -577,7 +577,7 @@ void VM::runtimeError(const std::string& format, ... ) {
     va_end(args);
     std::cerr << std::endl;
     
-    for (int i = frames.size() - 1; i >= 0; i--) {
+    for (int i = (int)frames.size() - 1; i >= 0; i--) {
         CallFrame* frame = &frames[i];
         ObjFunction* function = getFrameFunction(frame);
         
@@ -687,7 +687,7 @@ void VM::defineNative(const std::string& name, NativeFn function, int arity) {
     stack.pop_back();
 }
 
-ObjUpvalue* VM::captureUpvalue(int localIndex) {
+ObjUpvalue* VM::captureUpvalue(size_t localIndex) {
     ObjUpvalue* prevUpvalue = nullptr;
     ObjUpvalue* upvalue = openUpvalues;
     

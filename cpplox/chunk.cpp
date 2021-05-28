@@ -52,17 +52,17 @@ int Chunk::addConstant(Value value) {
     vm->stack.push_back(value);
     this->constants.writeValueArray(value);
     vm->stack.pop_back();
-    return this->constants.count - 1;
+    return (int)this->constants.count - 1;
 }
 
 int Chunk::getLine(size_t index) {
     int left = 0;
-    int right = this->lineCount - 1;
+    int right = (int)this->lineCount - 1;
     while(left < right - 1) {
         int mid = left + (right - left) / 2;
         
         if(this->lines[mid].start == index) {
-            return this->lines[mid].line;
+            return (int)this->lines[mid].line;
         } else if (this->lines[mid].start < index) {
             left = mid;
         } else {
@@ -70,7 +70,7 @@ int Chunk::getLine(size_t index) {
         }
     }
     
-    return this->lines[right].start > index ? this->lines[left].line : this->lines[right].line;
+    return this->lines[right].start > index ? (int)this->lines[left].line : (int)this->lines[right].line;
 }
 
 void Chunk::writeConstant(Value value, int line) {
