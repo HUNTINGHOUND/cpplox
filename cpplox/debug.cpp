@@ -2,7 +2,12 @@
 #include <iostream>
 #include <iomanip>
 #include "debug.hpp"
+
+#ifdef NAN_BOXING
+#include "nanvalue.hpp"
+#else
 #include "value.hpp"
+#endif
 
 int Disassembler::simpleInstruction(const std::string& name, int offset) {
     std::cout << name << std::endl;
@@ -12,7 +17,7 @@ int Disassembler::simpleInstruction(const std::string& name, int offset) {
 int Disassembler::constantInstruction(const std::string& name, Chunk* chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)constant << " '";
-    Value::printValue(chunk->constants.values[constant]);
+    ValueOP::printValue(chunk->constants.values[constant]);
     std::cout << "'" << std::endl;
     return offset + 2;
 }
@@ -23,7 +28,7 @@ int Disassembler::constantLongInstruction(const std::string& name, Chunk* chunk,
     constant |= chunk->code[offset + 3] << 16;
     constant |= chunk->code[offset + 4] << 24;
     std::cout << std::left << std::setw(16) << name << " " << std::right << std::setw(4) << (int)constant << " '";
-    Value::printValue(chunk->constants.values[constant]);
+    ValueOP::printValue(chunk->constants.values[constant]);
     std::cout << "'" << std::endl;
     return offset + 5;
 }
@@ -52,7 +57,7 @@ int Disassembler::invokeInstruction(const std::string &name,Chunk *chunk, int of
     uint8_t constant = chunk->code[offset + 1];
     uint8_t argCount = chunk->code[offset + 2];
     std::cout << std::left << std::setw(16) << name << " (" << std::setw(0) << argCount << " args) '" << std::setw(4) << constant;
-    Value::printValue(chunk->constants.values[constant]);
+    ValueOP::printValue(chunk->constants.values[constant]);
     std::cout << std::setw(0) << "'" << std::endl;
     return offset + 3;
 }
@@ -140,10 +145,10 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             offset++;
             uint8_t constant = chunk->code[offset];
             std::cout << std::left << std::setw(16) << "OP_CLOSURE" << std::right << std::setw(4) << constant << " ";
-            Value::printValue(chunk->constants.values[constant]);
+            ValueOP::printValue(chunk->constants.values[constant]);
             std::cout << std::endl;
             
-            ObjFunction* function = Value::as_function(
+            ObjFunction* function = ValueOP::as_function(
                                                        chunk->constants.values[constant]);
             for(int j = 0; j < function->upvalueCount; j++) {
                 int isLocal = chunk->code[offset++];

@@ -2,6 +2,7 @@
 #include "memory.hpp"
 #include "vm.hpp"
 #include "table.hpp"
+#include "chunk.hpp"
 #include <iostream>
 
 
@@ -42,9 +43,9 @@ ObjString* ObjString::makeString(VM* vm, size_t length, uint32_t hash) {
     string->length = length;
     string->hash = hash;
     
-    vm->stack.push_back(Value::obj_val(string));
+    vm->stack.push_back(ValueOP::obj_val(string));
     
-    vm->strings.tableSet(Value::obj_val(string), Value::nul_val());
+    vm->strings.tableSet(ValueOP::obj_val(string), ValueOP::nul_val());
     
     vm->stack.pop_back();
     
@@ -101,7 +102,7 @@ ObjUpvalue* ObjUpvalue::newUpvalue(Value* slot, VM* vm) {
     ObjUpvalue* upvalue = allocate_obj<ObjUpvalue>(OBJ_UPVALUE, 0, vm);
     upvalue->nextUp = nullptr;
     upvalue->location = slot;
-    upvalue->closed = Value::nul_val();
+    upvalue->closed = ValueOP::nul_val();
     return upvalue;
 }
 

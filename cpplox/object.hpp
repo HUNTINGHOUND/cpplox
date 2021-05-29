@@ -2,8 +2,8 @@
 #define object_h
 
 #include "flags.hpp"
-#include "chunk.hpp"
 #include "table.hpp"
+#include "chunk.hpp"
 
 class VM;
 

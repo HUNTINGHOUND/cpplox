@@ -4,6 +4,7 @@
 
 #include "chunk.hpp"
 #include "memory.hpp"
+#include "valuearray.hpp"
 
 Chunk::Chunk(VM* vm) : constants(vm) {
     this->count = 0;

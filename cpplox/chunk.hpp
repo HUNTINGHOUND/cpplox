@@ -1,10 +1,18 @@
 #ifndef chunk_h
 #define chunk_h
 
-#include "value.hpp"
 #include <vector>
+#include "valuearray.hpp"
+
+#ifdef NANBOXING
+#include "nanvalue.hpp"
+#else
+#include "value.hpp"
+#endif
+
 
 class VM;
+class ValueArray;
 
 enum OpCode {
     OP_CONSTANT,

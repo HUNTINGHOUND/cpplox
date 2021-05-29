@@ -1,9 +1,15 @@
 #include "memory.hpp"
-#include "value.hpp"
 #include "chunk.hpp"
 #include "debug.hpp"
 #include "compiler.hpp"
-#include <iostream>
+#include "valuearray.hpp"
+
+
+#ifdef NAN_BOXING
+#include "nanvalue.hpp"
+#else
+#include "value.hpp"
+#endif
 
 void* reallocate(void* pointer, size_t oldsize, size_t newsize, VM* vm) {
     vm->bytesAllocated += newsize - oldsize;
@@ -134,16 +140,16 @@ void GarbageCollector::markRoots(VM* vm) {
 void markGlobal(Table* table, VM* vm) {
     for(int i = 0; i < table->capacity; i++) {
         Entry* entry = &table->entries[i];
-        if(Value::is_obj(entry->key)) {
-            markObject(vm, Value::as_obj(entry->key));
-            markValue(vm, vm->globalValues.values[(int)Value::as_number(entry->value)]);
+        if(ValueOP::is_obj(entry->key)) {
+            markObject(vm, ValueOP::as_obj(entry->key));
+            markValue(vm, vm->globalValues.values[(int)ValueOP::as_number(entry->value)]);
         }
     }
 }
 
 void markValue(VM* vm, Value value) {
-    if(!Value::is_obj(value)) return;
-    markObject(vm, Value::as_obj(value));
+    if(!ValueOP::is_obj(value)) return;
+    markObject(vm, ValueOP::as_obj(value));
 }
 
 void markObject(VM* vm, Obj* object) {
@@ -155,7 +161,7 @@ void markObject(VM* vm, Obj* object) {
     
 #ifdef DEBUG_LOG_GC
     std::cout << (void*)object << " mark ";
-    Value::printValue(Value::obj_val(object));
+    ValueOP::printValue(ValueOP::obj_val(object));
     std::cout << std::endl;
 #endif
 }
@@ -171,7 +177,7 @@ void traceReferences(VM* vm) {
 void blackenObject(Obj* object, VM* vm) {
 #ifdef DEBUG_LOG_GC
     std::cout << (void*)object << " blacken ";
-    Value::printValue(Value::obj_val(object));
+    ValueOP::printValue(ValueOP::obj_val(object));
     std::cout << std::endl;
 #endif
     

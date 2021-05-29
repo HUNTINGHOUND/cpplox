@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9081509D2661EE57001E461C /* valuearray.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9081509B2661EE57001E461C /* valuearray.cpp */; };
 		9085E84F25F54A9F00C0E1F0 /* object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9085E84E25F54A9F00C0E1F0 /* object.cpp */; };
 		9085E94825FD0DE900C0E1F0 /* table.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9085E94725FD0DE800C0E1F0 /* table.cpp */; };
 		90A4207E25DFB71500DE641F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4C025BC870C003A74C5 /* main.cpp */; };
@@ -32,6 +33,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9081509A2661EDF9001E461C /* nanvalue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = nanvalue.hpp; sourceTree = "<group>"; };
+		9081509B2661EE57001E461C /* valuearray.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = valuearray.cpp; sourceTree = "<group>"; };
+		9081509C2661EE57001E461C /* valuearray.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = valuearray.hpp; sourceTree = "<group>"; };
 		9085E84C25F367B100C0E1F0 /* object.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = object.hpp; sourceTree = "<group>"; };
 		9085E84E25F54A9F00C0E1F0 /* object.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = object.cpp; sourceTree = "<group>"; };
 		9085E94625FD0D5900C0E1F0 /* table.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = table.hpp; sourceTree = "<group>"; };
@@ -101,6 +105,9 @@
 				90E1B4EF25C011C5003A74C5 /* scanner.hpp */,
 				90E1B4DD25BC9C34003A74C5 /* value.cpp */,
 				90E1B4DC25BC9AF7003A74C5 /* value.hpp */,
+				9081509A2661EDF9001E461C /* nanvalue.hpp */,
+				9081509B2661EE57001E461C /* valuearray.cpp */,
+				9081509C2661EE57001E461C /* valuearray.hpp */,
 				90E1B4E325BD98D8003A74C5 /* vm.cpp */,
 				90E1B4E125BD8518003A74C5 /* vm.hpp */,
 				9085E94725FD0DE800C0E1F0 /* table.cpp */,
@@ -167,6 +174,7 @@
 			files = (
 				90A4208D25DFB75600DE641F /* chunk.cpp in Sources */,
 				9085E84F25F54A9F00C0E1F0 /* object.cpp in Sources */,
+				9081509D2661EE57001E461C /* valuearray.cpp in Sources */,
 				9085E94825FD0DE900C0E1F0 /* table.cpp in Sources */,
 				90A4208B25DFB74C00DE641F /* vm.cpp in Sources */,
 				90A4208925DFB74800DE641F /* value.cpp in Sources */,

@@ -22,8 +22,8 @@ bool Table::tableSet(Value key, Value value) {
     
     Entry* entry = findEntry(entries, key, this->capacity);
     
-    bool isNewKey = entry->key.type == VAL_EMPTY;
-    if (isNewKey && Value::is_nul(entry->value)) count++;
+    bool isNewKey = ValueOP::is_empty(key);
+    if (isNewKey && ValueOP::is_nul(entry->value)) count++;
     
     entry->key = key;
     entry->value = value;
@@ -31,19 +31,19 @@ bool Table::tableSet(Value key, Value value) {
 }
 
 Entry* Table::findEntry(Entry* entries, Value key, size_t capacity) {
-    uint32_t index = Value::hashValue(key) & (capacity - 1);
+    uint32_t index = ValueOP::hashValue(key) & (capacity - 1);
     Entry* tombstone = nullptr;
     
     while(true) {
         Entry* entry = &entries[index];
         
-        if(Value::is_empty(entry->key)) {
-            if(Value::is_nul(entry->value)) {
+        if(ValueOP::is_empty(entry->key)) {
+            if(ValueOP::is_nul(entry->value)) {
                 return tombstone != nullptr ? tombstone : entry;
             } else {
                 if (tombstone == nullptr) tombstone = entry;
             }
-        } else if(Value::valuesEqual(key, entry->key)) {
+        } else if(ValueOP::valuesEqual(key, entry->key)) {
             
             return entry;
         }
@@ -55,14 +55,14 @@ Entry* Table::findEntry(Entry* entries, Value key, size_t capacity) {
 void Table::adjustCapacity(size_t newCapacity) {
     Entry* newEntries = allocate<Entry>(newCapacity, vm);
     for(int i = 0; i < newCapacity; i++) {
-        newEntries[i].key = Value::empty_val();
-        newEntries[i].value = Value::nul_val();
+        newEntries[i].key = ValueOP::empty_val();
+        newEntries[i].value = ValueOP::nul_val();
     }
     
     count = 0;
     for (int i = 0; i < this->capacity; i++) {
         Entry* entry = &entries[i];
-        if(Value::is_empty(entry->key)) continue;
+        if(ValueOP::is_empty(entry->key)) continue;
         
         Entry* dest = findEntry(newEntries, entry->key, newCapacity);
         dest->key = entry->key;
@@ -78,7 +78,7 @@ void Table::adjustCapacity(size_t newCapacity) {
 void Table::tableAddAll(Table* from) {
     for (int i = 0; i < from->capacity; i++) {
         Entry* entry = &from->entries[i];
-        if(Value::is_empty(entry->key)) {
+        if(ValueOP::is_empty(entry->key)) {
             tableSet(entry->key, entry->value);
         }
     }
@@ -88,7 +88,7 @@ bool Table::tableGet(Value key, Value *value) {
     if (count == 0) return false;
     
     Entry* entry = findEntry(entries, key, this->capacity);
-    if(Value::is_empty(entry->key)) return false;
+    if(ValueOP::is_empty(entry->key)) return false;
     
     *value = entry->value;
     return true;
@@ -98,10 +98,10 @@ bool Table::tableDelete(Value key) {
     if (count == 0) return false;
     
     Entry* entry = findEntry(entries, key, this->capacity);
-    if(Value::is_empty(entry->key)) return false;
+    if(ValueOP::is_empty(entry->key)) return false;
     
-    entry->key = Value::empty_val();
-    entry->value = Value::bool_val(true);
+    entry->key = ValueOP::empty_val();
+    entry->value = ValueOP::bool_val(true);
     
     return true;
 }
@@ -113,11 +113,11 @@ ObjString* Table::tableFindString(const char *chars, size_t length, uint32_t has
     
     while(true) {
         Entry* entry = &entries[index];
-        if (Value::is_empty(entry->key)) {
-            if (Value::is_nul(entry->value)) return nullptr;
-        } else if(Value::is_obj(entry->key) && Value::is_string(entry->key)){
+        if (ValueOP::is_empty(entry->key)) {
+            if (ValueOP::is_nul(entry->value)) return nullptr;
+        } else if(ValueOP::is_obj(entry->key) && ValueOP::is_string(entry->key)){
             
-            ObjString* key = Value::as_string(entry->key);
+            ObjString* key = ValueOP::as_string(entry->key);
             
             if (key->length == length && key->hash == hash &&
                 memcmp(key->chars, chars, length) == 0) {
@@ -132,8 +132,8 @@ ObjString* Table::tableFindString(const char *chars, size_t length, uint32_t has
 void Table::removeWhite(VM* vm) {
     for(int i = 0; i < capacity; i++) {
         Entry* entry = &entries[i];
-        if(!Value::is_empty(entry->key) &&
-           Value::as_obj(entry->key)->mark != vm->marker) {
+        if(!ValueOP::is_empty(entry->key) &&
+           ValueOP::as_obj(entry->key)->mark != vm->marker) {
             tableDelete(entry->key);
         }
     }

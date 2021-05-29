@@ -2,8 +2,11 @@
 #define memory_h
 
 #include <vector>
+#include <iostream>
 #include "vm.hpp"
 #include "object.hpp"
+
+class ValueArray;
 
 //central allocation method that helps keep track of memory usage
 void* reallocate(void* pointer, size_t oldsize, size_t newsize, VM* vm);

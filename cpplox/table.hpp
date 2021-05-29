@@ -9,14 +9,19 @@
 #define table_h
 
 #include "flags.hpp"
-#include "value.hpp"
 #include <vector>
+
+#ifdef NAN_BOXING
+#include "nanvalue.hpp"
+#else
+#include "value.hpp"
+#endif
 
 #define TABLE_MAX_LOAD 0.65
 
 struct Entry {
-    Value key = Value::empty_val();
-    Value value = Value::empty_val();
+    Value key = ValueOP::empty_val();
+    Value value = ValueOP::empty_val();
 };
 
 class Table {
