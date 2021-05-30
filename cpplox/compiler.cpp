@@ -1159,6 +1159,7 @@ void Compiler::super(bool canAssign) {
 
 void Compiler::randomAccess(bool canAssign) {
     expression();
+    parser->consume(TOKEN_RIGHT_BRACK, "Expect ']' after expression.");
     emitByte(OP_RANDOM_ACCESS);
 }
 

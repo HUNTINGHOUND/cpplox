@@ -56,7 +56,7 @@ int Disassembler::jumpInstruction(const std::string& name, int sign, Chunk *chun
 int Disassembler::invokeInstruction(const std::string &name,Chunk *chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     uint8_t argCount = chunk->code[offset + 2];
-    std::cout << std::left << std::setw(16) << name << " (" << std::setw(0) << argCount << " args) '" << std::setw(4) << constant;
+    std::cout << std::left << std::setw(16) << name << " (" << argCount << " args) '" << std::setw(4) << constant;
     ValueOP::printValue(chunk->constants.values[constant]);
     std::cout << std::setw(0) << "'" << std::endl;
     return offset + 3;
@@ -72,11 +72,11 @@ void Disassembler::disassembleChunk(Chunk* chunk, VM* vm, const std::string& nam
 
 
 int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
-    std::cout << std::setw(4) << offset << " ";
+    std::cout << std::right << std::setw(4) << offset << " ";
     if(offset > 0 && chunk->getLine(offset) == chunk->getLine(offset - 1)) {
         std::cout << "   | ";
     } else {
-        std::cout << std::setw(4) << chunk->getLine(offset) << " ";
+        std::cout << std::right << std::setw(4) << chunk->getLine(offset) << " ";
     }
     
     uint8_t instruction = chunk->code[offset];
@@ -178,6 +178,8 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             return constantInstruction("OP_GET_SUPER", chunk, offset);
         case OP_SUPER_INVOKE:
             return invokeInstruction("OP_SUPER_INVOKE", chunk, offset);
+        case OP_RANDOM_ACCESS:
+            return simpleInstruction("OP_RANDOM_ACCESS", offset);
         case OP_COLLECTION:
             return simpleInstruction("OP_COLLECTION", offset);
         default:

@@ -562,9 +562,11 @@ InterpretResult VM::run() {
                 }
                 
                 stack.push_back(collection->values[(int)index]);
+                break;
             }
             case OP_COLLECTION: {
                 stack.push_back(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
+                break;
             }
         }
     }
@@ -585,7 +587,7 @@ bool VM::invoke(ObjString *name, int argCount) {
             return false;
         }
         
-        for(int i = 0; i < argCount; i++) {
+        for(int i = 0; i <= argCount; i++) {
             stack.pop_back();
         }
         
