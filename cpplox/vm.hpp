@@ -96,6 +96,8 @@ class VM {
     
     bool invokeFromClass(ObjClass* _class, ObjString* name, int argCount);
     
+    void addCollectionMethods(ObjCollection* collection);
+    
 public:
     Compiler* current;
     ClassCompiler* currentClass;

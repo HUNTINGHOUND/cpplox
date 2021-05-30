@@ -182,6 +182,13 @@ void blackenObject(Obj* object, VM* vm) {
 #endif
     
     switch (object->type) {
+        case OBJ_COLLECTION: {
+            ObjCollection* collection = (ObjCollection*)object;
+            for(int i = 0; i < collection->size; i++) {
+                markValue(vm, collection->values[i]);
+            }
+            markTable(vm, &collection->methods);
+        }
         case OBJ_BOUND_METHOD: {
             ObjBoundMethod* bound = (ObjBoundMethod*)object;
             markValue(vm, bound->receiver);

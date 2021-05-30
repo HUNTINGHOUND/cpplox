@@ -14,6 +14,7 @@ class ObjClosure;
 class ObjClass;
 class ObjInstance;
 class ObjBoundMethod;
+class ObjCollection;
 enum ObjType : short;
 class VM;
 
@@ -44,6 +45,7 @@ bool is_closure(Value value);
 bool is_class(Value value);
 bool is_instance(Value value);
 bool is_bound_method(Value value);
+bool is_collection(Value value);
 bool isObjType(Value value, ObjType type);
 bool isConst(Value value);
 
@@ -58,6 +60,7 @@ ObjClosure* as_closure(Value value);
 ObjClass* as_class(Value value);
 ObjInstance* as_instance(Value value);
 ObjBoundMethod* as_bound_method(Value value);
+ObjCollection* as_collection(Value value);
 
 Value true_val();
 Value false_val();

@@ -120,8 +120,7 @@ class Compiler {
     /// @param byte1 first byte to be appended
     /// @param byte2 second byte to be appended
     void emitBytes(uint8_t byte1, uint8_t byte2);
-    
-    //TODO: add documentation-------------------------------
+
     
     void expression();
     
@@ -205,6 +204,7 @@ class Compiler {
     
     void method();
     
+    
 public:
     
     Scanner* scanner;
@@ -244,6 +244,10 @@ public:
     void _this(bool canAssign);
     
     void super(bool canAssign);
+    
+    void randomAccess(bool canAssign);
+    
+    void collection(bool canAssign);
     
     void markCompilerRoots();
     

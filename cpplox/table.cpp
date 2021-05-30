@@ -22,7 +22,7 @@ bool Table::tableSet(Value key, Value value) {
     
     Entry* entry = findEntry(entries, key, this->capacity);
     
-    bool isNewKey = ValueOP::is_empty(key);
+    bool isNewKey = ValueOP::is_empty(entry->key);
     if (isNewKey && ValueOP::is_nul(entry->value)) count++;
     
     entry->key = key;
@@ -120,7 +120,7 @@ ObjString* Table::tableFindString(const char *chars, size_t length, uint32_t has
             ObjString* key = ValueOP::as_string(entry->key);
             
             if (key->length == length && key->hash == hash &&
-                memcmp(key->chars, chars, length) == 0) {
+                strcmp(key->chars, chars) == 0) {
                 return key;
             }
         }

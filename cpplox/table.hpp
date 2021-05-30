@@ -21,7 +21,7 @@
 
 struct Entry {
     Value key = ValueOP::empty_val();
-    Value value = ValueOP::empty_val();
+    Value value = ValueOP::nul_val();
 };
 
 class Table {

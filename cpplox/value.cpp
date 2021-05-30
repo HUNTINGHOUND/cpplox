@@ -257,6 +257,16 @@ void ValueOP::printObject(Value value) {
             break;
         case OBJ_INSTANCE:
             std::cout << as_instance(value)->_class->name->chars << " instance";
+        case OBJ_COLLECTION: {
+            ObjCollection* collection = ValueOP::as_collection(value);
+            std::cout << "{";
+            for(int i = 0; i < collection->size; i++) {
+                printValue(collection->values[i]);
+                if(i != collection->size - 1) std::cout << ", ";
+            }
+            std::cout << "}";
+        }
+            
     }
 }
 
@@ -387,3 +397,11 @@ ObjFunction* ValueOP::get_obj_function(Obj* obj) {
     }
 }
 
+bool ValueOP::is_collection(Value value) {
+    return isObjType(value, OBJ_COLLECTION);
+}
+
+ObjCollection* ValueOP::as_collection(Value value) {
+    if(!is_collection(value)) return nullptr;
+    return (ObjCollection*)as_obj(value);
+}

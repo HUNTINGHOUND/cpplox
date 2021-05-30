@@ -408,7 +408,28 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_GET_PROPERTY: {
+                
+                
+                
                 if(!ValueOP::is_instance(peek(0))) {
+                    
+                    if(ValueOP::is_collection(peek(0))) {
+                        ObjCollection* collection = ValueOP::as_collection(peek(0));
+                        ObjString* name = read_string(frame);
+                        
+                        Value dummy;
+                        if(collection->methods.tableGet(ValueOP::obj_val(name), &dummy)) {
+                            stack.pop_back();
+                            stack.push_back(ValueOP::obj_val(
+                                    ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
+                            
+                            break;
+                        }
+                        
+                        runtimeError("Collection does not contain property '%s'", name->chars);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    
                     runtimeError("Cannot reference property of non-instances.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -510,12 +531,70 @@ InterpretResult VM::run() {
                 frame = &frames.back();
                 break;
             }
+            case OP_RANDOM_ACCESS: {
+                Value potentialIndex = stack.back();
+                stack.pop_back();
+                
+                if(!ValueOP::is_number(potentialIndex)) {
+                    runtimeError("Random access index must be a number");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                double index = ValueOP::as_number(potentialIndex);
+                
+                ObjCollection* collection = ValueOP::as_collection(stack.back());
+                stack.pop_back();
+                
+                if(!collection) {
+                    runtimeError("Can only random access collection.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                if(collection->size <= index) {
+                    runtimeError("Random access out of bound.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                double dummy;
+                if(modf(index, &dummy) != 0.0) {
+                    runtimeError("Random access index must be an integer.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                stack.push_back(collection->values[(int)index]);
+            }
+            case OP_COLLECTION: {
+                stack.push_back(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
+            }
         }
     }
 }
 
 bool VM::invoke(ObjString *name, int argCount) {
     Value receiver = peek(argCount);
+    
+    if(ValueOP::is_collection(receiver)) {
+        ObjCollection* collection = ValueOP::as_collection(receiver);
+        std::vector<Value> arguments;
+        for(int i = argCount - 1; i >= 0; i--) {
+            arguments.push_back(peek(i));
+        }
+        CustomResponse response = collection->invokeCollectionMethods(name, arguments);
+        if(response.hasErr) {
+            runtimeError(response.errorMessage);
+            return false;
+        }
+        
+        for(int i = 0; i < argCount; i++) {
+            stack.pop_back();
+        }
+        
+        if(response.isVoid) stack.push_back(ValueOP::nul_val());
+        else stack.push_back(response.returnVal);
+        
+        return true;
+    }
+    
     if(!ValueOP::is_instance(receiver)) {
         runtimeError("Only instances have methods.");
         return false;
@@ -605,6 +684,29 @@ bool VM::callValue(Value callee, int argCount) {
         switch (ValueOP::obj_type(callee)) {
             case OBJ_BOUND_METHOD: {
                 ObjBoundMethod* bound = ValueOP::as_bound_method(callee);
+                
+                if(ValueOP::is_collection(bound->receiver)) {
+                    ObjCollection* collection = ValueOP::as_collection(bound->receiver);
+                    std::vector<Value> arguments;
+                    for(int i = argCount - 1; i >= 0; i--) {
+                        arguments.push_back(peek(i));
+                    }
+                    CustomResponse response = collection->invokeCollectionMethods((ObjString*)bound->method, arguments);
+                    if(response.hasErr) {
+                        runtimeError(response.errorMessage);
+                        return false;
+                    }
+                    
+                    for(int i = 0; i < argCount; i++) {
+                        stack.pop_back();
+                    }
+                    
+                    if(response.isVoid) stack.push_back(ValueOP::nul_val());
+                    else stack.push_back(response.returnVal);
+                    
+                    return true;
+                }
+                
                 auto it = stack.end();
                 it[-argCount - 1] = bound->receiver;
                 
@@ -647,6 +749,16 @@ bool VM::callValue(Value callee, int argCount) {
                 
                 return true;
             }
+            case OBJ_COLLECTION: {
+                ObjCollection* collection = ValueOP::as_collection(callee);
+                for (int i = argCount - 1; i >= 0; i--) {
+                    collection->addBack(peek(i));
+                }
+                
+                addCollectionMethods(collection);
+                
+                return true;
+            }
             default:
                 break;
         }
@@ -665,6 +777,7 @@ bool VM::callFunction(ObjFunction *function, int argCount) {
 }
 
 bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
+
     if(argCount != function->arity) {
         runtimeError("Expected %d arguments but got %d.", function->arity, argCount);
         return false;
@@ -748,4 +861,13 @@ bool VM::bindMethod(ObjClass *_class, ObjString *name) {
     stack.pop_back();
     stack.push_back(ValueOP::obj_val(bound));
     return true;
+}
+
+void VM::addCollectionMethods(ObjCollection *collection) {
+    std::vector<std::string> methodNames{"addBack", "deleteBack", "swap", "getSize"};
+    for(std::string& name : methodNames) {
+        stack.push_back(ValueOP::obj_val(ObjString::copyString(this, name.c_str(), name.length())));
+        collection->methods.tableSet(stack.back(), ValueOP::nul_val());
+        stack.pop_back();
+    }
 }

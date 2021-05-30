@@ -127,3 +127,110 @@ ObjBoundMethod* ObjBoundMethod::newBoundMethod(Value receiver, Obj *method, VM* 
     bound->receiver = receiver;
     return bound;
 }
+
+ObjCollection* ObjCollection::newCollection(Value *values, size_t size, size_t capacity, VM* vm) {
+    ObjCollection* collection = allocate_obj<ObjCollection>(OBJ_COLLECTION, 0, vm);
+    collection->vm = vm;
+    collection->values = values;
+    collection->size = size;
+    collection->capacity = capacity;
+    collection->methods = Table(vm);
+    return collection;
+}
+
+CustomResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::vector<Value>& arguments) {
+    CustomResponse response;
+    response.hasErr = false;
+    if(strcmp(method->chars, "addBack") == 0) {
+        if(arguments.size() != 1) {
+            response.hasErr = true;
+            
+            response.errorMessage = "addBack method expects 1 argument.";
+            return response;
+        } else {
+            response.isVoid = true;
+            addBack(arguments[0]);
+        }
+    } else if (strcmp(method->chars, "deleteBack") == 0) {
+        if(arguments.size() != 0) {
+            response.hasErr = true;
+            
+            response.errorMessage = "deleteBack method expects 0 argument.";
+            return response;
+        } else {
+            response.isVoid = true;
+            deleteBack();
+        }
+    } else if (strcmp(method->chars, "swap") == 0) {
+        if(arguments.size() != 2) {
+            response.hasErr = true;
+            
+            response.errorMessage = "swap method expects 2 argument.";
+            return response;
+        } else {
+            //error checking
+            double dummy;
+            if(!ValueOP::is_number(arguments[0]) || modf(ValueOP::as_number(arguments[0]), &dummy) != 0.0) {
+                response.hasErr = true;
+                
+                response.errorMessage = "Swap index argument must be an integer";
+                return response;
+            }
+            
+            if(size <= ValueOP::as_number(arguments[0])) {
+                response.hasErr = true;
+                
+                response.errorMessage = "Out of bound access to collection object.";
+                return response;
+            }
+            
+            
+            
+            response.isVoid = true;
+            swap(arguments[0], arguments[1]);
+        }
+    } else if (strcmp(method->chars, "getSize") == 0) {
+        if(arguments.size() != 0) {
+            response.hasErr = true;
+            
+            response.errorMessage = "getSize method expects 0 argument.";
+            return response;
+        } else {
+            response.isVoid = false;
+            response.returnVal = ValueOP::number_val(getSize());
+        }
+    } else {
+        response.hasErr = true;
+        
+        response.errorMessage = "Collection class does not contain property '";
+        response.errorMessage + method->chars;
+        response.errorMessage.pop_back();
+        response.errorMessage += "'.";
+    }
+    
+    return response;
+}
+
+
+void ObjCollection::addBack(Value value) {
+    if(capacity == size) {
+        size_t newCapacity = grow_capacity(capacity);
+        values = grow_array<Value>(values, capacity, newCapacity, vm);
+        capacity = newCapacity;
+    }
+    
+    values[size++] = value;
+}
+
+void ObjCollection::deleteBack() {
+    values[size] = ValueOP::empty_val();
+    size--;
+}
+
+int ObjCollection::getSize() {
+    return (int)size;
+}
+
+void ObjCollection::swap(Value index, Value value) {
+    values[(int)ValueOP::as_number(index)] = value;
+}

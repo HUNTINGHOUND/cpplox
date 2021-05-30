@@ -7,11 +7,13 @@
 #endif
 
 
-ParseRule rules[49] = {
+ParseRule rules[52] = {
     [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, &Compiler::call,   PREC_CALL},
     [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_RIGHT_BRACE]   = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_LEFT_BRACK]    = {nullptr,     &Compiler::randomAccess,   PREC_CALL},
+    [TOKEN_RIGHT_BRACK]   = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_COMMA]         = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_DOT]           = {nullptr,     &Compiler::dot,   PREC_CALL},
     [TOKEN_MINUS]         = {&Compiler::unary, &Compiler::binary, PREC_TERM},
@@ -32,6 +34,7 @@ ParseRule rules[49] = {
     [TOKEN_IDENTIFIER]    = {&Compiler::variable,     nullptr,   PREC_NONE},
     [TOKEN_STRING]        = {&Compiler::string, nullptr, PREC_NONE},
     [TOKEN_NUMBER]        = {&Compiler::number, nullptr, PREC_NONE},
+    [TOKEN_COLLECTION]    = {&Compiler::collection, nullptr, PREC_NONE},
     [TOKEN_AND]           = {nullptr,     &Compiler::_and,   PREC_AND},
     [TOKEN_CLASS]         = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_ELSE]          = {nullptr,     nullptr,   PREC_NONE},
@@ -505,6 +508,7 @@ void Compiler::variable(bool canAssign) {
 }
 
 void Compiler::namedVariable(Token* name, bool canAssign) {
+    
     uint8_t getOp, setOp;
     int arg = resolveLocal(name);
     if (arg != -1) {
@@ -1151,4 +1155,13 @@ void Compiler::super(bool canAssign) {
         namedVariable(&s, false);
         emitBytes(OP_GET_SUPER, name);
     }
+}
+
+void Compiler::randomAccess(bool canAssign) {
+    expression();
+    emitByte(OP_RANDOM_ACCESS);
+}
+
+void Compiler::collection(bool canAssign) {
+    emitByte(OP_COLLECTION);
 }

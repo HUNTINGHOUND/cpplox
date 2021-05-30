@@ -1,6 +1,7 @@
 #ifndef object_h
 #define object_h
 
+#include <string>
 #include "flags.hpp"
 #include "table.hpp"
 #include "chunk.hpp"
@@ -15,7 +16,8 @@ enum ObjType : short{
     OBJ_UPVALUE,
     OBJ_CLASS,
     OBJ_INSTANCE,
-    OBJ_BOUND_METHOD
+    OBJ_BOUND_METHOD,
+    OBJ_COLLECTION
 };
 
 enum FunctionType : short{
@@ -113,6 +115,32 @@ public:
     Obj* method;
     
     static ObjBoundMethod* newBoundMethod(Value receiver, Obj* method, VM* vm);
+};
+
+struct CustomResponse {
+    bool hasErr;
+    std::string errorMessage;
+    bool isVoid;
+    Value returnVal;
+};
+
+class ObjCollection : public Obj {
+    void expandCapacity();
+    VM* vm;
+public:
+    Value* values;
+    size_t size;
+    size_t capacity;
+    
+    Table methods;
+    
+    static ObjCollection* newCollection(Value* values, size_t size, size_t capacity, VM* vm);
+    
+    CustomResponse invokeCollectionMethods(ObjString* method, std::vector<Value>& arguments);
+    void addBack(Value value);
+    void deleteBack();
+    void swap(Value index, Value value);
+    int getSize();
 };
 
 #endif /* object_h */

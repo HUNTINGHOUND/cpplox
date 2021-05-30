@@ -110,7 +110,8 @@ Token Scanner::number() {
 TokenType Scanner::checkKeyword(int start, int length,
                                 const std::string& rest, TokenType type) {
     
-    if (current - this->start == start + length && this->source.substr(start + this->start, length).compare(rest) == 0)
+    if (current - this->start == start + length &&
+        this->source.substr(start + this->start, length).compare(rest) == 0)
         return type;
     
     return TOKEN_IDENTIFIER;
@@ -128,6 +129,7 @@ TokenType Scanner::identifierType() {
                     case 'o':
                         if(current - start > 2) {
                             switch (source[start + 2]) {
+                                case 'l': return checkKeyword(3, 7, "lection", TOKEN_COLLECTION);
                                 case 'n':
                                     if(current - start > 3) {
                                         switch (source[start + 3]) {
@@ -145,7 +147,7 @@ TokenType Scanner::identifierType() {
                     if(current - start > 2) {
                         switch (source[start + 2]) {
                             case 'f': return checkKeyword(1, 4, "ault", TOKEN_DEFAULT);
-                            case 'l': return TOKEN_DEL;
+                            case 'l': return checkKeyword(1, 3, "ete", TOKEN_DEL);
                         }
                     }
             }
@@ -211,6 +213,8 @@ Token Scanner::scanToken() {
         case ')': return makeToken(TOKEN_RIGHT_PAREN);
         case '{': return makeToken(TOKEN_LEFT_BRACE);
         case '}': return makeToken(TOKEN_RIGHT_BRACE);
+        case '[': return makeToken(TOKEN_LEFT_BRACK);
+        case ']': return makeToken(TOKEN_RIGHT_BRACK);
         case ';': return makeToken(TOKEN_SEMICOLON);
         case ',': return makeToken(TOKEN_COMMA);
         case '.': return makeToken(TOKEN_DOT);
