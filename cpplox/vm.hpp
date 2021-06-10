@@ -7,6 +7,7 @@
 #include "chunk.hpp"
 #include "table.hpp"
 #include "object.hpp"
+#include <unordered_map>
 #include <queue>
 #include <cstdarg>
 #include <ctime>
@@ -117,6 +118,7 @@ public:
     Table strings;
     Table globalNames;
     ValueArray globalValues;
+    std::unordered_map<uint8_t, Value> cache;
     
     ObjString* initString;
     
