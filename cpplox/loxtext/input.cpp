@@ -4,6 +4,7 @@
 #include "fileio.hpp"
 #include "output.hpp"
 #include "find.hpp"
+#include "../vm.hpp"
 
 void Input::editorProcessKeypress() {
     static int quit_times = QUIT_TIMES;
@@ -28,6 +29,24 @@ void Input::editorProcessKeypress() {
         return;
     } else if (c == Terminal::ctrl_key('f')) {
         Find::editorFind();
+        return;
+    } else if (c == Terminal::ctrl_key('b')) {
+        std::string buf = "";
+        FileIO::editorRowstoString(&buf);
+        write(STDOUT_FILENO, "\x1b[2J", 4);
+        disableRawMode();
+        
+        VM vm;
+        
+        InterpretResult result = vm.interpret(buf.c_str());;
+        
+        
+        if(result == INTERPRET_COMPILE_ERROR) Output::editorSetStatusMessage("Compile Error", {});
+        if(result == INTERPRET_RUNTIME_ERROR) Output::editorSetStatusMessage("Runtime Error", {});
+        getchar();
+        
+        Terminal::enableRawMode();
+        
         return;
     }
     

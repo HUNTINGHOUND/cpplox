@@ -1,3 +1,4 @@
+#include "startEditor.hpp"
 #include "includes.hpp"
 #include "terminal.hpp"
 #include "input.hpp"
@@ -6,7 +7,7 @@
 
 
 
-int start(std::string& filename) {
+int startEditor(std::string& filename) {
     Terminal::enableRawMode();
     Terminal::initEditor();
     if(!filename.empty()) {

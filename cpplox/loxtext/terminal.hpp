@@ -3,6 +3,7 @@
 #define terminal_hpp
 
 #include "includes.hpp"
+#include "../vm.hpp"
 
 struct EditorSyntax {
     std::vector<std::string> filematch;
@@ -35,6 +36,7 @@ struct EditorConfig {
     std::string filename;
     termios og_termios;
     EditorSyntax* syntax;
+    VM* vm;
     time_t statusmsg_time;
     int cx, cy;
     int rx;
@@ -71,5 +73,7 @@ int getWindowSize(int* rows, int* cols);
 void initEditor();
 int getCursorPosition(int* rows, int* cols);
 };
+
+void disableRawMode();
 
 #endif /* terminal_hpp */

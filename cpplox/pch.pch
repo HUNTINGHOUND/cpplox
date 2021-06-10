@@ -20,6 +20,8 @@
 #include <queue>
 #include <cstdarg>
 #include <ctime>
+#include <string.h>
+
 
 
 #endif /* pch_h */

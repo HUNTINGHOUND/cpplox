@@ -95,6 +95,10 @@ void freeObject(Obj* object, VM* vm) {
             reallocate(object, sizeof(ObjBoundMethod), 0, vm);
             break;
         }
+        case OBJ_COLLECTION: {
+            ObjCollection* collection = (ObjCollection*)object;
+            free_array<Value>(collection->values, collection->capacity, vm);
+        }
     }
 }
 
