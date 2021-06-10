@@ -1,9 +1,6 @@
+#include "pch.pch"
 #include "vm.hpp"
 #include "debug.hpp"
-#include <sstream>
-#include <string>
-#include <iostream>
-#include <fstream>
 
 void repl(VM* vm) {
     std::stringstream ss;

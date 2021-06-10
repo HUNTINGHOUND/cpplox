@@ -5,8 +5,6 @@
 #include "memory.hpp"
 #include "object.hpp"
 #include "table.hpp"
-#include <iostream>
-#include <cstdio>
 
 //NATIVE FUNCTIONS====================================================>
 

@@ -4,13 +4,10 @@
 #ifndef vm_h
 #define vm_h
 
+#include "pch.pch"
 #include "chunk.hpp"
 #include "table.hpp"
 #include "object.hpp"
-#include <unordered_map>
-#include <queue>
-#include <cstdarg>
-#include <ctime>
 
 #define STACK_MAX 256
 

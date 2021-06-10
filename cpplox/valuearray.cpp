@@ -1,10 +1,3 @@
-//
-//  valuearray.cpp
-//  cpplox
-//
-//  Created by Morgan Xu on 5/29/21.
-//
-
 #include "valuearray.hpp"
 #include "memory.hpp"
 

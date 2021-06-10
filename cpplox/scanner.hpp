@@ -5,7 +5,7 @@
 #ifndef scanner_hpp
 #define scanner_hpp
 
-#include <string>
+#include "pch.pch"
 
 enum TokenType {
     TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,

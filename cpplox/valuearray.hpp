@@ -8,6 +8,7 @@
 #ifndef valuearray_hpp
 #define valuearray_hpp
 
+#include "pch.pch"
 #include "flags.hpp"
 
 #ifdef NANBOXING

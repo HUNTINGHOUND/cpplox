@@ -8,8 +8,8 @@
 #ifndef table_h
 #define table_h
 
+#include "pch.pch"
 #include "flags.hpp"
-#include <vector>
 
 #ifdef NAN_BOXING
 #include "nanvalue.hpp"

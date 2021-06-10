@@ -1,6 +1,3 @@
-
-#include <iostream>
-#include <iomanip>
 #include "debug.hpp"
 
 #ifdef NAN_BOXING

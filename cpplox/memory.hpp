@@ -1,8 +1,7 @@
 #ifndef memory_h
 #define memory_h
 
-#include <vector>
-#include <iostream>
+#include "pch.pch"
 #include "vm.hpp"
 #include "object.hpp"
 
