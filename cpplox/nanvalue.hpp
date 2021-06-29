@@ -3,8 +3,7 @@
 #ifndef nanvalue_h
 #define nanvalue_h
 
-#include <vector>
-#include <string.h>
+#include "pch.pch"
 
 class Obj;
 class ObjString;

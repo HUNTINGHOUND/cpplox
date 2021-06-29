@@ -1,6 +1,7 @@
 #ifndef compiler_hpp
 #define compiler_hpp
 
+#include "pch.pch"
 #include "chunk.hpp"
 #include "scanner.hpp"
 #include "vm.hpp"

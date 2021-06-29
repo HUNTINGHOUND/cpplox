@@ -3,7 +3,7 @@
 #include "vm.hpp"
 #include "table.hpp"
 #include "chunk.hpp"
-#include <iostream>
+
 
 
 uint32_t ObjString::hashString(const char* key, size_t length) {

@@ -4,12 +4,10 @@
 #ifndef vm_h
 #define vm_h
 
+#include "pch.pch"
 #include "chunk.hpp"
 #include "table.hpp"
 #include "object.hpp"
-#include <queue>
-#include <cstdarg>
-#include <ctime>
 
 #define STACK_MAX 256
 
@@ -117,6 +115,7 @@ public:
     Table strings;
     Table globalNames;
     ValueArray globalValues;
+    std::unordered_map<uint8_t, Value> cache;
     
     ObjString* initString;
     

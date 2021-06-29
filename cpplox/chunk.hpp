@@ -1,7 +1,7 @@
 #ifndef chunk_h
 #define chunk_h
 
-#include <vector>
+#include "pch.pch"
 #include "valuearray.hpp"
 
 #ifdef NANBOXING

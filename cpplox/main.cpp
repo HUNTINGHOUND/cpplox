@@ -1,9 +1,7 @@
+#include "pch.pch"
 #include "vm.hpp"
 #include "debug.hpp"
-#include <sstream>
-#include <string>
-#include <iostream>
-#include <fstream>
+#include "loxtext/startEditor.hpp"
 
 void repl(VM* vm) {
     std::stringstream ss;
@@ -58,10 +56,21 @@ int main(int argc, const char* argv[]) {
     
     if(argc == 1) {
         repl(&vm);
-    } else if(argc == 2) {
-        runFile(&vm, argv[1]);
+    } else if(argc >= 2) {
+        if(strcmp(argv[1], "editor") == 0) {
+            std::string filename;
+            if(argc == 3) {
+                filename = std::string(argv[2]);
+            }
+            startEditor(filename);
+        } else {
+            runFile(&vm, argv[1]);
+        }
     } else {
-        std::cerr << "Usage: cpplox [path]\n";
+        std::cerr << "Usage: cpplox [options]" << std::endl << std::endl;
+        std::cerr << "options:" << std::endl;
+        std::cerr << "   <filename>          Will compile and run the file specified" << std::endl << std::endl;
+        std::cerr << "   editor [filename]   Will open up the built in text editor on the given file, if [filename] is empty, will open an empty text editor." << std::endl << std::endl;
         exit(64);
     }
     

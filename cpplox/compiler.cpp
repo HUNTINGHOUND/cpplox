@@ -1,6 +1,5 @@
 #include "compiler.hpp"
 #include "memory.hpp"
-#include <iostream>
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.hpp"

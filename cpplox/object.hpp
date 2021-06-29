@@ -1,7 +1,7 @@
 #ifndef object_h
 #define object_h
 
-#include <string>
+#include "pch.pch"
 #include "flags.hpp"
 #include "table.hpp"
 #include "chunk.hpp"

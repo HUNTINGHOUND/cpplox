@@ -1,6 +1,7 @@
 #ifndef debug_h
 #define debug_h
 
+#include "pch.pch"
 #include "chunk.hpp"
 #include "vm.hpp"
 

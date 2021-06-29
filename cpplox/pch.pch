@@ -1,0 +1,27 @@
+#ifndef pch_h
+#define pch_h
+
+#include <string>
+#include <sstream>
+#include <vector>
+#include <iostream>
+#include <cstdlib>
+#include <cstdio>
+#include <cerrno>
+#include <unistd.h>
+#include <termios.h>
+#include <fstream>
+#include <sys/ioctl.h>
+#include <functional>
+#include <algorithm>
+#include <cstdlib>
+#include <iomanip>
+#include <unordered_map>
+#include <queue>
+#include <cstdarg>
+#include <ctime>
+#include <string.h>
+
+
+
+#endif /* pch_h */
