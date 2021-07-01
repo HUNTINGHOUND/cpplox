@@ -59,7 +59,7 @@ enum Precedence {
     PREC_TERM,       // + -
     PREC_FACTOR,     // * /
     PREC_UNARY,      // ! -
-    PREC_CALL,       // .()
+    PREC_CALL,       // .() 
     PREC_PRIMARY
 };
 
@@ -205,7 +205,6 @@ class Compiler {
     
     void method();
     
-    
 public:
     
     Scanner* scanner;
@@ -249,6 +248,8 @@ public:
     void randomAccess(bool canAssign);
     
     void collection(bool canAssign);
+    
+    void steps(bool canAssign);
     
     void markCompilerRoots();
     

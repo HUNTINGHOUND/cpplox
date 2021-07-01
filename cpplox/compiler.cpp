@@ -29,7 +29,7 @@ ParseRule rules[52] = {
     [TOKEN_LESS]          = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
     [TOKEN_LESS_EQUAL]    = {nullptr,     &Compiler::binary,   PREC_COMPARISON},
     [TOKEN_QUESTION_MARK] = {nullptr,     &Compiler::condition, PREC_CONDITIONAL},
-    [TOKEN_COLON]         = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_COLON]         = {nullptr,     &Compiler::steps,   PREC_CONDITIONAL},
     [TOKEN_IDENTIFIER]    = {&Compiler::variable,     nullptr,   PREC_NONE},
     [TOKEN_STRING]        = {&Compiler::string, nullptr, PREC_NONE},
     [TOKEN_NUMBER]        = {&Compiler::number, nullptr, PREC_NONE},
@@ -1157,11 +1157,22 @@ void Compiler::super(bool canAssign) {
 }
 
 void Compiler::randomAccess(bool canAssign) {
-    expression();
+    parsePrecedence(PREC_CALL);
     parser->consume(TOKEN_RIGHT_BRACK, "Expect ']' after expression.");
     emitByte(OP_RANDOM_ACCESS);
 }
 
 void Compiler::collection(bool canAssign) {
     emitByte(OP_COLLECTION);
+}
+
+void Compiler::steps(bool canAssign) {
+    parsePrecedence(PREC_OR);
+    if(match(TOKEN_COLON)) {
+        expression();
+    } else {
+        emitConstant(ValueOP::number_val(1));
+    }
+    
+    emitByte(OP_RANGE);
 }

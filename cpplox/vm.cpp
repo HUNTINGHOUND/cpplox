@@ -566,6 +566,27 @@ InterpretResult VM::run() {
                 stack.push_back(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
                 break;
             }
+            case OP_RANGE: {
+                double step = ValueOP::as_number(stack.back());
+                stack.pop_back();
+                
+                double end = ValueOP::as_number(stack.back());
+                stack.pop_back();
+                
+                double start = ValueOP::as_number(stack.back());
+                stack.pop_back();
+                
+                stack.push_back(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
+                
+                int count = 0;
+                for(;start <= end; start += step) {
+                    stack.push_back(ValueOP::number_val(start));
+                    count++;
+                }
+                
+                callValue(peek(count), count);
+                break;
+            }
         }
     }
 }
@@ -753,6 +774,10 @@ bool VM::callValue(Value callee, int argCount) {
                 ObjCollection* collection = ValueOP::as_collection(callee);
                 for (int i = argCount - 1; i >= 0; i--) {
                     collection->addBack(peek(i));
+                }
+                
+                for (int i = argCount - 1; i >= 0; i--) {
+                    stack.pop_back();
                 }
                 
                 addCollectionMethods(collection);
