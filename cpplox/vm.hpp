@@ -96,6 +96,8 @@ class VM {
     
     void addCollectionMethods(ObjCollection* collection);
     
+    void appendCollection();
+    
 public:
     Compiler* current;
     ClassCompiler* currentClass;

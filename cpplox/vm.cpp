@@ -234,9 +234,11 @@ InterpretResult VM::run() {
                     concatenate();
                 } else if (ValueOP::is_number(peek(0)) && ValueOP::is_number(peek(1))) {
                     binary_op<double,double>(ValueOP::number_val, std::plus<double>());
+                } else if (ValueOP::is_collection(peek(0)) && ValueOP::is_collection(peek(1))) {
+                    
                 } else {
                     runtimeError(
-                                 "Operands must be two numbers or two strings.");
+                                 "Operands must be two numbers, two strings, or two collections.");
                     
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -419,7 +421,7 @@ InterpretResult VM::run() {
                         if(collection->methods.tableGet(ValueOP::obj_val(name), &dummy)) {
                             stack.pop_back();
                             stack.push_back(ValueOP::obj_val(
-                                    ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
+                                            ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
                             
                             break;
                         }
@@ -534,8 +536,38 @@ InterpretResult VM::run() {
                 stack.pop_back();
                 
                 if(!ValueOP::is_number(potentialIndex)) {
-                    runtimeError("Random access index must be a number");
-                    return INTERPRET_RUNTIME_ERROR;
+                    if(ValueOP::is_collection(potentialIndex)) {
+                        
+                        ObjCollection* collection = ValueOP::as_collection(stack.back());
+                        stack.pop_back();
+                        
+                        ObjCollection* newCollection = ObjCollection::newCollection(nullptr, 0, 0, this);
+                        stack.push_back(ValueOP::obj_val(newCollection));
+                        
+                        ObjCollection* indexes = ValueOP::as_collection(potentialIndex);
+                        for(int i = 0; i < indexes->size; i++) {
+                            double index = ValueOP::as_number(indexes->values[i]);
+                            
+                            if(collection->size <= index) {
+                                runtimeError("Random access out of bound.");
+                                return INTERPRET_RUNTIME_ERROR;
+                            }
+                            
+                            double dummy;
+                            if(modf(index, &dummy) != 0.0) {
+                                runtimeError("Random access index must be an integer. The %d element was not an integer.", i);
+                                return INTERPRET_RUNTIME_ERROR;
+                            }
+                            
+                            newCollection->addBack(collection->values[(int)index]);
+                        }
+                        
+                        break;
+                        
+                    } else {
+                        runtimeError("Random access index must be a number");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
                 }
                 
                 double index = ValueOP::as_number(potentialIndex);
@@ -802,7 +834,7 @@ bool VM::callFunction(ObjFunction *function, int argCount) {
 }
 
 bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
-
+    
     if(argCount != function->arity) {
         runtimeError("Expected %d arguments but got %d.", function->arity, argCount);
         return false;
