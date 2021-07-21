@@ -10,6 +10,8 @@ struct EditorSyntax {
     std::vector<std::string> keywords;
     std::string filetype;
     std::string singleline_comment_start;
+    std::string multiline_comment_start;
+    std::string multiline_comment_end;
     int flags;
 };
 
@@ -19,6 +21,7 @@ enum editorHighLight {
     HL_MATCH,
     HL_STRING,
     HL_COMMENT,
+    HL_MLCOMMENT,
     HL_KEYWORD1,
     HL_KEYWORD2
 };
@@ -27,6 +30,8 @@ struct Erow {
     std::vector<uint8_t> hl;
     std::string chars;
     std::string render;
+    int idx;
+    bool hl_open_comment;
 };
 
 

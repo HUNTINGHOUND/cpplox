@@ -51,9 +51,10 @@ void Input::editorProcessKeypress() {
     }
     
     switch (c) {
-        case '\r':
+        case '\r': {
             EditorOP::editorInsertNewLine();
             break;
+        }
             
         case PAGE_UP:
         case PAGE_DOWN: {
@@ -157,9 +158,6 @@ std::string Input::editorPrompt(const std::string& prompt, std::function<void(st
             if(buf.size() != 0) {
                 Output::editorSetStatusMessage("", {});
                 if(callback) (*callback)(buf, c);
-                std::fstream log("log.txt", std::fstream::out);
-                log << "executed";
-                log.close();
                 return buf;
             }
         } else if(!iscntrl(c) && c < 128) {

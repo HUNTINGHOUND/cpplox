@@ -22,7 +22,7 @@ std::vector<EditorSyntax> HLDB {
         C_HL_extensions,
         C_HL_keywords,
         "c/c++",
-        "//",
+        "//", "/*", "*/",
         hl_highlight_numbers | hl_highlight_strings
     }
 };

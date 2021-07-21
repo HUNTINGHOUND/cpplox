@@ -246,21 +246,52 @@ void Output::editorUpdateSyntax(Erow& row) {
     
     if(E.syntax == nullptr) return;
     
-    
     std::string_view scs = E.syntax->singleline_comment_start;
+    std::string_view mcs = E.syntax->multiline_comment_start;
+    std::string_view mce = E.syntax->multiline_comment_end;
     std::string_view renderView = row.render;
     
     bool prev_sep = true;
     int in_string = 0;
+    bool in_comment = (row.idx > 0 && E.row[row.idx - 1].hl_open_comment);
     
     int i = 0;
     while(i < row.hl.size()) {
         uint8_t prev_hl = (i > 0) ? row.hl[i - 1] : HL_NORMAL;
         
-        if(scs.size() != 0 && in_string == 0) {
+        if(scs.size() != 0 && in_string == 0 && !in_comment) {
             if(renderView.substr(i, scs.length()).compare(scs) == 0) {
                 std::fill(row.hl.begin() + i, row.hl.end(), HL_COMMENT);
                 break;
+            }
+        }
+        
+        if(mcs.length() != 0 && mce.length() != 0 && !in_string) {
+            if(in_comment) {
+                row.hl[i] = HL_MLCOMMENT;
+                
+                if(renderView.substr(i, mce.length()).compare(mce) == 0) {
+                    
+                    for(int j = 0; j < mce.length(); j++) {
+                        row.hl[i + j] = HL_MLCOMMENT;
+                    }
+                    
+                    
+                    i += mce.length();
+                    in_comment = false;
+                    prev_sep = true;
+                } else {
+                    i++;
+                    continue;
+                }
+            } else if(renderView.substr(i, mcs.length()).compare(mcs) == 0) {
+                for(int j = 0; j < mcs.length(); j++) {
+                    row.hl[i + j] = HL_MLCOMMENT;
+                }
+                
+                i += mcs.length();
+                in_comment = true;
+                continue;
             }
         }
         
@@ -322,13 +353,19 @@ void Output::editorUpdateSyntax(Erow& row) {
         i++;
     }
     
+    bool changed = (row.hl_open_comment != in_comment);
+    row.hl_open_comment = in_comment;
+    if(changed && row.idx + 1 < E.numsrows) {
+        editorUpdateSyntax(E.row[row.idx + 1]);
+    }
 }
 
 int Output::editorSyntaxToColor(int hl) {
     switch (hl) {
+        case HL_COMMENT:
+        case HL_MLCOMMENT: return 36;
         case HL_KEYWORD2: return 32;
         case HL_KEYWORD1: return 33;
-        case HL_COMMENT: return 26;
         case HL_STRING: return 35;
         case HL_NUMBER: return 31;
         default: return 37;

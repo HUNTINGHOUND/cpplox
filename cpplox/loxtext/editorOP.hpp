@@ -7,6 +7,7 @@ namespace EditorOP {
 void editorInsertChar(int c);
 void editorDelChar();
 void editorInsertNewLine();
+void editorInsertNewRow(int at, std::string chars);
 }
 
 #endif /* editorOP_hpp */
