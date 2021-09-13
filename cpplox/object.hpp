@@ -56,6 +56,7 @@ class ObjFunction : public Obj{
 public:
     int arity;
     int upvalueCount;
+    int defaults;
     Chunk chunk;
     ObjString* name;
     

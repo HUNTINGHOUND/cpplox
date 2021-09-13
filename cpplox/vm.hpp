@@ -31,6 +31,8 @@ public:
 
 class VM {
     
+    void push_stack(Value value);
+    
     InterpretResult run();
     
     uint8_t read_byte(CallFrame* frame);

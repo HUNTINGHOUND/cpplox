@@ -256,6 +256,7 @@ void ValueOP::printObject(Value value) {
             break;
         case OBJ_INSTANCE:
             std::cout << as_instance(value)->_class->name->chars << " instance";
+            break;
         case OBJ_COLLECTION: {
             ObjCollection* collection = ValueOP::as_collection(value);
             std::cout << "{";
@@ -264,6 +265,7 @@ void ValueOP::printObject(Value value) {
                 if(i != collection->size - 1) std::cout << ", ";
             }
             std::cout << "}";
+            break;
         }
             
     }

@@ -72,6 +72,7 @@ ObjFunction* ObjFunction::newFunction(VM* vm) {
     ObjFunction* function = allocate_obj<ObjFunction>(OBJ_FUNCTION, 0, vm);
     
     function->arity = 0;
+    function->defaults = 0;
     function->upvalueCount = 0;
     function->name = nullptr;
     function->chunk = Chunk(vm);

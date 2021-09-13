@@ -143,7 +143,7 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
     double a = ValueOP::as_number(stack.back());
     stack.pop_back();
     Value v = std::invoke(*valuetype, func(a,b));
-    stack.push_back(v);
+    push_stack(v);
     return INTERPRET_OK;
 }
 
@@ -164,10 +164,10 @@ InterpretResult VM::interpret(const std::string& source) {
     
     if(function == nullptr) return INTERPRET_COMPILE_ERROR;
     
-    stack.push_back(ValueOP::obj_val(function));
+    push_stack(ValueOP::obj_val(function));
     ObjClosure* closure = ObjClosure::newClosure(function, this);
     stack.pop_back();
-    stack.push_back(ValueOP::obj_val(closure));
+    push_stack(ValueOP::obj_val(closure));
     callValue(ValueOP::obj_val(closure), 0);
     
     return run();
@@ -206,9 +206,9 @@ InterpretResult VM::run() {
                 stack.pop_back();
                 
                 if(ValueOP::as_bool(condition)) {
-                    stack.push_back(a);
+                    push_stack(a);
                 } else {
-                    stack.push_back(b);
+                    push_stack(b);
                 }
                 
                 break;
@@ -218,7 +218,7 @@ InterpretResult VM::run() {
                 stack.pop_back();
                 Value a = stack.back();
                 stack.pop_back();
-                stack.push_back(ValueOP::bool_val(ValueOP::valuesEqual(a,b)));
+                push_stack(ValueOP::bool_val(ValueOP::valuesEqual(a,b)));
                 break;
             }
             case OP_GREATER: {
@@ -259,7 +259,7 @@ InterpretResult VM::run() {
             case OP_NOT: {
                 Value v = ValueOP::bool_val(isFalsey(stack.back()));
                 stack.pop_back();
-                stack.push_back(v);
+                push_stack(v);
                 break;
             }
             case OP_NEGATE: {
@@ -273,7 +273,7 @@ InterpretResult VM::run() {
             }
             case OP_CONSTANT: {
                 Value constant = read_constant(frame);
-                stack.push_back(constant);
+                push_stack(constant);
                 break;
             }
             case OP_RETURN: {
@@ -291,19 +291,19 @@ InterpretResult VM::run() {
                 while(stack.size() != frame->slots) {
                     stack.pop_back();
                 }
-                stack.push_back(result);
+                push_stack(result);
                 
                 frame = &frames.back();
                 break;
             }
             case OP_NUL:
-                stack.push_back(ValueOP::nul_val());
+                push_stack(ValueOP::nul_val());
                 break;
             case OP_TRUE:
-                stack.push_back(ValueOP::bool_val(true));
+                push_stack(ValueOP::bool_val(true));
                 break;
             case OP_FALSE:
-                stack.push_back(ValueOP::bool_val(false));
+                push_stack(ValueOP::bool_val(false));
                 break;
             case OP_PRINT: {
                 ValueOP::printValue(stack.back());
@@ -325,7 +325,7 @@ InterpretResult VM::run() {
                     runtimeError("Undefined variable.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                stack.push_back(value);
+                push_stack(value);
                 break;
             }
             case OP_SET_GLOBAL: {
@@ -339,7 +339,7 @@ InterpretResult VM::run() {
             }
             case OP_GET_LOCAL: {
                 uint8_t slot = read_byte(frame);
-                stack.push_back(stack[frame->slots + slot]);
+                push_stack(stack[frame->slots + slot]);
                 break;
             }
             case OP_SET_LOCAL: {
@@ -350,6 +350,11 @@ InterpretResult VM::run() {
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = read_short(frame);
                 if (isFalsey(peek(0))) frame->ip += offset;
+                break;
+            }
+            case OP_JUMP_IF_EMPTY: {
+                uint16_t offset = read_short(frame);
+                if (ValueOP::is_empty(peek(0))) frame->ip += offset;
                 break;
             }
             case OP_JUMP: {
@@ -363,7 +368,7 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_DUP:
-                stack.push_back(peek(0));
+                push_stack(peek(0));
                 break;
             case OP_CALL: {
                 int argCount = read_byte(frame);
@@ -376,7 +381,7 @@ InterpretResult VM::run() {
             case OP_CLOSURE: {
                 ObjFunction* function = ValueOP::as_function(read_constant(frame));
                 ObjClosure* closure = ObjClosure::newClosure(function, this);
-                stack.push_back(ValueOP::obj_val(closure));
+                push_stack(ValueOP::obj_val(closure));
                 for(int i = 0; i < closure->upvalueCount; i++) {
                     uint8_t isLocal = read_byte(frame);
                     uint8_t index = read_byte(frame);
@@ -390,7 +395,7 @@ InterpretResult VM::run() {
             }
             case OP_GET_UPVALUE: {
                 uint8_t slot = read_byte(frame);
-                stack.push_back(*((ObjClosure*)frame->function)->upvalues[slot]->location);
+                push_stack(*((ObjClosure*)frame->function)->upvalues[slot]->location);
                 break;
             }
             case OP_SET_UPVALUE: {
@@ -404,7 +409,7 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_CLASS: {
-                stack.push_back(ValueOP::obj_val(ObjClass::newClass(read_string(frame), this)));
+                push_stack(ValueOP::obj_val(ObjClass::newClass(read_string(frame), this)));
                 break;
             }
             case OP_GET_PROPERTY: {
@@ -420,7 +425,7 @@ InterpretResult VM::run() {
                         Value dummy;
                         if(collection->methods.tableGet(ValueOP::obj_val(name), &dummy)) {
                             stack.pop_back();
-                            stack.push_back(ValueOP::obj_val(
+                            push_stack(ValueOP::obj_val(
                                             ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
                             
                             break;
@@ -440,7 +445,7 @@ InterpretResult VM::run() {
                 Value value;
                 if (instance->fields.tableGet(ValueOP::obj_val(name), &value)) {
                     stack.pop_back();
-                    stack.push_back(value);
+                    push_stack(value);
                     break;
                 }
                 
@@ -462,7 +467,7 @@ InterpretResult VM::run() {
                 Value value = stack.back();
                 stack.pop_back();
                 stack.pop_back();
-                stack.push_back(value);
+                push_stack(value);
                 break;
             }
             case OP_DEL: {
@@ -542,7 +547,7 @@ InterpretResult VM::run() {
                         stack.pop_back();
                         
                         ObjCollection* newCollection = ObjCollection::newCollection(nullptr, 0, 0, this);
-                        stack.push_back(ValueOP::obj_val(newCollection));
+                        push_stack(ValueOP::obj_val(newCollection));
                         
                         ObjCollection* indexes = ValueOP::as_collection(potentialIndex);
                         for(int i = 0; i < indexes->size; i++) {
@@ -591,11 +596,11 @@ InterpretResult VM::run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                stack.push_back(collection->values[(int)index]);
+                push_stack(collection->values[(int)index]);
                 break;
             }
             case OP_COLLECTION: {
-                stack.push_back(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
+                push_stack(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
                 break;
             }
             case OP_RANGE: {
@@ -608,11 +613,11 @@ InterpretResult VM::run() {
                 double start = ValueOP::as_number(stack.back());
                 stack.pop_back();
                 
-                stack.push_back(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
+                push_stack(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
                 
                 int count = 0;
                 for(;start <= end; start += step) {
-                    stack.push_back(ValueOP::number_val(start));
+                    push_stack(ValueOP::number_val(start));
                     count++;
                 }
                 
@@ -642,8 +647,8 @@ bool VM::invoke(ObjString *name, int argCount) {
             stack.pop_back();
         }
         
-        if(response.isVoid) stack.push_back(ValueOP::nul_val());
-        else stack.push_back(response.returnVal);
+        if(response.isVoid) push_stack(ValueOP::nul_val());
+        else push_stack(response.returnVal);
         
         return true;
     }
@@ -691,7 +696,7 @@ void VM::concatenate() {
     stack.pop_back();
     
     
-    stack.push_back(ValueOP::obj_val(result));
+    push_stack(ValueOP::obj_val(result));
 }
 
 bool VM::isFalsey(Value value) {
@@ -754,8 +759,8 @@ bool VM::callValue(Value callee, int argCount) {
                         stack.pop_back();
                     }
                     
-                    if(response.isVoid) stack.push_back(ValueOP::nul_val());
-                    else stack.push_back(response.returnVal);
+                    if(response.isVoid) push_stack(ValueOP::nul_val());
+                    else push_stack(response.returnVal);
                     
                     return true;
                 }
@@ -835,23 +840,33 @@ bool VM::callFunction(ObjFunction *function, int argCount) {
 
 bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
     
-    if(argCount != function->arity) {
-        runtimeError("Expected %d arguments but got %d.", function->arity, argCount);
+    if(argCount < function->arity - function->defaults) {
+        runtimeError("Expected at least %d arguments but got %d.", function->arity - function->defaults, argCount);
         return false;
     }
-    
+    if(argCount > function->arity) {
+        runtimeError("Expected at most %d arguments but got %d.", function->arity, argCount);
+        return false;
+    }
     if(frames.size() == frames.max_size()) {
         runtimeError("Stack overflow.");
         return false;
     }
+
+    if(argCount > function->arity - function->defaults) {
+        for(int i = 0; i < argCount - (function->arity - function->defaults); i++) {
+            push_stack(ValueOP::empty_val());
+        }
+    }
     
-    frames.push_back(CallFrame(callee, function->chunk.code, stack.size() - argCount - 1));
+    frames.push_back(CallFrame(callee, function->chunk.code,
+                               stack.size() - argCount - (argCount - (function->arity - function->defaults)) - 1));
     return true;
 }
 
 void VM::defineNative(const std::string& name, NativeFn function, int arity) {
-    stack.push_back(ValueOP::obj_val(ObjString::copyString(this, name.c_str(), (int)strlen(name.c_str()))));
-    stack.push_back(ValueOP::obj_val(ObjNative::newNative(function,arity, this)));
+    push_stack(ValueOP::obj_val(ObjString::copyString(this, name.c_str(), (int)strlen(name.c_str()))));
+    push_stack(ValueOP::obj_val(ObjNative::newNative(function,arity, this)));
     globalValues.writeValueArray(stack[1]);
     globalNames.tableSet(stack[0], ValueOP::number_val(globalValues.count - 1));
     stack.pop_back();
@@ -916,15 +931,19 @@ bool VM::bindMethod(ObjClass *_class, ObjString *name) {
     ObjBoundMethod* bound = ObjBoundMethod::newBoundMethod(peek(0), ValueOP::as_obj(method), this);
     
     stack.pop_back();
-    stack.push_back(ValueOP::obj_val(bound));
+    push_stack(ValueOP::obj_val(bound));
     return true;
 }
 
 void VM::addCollectionMethods(ObjCollection *collection) {
     std::vector<std::string> methodNames{"addBack", "deleteBack", "swap", "getSize"};
     for(std::string& name : methodNames) {
-        stack.push_back(ValueOP::obj_val(ObjString::copyString(this, name.c_str(), name.length())));
+        push_stack(ValueOP::obj_val(ObjString::copyString(this, name.c_str(), name.length())));
         collection->methods.tableSet(stack.back(), ValueOP::nul_val());
         stack.pop_back();
     }
+}
+
+void VM::push_stack(Value value) {
+    stack.push_back(value);
 }

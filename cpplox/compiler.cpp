@@ -5,7 +5,7 @@
 #include "debug.hpp"
 #endif
 
-
+//Table containing precedence and compiling rules for all tokens
 ParseRule rules[52] = {
     [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, &Compiler::call,   PREC_CALL},
     [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
@@ -61,6 +61,11 @@ ParseRule rules[52] = {
     [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
 };
 
+
+/// Compare two identifier (variable name) token to see if they are equal
+/// @param a Token to be compared
+/// @param b Token to be compared
+/// @return True if the tokens are equal, false otherwise
 bool identifierEqual(Token* a, Token* b) {
     if (a->length != b->length) return false;
     return a->source.compare(b->source) == 0;
@@ -907,6 +912,7 @@ void Compiler::_function(FunctionType type) {
     parser->consume(TOKEN_LEFT_PAREN, "Expect '(' after function name,");
     
     if(!compiler.parser->check(TOKEN_RIGHT_PAREN)) {
+        bool found_default = false;
         do {
             compiler.function->arity++;
             if(compiler.function->arity > 255) {
@@ -914,6 +920,22 @@ void Compiler::_function(FunctionType type) {
             }
             
             uint8_t paramConstant = compiler.parseVariable("Expect parameter name.", false);
+            if(match(TOKEN_EQUAL)) {
+                parser->consume(TOKEN_LEFT_BRACE, "Expect '{' after default parameter.");
+                found_default = true;
+                compiler.function->defaults++;
+                size_t jumploc = compiler.emitJump(OP_JUMP_IF_EMPTY);
+                compiler.expression();
+                size_t end_jump = compiler.emitJump(OP_JUMP);
+                compiler.patchJump(jumploc);
+                compiler.emitByte(OP_POP);
+                compiler.patchJump(end_jump);
+                parser->consume(TOKEN_RIGHT_BRACE, "Expect '}' after default parameter definition.");
+            } else if(found_default) {
+                parser->errorAtCurrent("Cannot declare non-default parameters after default parameters.");
+                
+            }
+            
             compiler.defineVariable(paramConstant);
         } while (match(TOKEN_COMMA));
     }
@@ -1000,7 +1022,7 @@ int Compiler::addUpvalue(uint8_t index, bool isLocal) {
     for (int i = 0; i < upvalueCount; i++) {
         Upvalue* upvalue = &upvalues[i];
         if(upvalue->index == index && upvalue->isLocal == isLocal) {
-            return i; 
+            return i;
         }
     }
     
