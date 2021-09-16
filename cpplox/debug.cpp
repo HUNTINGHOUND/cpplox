@@ -65,6 +65,8 @@ void Disassembler::disassembleChunk(Chunk* chunk, VM* vm, const std::string& nam
     for (int offset = 0; offset < chunk->count;) {
         offset = disassembleInstruction(chunk, vm, offset);
     }
+    
+    std::cout << "== END ==" << std::endl << std::endl;
 }
 
 
