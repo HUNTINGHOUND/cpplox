@@ -3,6 +3,7 @@
 #include "debug.hpp"
 #include "compiler.hpp"
 #include "valuearray.hpp"
+#include "flags.hpp"
 
 
 #ifdef NAN_BOXING
@@ -15,9 +16,9 @@ void* reallocate(void* pointer, size_t oldsize, size_t newsize, VM* vm) {
     vm->bytesAllocated += newsize - oldsize;
     
     if(newsize > oldsize) {
-#ifdef DEBUG_STRESS_GC
-        GarbageCollector::collectGarbage(vm);
-#endif
+        if(DEBUG_STRESS_GC) {
+            GarbageCollector::collectGarbage(vm);
+        }
     }
     
     if(vm->bytesAllocated > vm->nextGC) {
@@ -51,9 +52,9 @@ void freeObjects(VM* vm) {
 }
 
 void freeObject(Obj* object, VM* vm) {
-#ifdef DEBUG_LOG_GC
-    std::cout << (void*)object << " free type " << object->type << std::endl;
-#endif
+    if(DEBUG_LOG_GC) {
+        std::cout << (void*)object << " free type " << object->type << std::endl;
+    }
     
     switch (object->type) {
         case OBJ_STRING: {
@@ -97,16 +98,19 @@ void freeObject(Obj* object, VM* vm) {
         }
         case OBJ_COLLECTION: {
             ObjCollection* collection = (ObjCollection*)object;
-            free_array<Value>(collection->values, collection->capacity, vm);
+            delete collection->values;
+            reallocate(object, sizeof(ObjCollection), 0, vm);
+            break;
         }
     }
 }
 
 void GarbageCollector::collectGarbage(VM* vm) {
-#ifdef DEBUG_LOG_GC
-    std::cout << "-- gc begin" << std::endl;
+    if(DEBUG_LOG_GC) {
+        std::cout << "-- gc begin" << std::endl;
+    }
+    
     size_t before = vm->bytesAllocated;
-#endif
     
     markRoots(vm);
     traceReferences(vm);
@@ -117,10 +121,10 @@ void GarbageCollector::collectGarbage(VM* vm) {
     
     vm->marker = !vm->marker;
     
-#ifdef DEBUG_LOG_GC
-    std::cout << "-- gc end" << std::endl;
-    std::cout << "   collected " << before - vm->bytesAllocated << " bytes (from " << before << " to " << vm->bytesAllocated << ") next at " << vm->nextGC << std::endl;
-#endif
+    if(DEBUG_LOG_GC) {
+        std::cout << "-- gc end" << std::endl;
+        std::cout << "   collected " << before - vm->bytesAllocated << " bytes (from " << before << " to " << vm->bytesAllocated << ") next at " << vm->nextGC << std::endl;
+    }
 }
 
 void GarbageCollector::markRoots(VM* vm) {
@@ -163,11 +167,11 @@ void markObject(VM* vm, Obj* object) {
     
     vm->grayStack.push_back(object);
     
-#ifdef DEBUG_LOG_GC
-    std::cout << (void*)object << " mark ";
-    ValueOP::printValue(ValueOP::obj_val(object));
-    std::cout << std::endl;
-#endif
+    if(DEBUG_LOG_GC) {
+        std::cout << (void*)object << " mark ";
+        ValueOP::printValue(ValueOP::obj_val(object));
+        std::cout << std::endl;
+    }
 }
 
 void traceReferences(VM* vm) {
@@ -179,17 +183,17 @@ void traceReferences(VM* vm) {
 }
 
 void blackenObject(Obj* object, VM* vm) {
-#ifdef DEBUG_LOG_GC
-    std::cout << (void*)object << " blacken ";
-    ValueOP::printValue(ValueOP::obj_val(object));
-    std::cout << std::endl;
-#endif
+    if(DEBUG_LOG_GC) {
+        std::cout << (void*)object << " blacken ";
+        ValueOP::printValue(ValueOP::obj_val(object));
+        std::cout << std::endl;
+    }
     
     switch (object->type) {
         case OBJ_COLLECTION: {
             ObjCollection* collection = (ObjCollection*)object;
-            for(int i = 0; i < collection->size; i++) {
-                markValue(vm, collection->values[i]);
+            for(int i = 0; i < collection->values->count; i++) {
+                markValue(vm, collection->values->values[i]);
             }
             markTable(vm, &collection->methods);
         }

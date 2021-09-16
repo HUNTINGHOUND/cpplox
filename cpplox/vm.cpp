@@ -1,10 +1,10 @@
 #include "vm.hpp"
 #include "debug.hpp"
 #include "compiler.hpp"
-#include "flags.hpp"
 #include "memory.hpp"
 #include "object.hpp"
 #include "table.hpp"
+#include "flags.hpp"
 
 //NATIVE FUNCTIONS====================================================>
 
@@ -180,19 +180,19 @@ InterpretResult VM::run() {
     
     for(;;) {
         
-#ifdef DEBUG_TRACE_EXECUTION
-        std::cout << "         ";
-        for (auto it = stack.begin(); it != stack.end(); it++) {
-            std::cout << "[";
-            ValueOP::printValue(*it);
-            std::cout << "]";
+        if(DEBUG_TRACE_EXECUTION) {
+            std::cout << "         ";
+            for (auto it = stack.begin(); it != stack.end(); it++) {
+                std::cout << "[";
+                ValueOP::printValue(*it);
+                std::cout << "]";
+            }
+            std::cout << std::endl;
+            
+            uint8_t* start = getFrameFunction(frame)->chunk.code;
+            Disassembler::disassembleInstruction(&getFrameFunction(frame)->chunk, this, (int)(frame->ip - start));
         }
-        std::cout << std::endl;
         
-        uint8_t* start = getFrameFunction(frame)->chunk.code;
-        Disassembler::disassembleInstruction(&getFrameFunction(frame)->chunk, this, (int)(frame->ip - start));
-        
-#endif
         
         
         uint8_t instruction;
@@ -235,7 +235,7 @@ InterpretResult VM::run() {
                 } else if (ValueOP::is_number(peek(0)) && ValueOP::is_number(peek(1))) {
                     binary_op<double,double>(ValueOP::number_val, std::plus<double>());
                 } else if (ValueOP::is_collection(peek(0)) && ValueOP::is_collection(peek(1))) {
-                    
+                    appendCollection();
                 } else {
                     runtimeError(
                                  "Operands must be two numbers, two strings, or two collections.");
@@ -426,7 +426,7 @@ InterpretResult VM::run() {
                         if(collection->methods.tableGet(ValueOP::obj_val(name), &dummy)) {
                             stack.pop_back();
                             push_stack(ValueOP::obj_val(
-                                            ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
+                                                        ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
                             
                             break;
                         }
@@ -550,10 +550,10 @@ InterpretResult VM::run() {
                         push_stack(ValueOP::obj_val(newCollection));
                         
                         ObjCollection* indexes = ValueOP::as_collection(potentialIndex);
-                        for(int i = 0; i < indexes->size; i++) {
-                            double index = ValueOP::as_number(indexes->values[i]);
+                        for(int i = 0; i < indexes->values->count; i++) {
+                            double index = ValueOP::as_number(indexes->values->values[i]);
                             
-                            if(collection->size <= index) {
+                            if(collection->values->count <= index) {
                                 runtimeError("Random access out of bound.");
                                 return INTERPRET_RUNTIME_ERROR;
                             }
@@ -564,7 +564,7 @@ InterpretResult VM::run() {
                                 return INTERPRET_RUNTIME_ERROR;
                             }
                             
-                            newCollection->addBack(collection->values[(int)index]);
+                            newCollection->addBack(collection->values->values[(int)index]);
                         }
                         
                         break;
@@ -585,7 +585,7 @@ InterpretResult VM::run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                if(collection->size <= index) {
+                if(collection->values->count <= index) {
                     runtimeError("Random access out of bound.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -596,7 +596,7 @@ InterpretResult VM::run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                push_stack(collection->values[(int)index]);
+                push_stack(collection->values->values[(int)index]);
                 break;
             }
             case OP_COLLECTION: {
@@ -697,6 +697,23 @@ void VM::concatenate() {
     
     
     push_stack(ValueOP::obj_val(result));
+}
+
+void VM::appendCollection() {
+    ObjCollection* b = ValueOP::as_collection(peek(0));
+    ObjCollection* a = ValueOP::as_collection(peek(1));
+    
+    ObjCollection* newCollection = ObjCollection::newCollection(nullptr, 0, 0, this);
+    for(int i = 0; i < a->values->count; i++) {
+        newCollection->addBack(a->values->values[i]);
+    }
+    for(int i = 0; i < b->values->count; i++) {
+        newCollection->addBack(b->values->values[i]);
+    }
+    
+    stack.pop_back();
+    stack.pop_back();
+    push_stack(ValueOP::obj_val(newCollection));
 }
 
 bool VM::isFalsey(Value value) {
@@ -852,7 +869,7 @@ bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
         runtimeError("Stack overflow.");
         return false;
     }
-
+    
     if(argCount > function->arity - function->defaults) {
         for(int i = 0; i < argCount - (function->arity - function->defaults); i++) {
             push_stack(ValueOP::empty_val());

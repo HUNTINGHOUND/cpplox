@@ -2,9 +2,9 @@
 #define object_h
 
 #include "pch.pch"
-#include "flags.hpp"
 #include "table.hpp"
 #include "chunk.hpp"
+#include "valuearray.hpp"
 
 class VM;
 
@@ -129,10 +129,7 @@ class ObjCollection : public Obj {
     void expandCapacity();
     VM* vm;
 public:
-    Value* values;
-    size_t size;
-    size_t capacity;
-    
+    ValueArray* values;
     Table methods;
     
     static ObjCollection* newCollection(Value* values, size_t size, size_t capacity, VM* vm);

@@ -1,9 +1,8 @@
 #include "compiler.hpp"
 #include "memory.hpp"
-
-#ifdef DEBUG_PRINT_CODE
 #include "debug.hpp"
-#endif
+#include "flags.hpp"
+
 
 //Table containing precedence and compiling rules for all tokens
 ParseRule rules[52] = {
@@ -181,12 +180,12 @@ ObjFunction* Compiler::endCompiler() {
     
     vm->current = enclosing;
     
-#ifdef DEBUG_PRINT_CODE
-    if(!parser->hadError) {
-        Disassembler::disassembleChunk(currentChunk(), vm, function->name != nullptr
-                                       ? function->name->chars : "<script>");
+    if(DEBUG_PRINT_CODE) {
+        if(!parser->hadError) {
+            Disassembler::disassembleChunk(currentChunk(), vm, function->name != nullptr
+                                           ? function->name->chars : "<script>");
+        }
     }
-#endif
     
     return function;
 }

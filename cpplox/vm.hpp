@@ -76,6 +76,14 @@ class VM {
     
     bool bindMethod(ObjClass* _class, ObjString* name);
     
+    void addCollectionMethods(ObjCollection* collection);
+    
+    bool invoke(ObjString* name, int argCount);
+    
+    bool invokeFromClass(ObjClass* _class, ObjString* name, int argCount);
+    
+    void appendCollection();
+    
     //Native functions
     
     bool clockNative(int argCount, Value *args);
@@ -91,14 +99,6 @@ class VM {
     bool getFieldNative(int argCount, Value* args);
     
     bool setFieldNative(int argCount, Value* args);
-    
-    bool invoke(ObjString* name, int argCount);
-    
-    bool invokeFromClass(ObjClass* _class, ObjString* name, int argCount);
-    
-    void addCollectionMethods(ObjCollection* collection);
-    
-    void appendCollection();
     
 public:
     Compiler* current;

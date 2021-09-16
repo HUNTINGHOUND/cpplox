@@ -1,15 +1,7 @@
-//
-//  table.hpp
-//  cpplox
-//
-//  Created by Morgan Xu on 3/13/21.
-//
-
 #ifndef table_h
 #define table_h
 
 #include "pch.pch"
-#include "flags.hpp"
 
 #ifdef NAN_BOXING
 #include "nanvalue.hpp"

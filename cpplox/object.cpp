@@ -3,17 +3,20 @@
 #include "vm.hpp"
 #include "table.hpp"
 #include "chunk.hpp"
+#include "flags.hpp"
+#include "debug.hpp"
+
 
 
 
 uint32_t ObjString::hashString(const char* key, size_t length) {
     uint32_t hash = 2166136261u;
-
+    
     for (int i = 0; i < length; i++) {
         hash ^= (uint8_t)key[i];
         hash *= 16777619;
     }
-
+    
     return hash;
 }
 
@@ -31,9 +34,9 @@ Obj* Obj::allocateObject(size_t size, ObjType type, VM* vm) {
     object->next = vm->objects;
     vm->objects = object;
     
-#ifdef DEBUG_LOG_GC
-    std::cout << (void*)object << " allocate " << size << " for " << type << std::endl;
-#endif
+    if(DEBUG_LOG_GC) {
+        std::cout << (void*)object << " allocate " << size << " for " << type << std::endl;
+    }
     
     return object;
 }
@@ -55,7 +58,7 @@ ObjString* ObjString::makeString(VM* vm, size_t length, uint32_t hash) {
 ObjString* ObjString::copyString(VM* vm, const char* chars, size_t length) {
     uint32_t hash = hashString(chars, length);
     ObjString* interned = vm->strings.tableFindString(chars, length,
-                                             hash);
+                                                      hash);
     
     if (interned != nullptr) {
         return interned;
@@ -131,10 +134,8 @@ ObjBoundMethod* ObjBoundMethod::newBoundMethod(Value receiver, Obj *method, VM* 
 
 ObjCollection* ObjCollection::newCollection(Value *values, size_t size, size_t capacity, VM* vm) {
     ObjCollection* collection = allocate_obj<ObjCollection>(OBJ_COLLECTION, 0, vm);
+    collection->values = new ValueArray(vm);
     collection->vm = vm;
-    collection->values = values;
-    collection->size = size;
-    collection->capacity = capacity;
     collection->methods = Table(vm);
     return collection;
 }
@@ -178,7 +179,7 @@ CustomResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::ve
                 return response;
             }
             
-            if(size <= ValueOP::as_number(arguments[0])) {
+            if(values->count <= ValueOP::as_number(arguments[0])) {
                 response.hasErr = true;
                 
                 response.errorMessage = "Out of bound access to collection object.";
@@ -214,24 +215,17 @@ CustomResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::ve
 
 
 void ObjCollection::addBack(Value value) {
-    if(capacity == size) {
-        size_t newCapacity = grow_capacity(capacity);
-        values = grow_array<Value>(values, capacity, newCapacity, vm);
-        capacity = newCapacity;
-    }
-    
-    values[size++] = value;
+    values->writeValueArray(value);
 }
 
 void ObjCollection::deleteBack() {
-    values[size] = ValueOP::empty_val();
-    size--;
+    values->count--;
 }
 
 int ObjCollection::getSize() {
-    return (int)size;
+    return (int)values->count;
 }
 
 void ObjCollection::swap(Value index, Value value) {
-    values[(int)ValueOP::as_number(index)] = value;
+    values->values[(int)ValueOP::as_number(index)] = value;
 }

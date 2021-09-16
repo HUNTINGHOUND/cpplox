@@ -87,18 +87,27 @@ public:
     //constants each chunk keeps
     ValueArray constants;
     
-    //adds a constant to the constant vector return position added
+    
+    /// Adds a constant to the constant vector
+    /// @param value constant to be added
+    /// @return position added
     int addConstant(Value value);
     
     Chunk(VM* vm);
     
-    //free chunk from memory
+    /// Free the chunk from memroy
     void freeChunk();
     
-    //write operation to chunk
+    
+    /// Write bytecode to chunk
+    /// @param byte The bytecode to be writen
+    /// @param line The line from source code the corresponding bytecode comes from. Used for debug purpose
     void writeChunk(uint8_t byte, int line);
     
-    //get which line in the source code the operation is compiled from, error report purpose
+    
+    /// Using binary search to find the line a bytecode is corresponding to
+    /// @param index the index of the bytecode
+    /// @return the line of the source code that the bytecode came from
     int getLine(size_t index);
     
     //write a constant to the chunk and it location to the byte code

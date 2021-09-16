@@ -1,6 +1,5 @@
 #include "pch.pch"
 #include "vm.hpp"
-#include "debug.hpp"
 #include "loxtext/startEditor.hpp"
 
 void repl(VM* vm) {
@@ -66,6 +65,8 @@ int main(int argc, const char* argv[]) {
         } else {
             runFile(&vm, argv[1]);
         }
+    
+        
     } else {
         std::cerr << "Usage: cpplox [options]" << std::endl << std::endl;
         std::cerr << "options:" << std::endl;

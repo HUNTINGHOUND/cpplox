@@ -260,9 +260,9 @@ void ValueOP::printObject(Value value) {
         case OBJ_COLLECTION: {
             ObjCollection* collection = ValueOP::as_collection(value);
             std::cout << "{";
-            for(int i = 0; i < collection->size; i++) {
-                printValue(collection->values[i]);
-                if(i != collection->size - 1) std::cout << ", ";
+            for(int i = 0; i < collection->values->count; i++) {
+                printValue(collection->values->values[i]);
+                if(i != collection->values->count - 1) std::cout << ", ";
             }
             std::cout << "}";
             break;
