@@ -100,6 +100,8 @@ class VM {
     
     bool setFieldNative(int argCount, Value* args);
     
+    bool interpolateNative(int argCount, Value* args);
+    
 public:
     Compiler* current;
     ClassCompiler* currentClass;

@@ -10,34 +10,25 @@ Lox is a dynamically typed high level language that supports OOP operations and 
 * Boolean values. Just normal boolean values for logics. As expected, there are only two boolean values.
 
 ```
-
 true;
 false;
-
 ```
 
 * Numbers. So far Lox supports only double precision floating points numbers. I plan to add hexadecimal, binary, and scientific notation in the near future.
 
 ```
-
 12; //an integer
 1.2; //a decimal
-
 ```
 
 * String. A string literal just like any other string literal. Concatenate will be supported. 
 ```
-
 ""; //empty string
-
 "abc"; //a normal string
-
 ```
 * Nul. Very similar to java null. Just a simple place holder that contains no value.
 ```
-
 nul; //a nul! how exciting
-
 ```
 * Collection. This contains a collection of values. These values can be primitive types or classes
 ```

@@ -78,6 +78,8 @@ ObjInstance* as_instance(Value value);
 ObjBoundMethod* as_bound_method(Value value);
 ObjCollection* as_collection(Value value);
 
+ObjString* to_string(Value value, VM* vm);
+
 Value bool_val(bool value);
 Value nul_val();
 Value number_val(double value);

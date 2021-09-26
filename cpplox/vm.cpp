@@ -8,6 +8,49 @@
 
 //NATIVE FUNCTIONS====================================================>
 
+bool VM::interpolateNative(int argCount, Value *args) {
+    if(!ValueOP::is_string(args[0])) {
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first element to be a string.", 38));
+        return false;
+    }
+    if(!ValueOP::is_collection(args[1])) {
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected the second argument to be collection.", 46));
+        return false;
+    }
+    
+    ObjString* format = ValueOP::as_string(args[0]);
+    size_t n = format->length;
+    
+    ObjCollection* input = ValueOP::as_collection(args[1]);
+    size_t m = input->values->count;
+    
+    std::string interloped = "";
+    int j = 0;
+    int i = 0;
+    while(i < n) {
+        if(format->chars[i] == '$' && i != n - 2 && format->chars[i + 1] == '{' && format->chars[i + 2] == '}') {
+            if(j >= m) {
+                args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected more arguments for interpolation.", 42));
+                return false;
+            }
+            
+            ObjString* arg = ValueOP::to_string(input->values->values[j++], this);
+            push_stack(ValueOP::obj_val(arg));
+            std::string inserted(arg->chars);
+            interloped += inserted;
+            stack.pop_back();
+            
+            i += 3;
+        } else {
+            interloped += format->chars[i];
+            i++;
+        }
+    }
+    
+    args[-1] = ValueOP::obj_val(ObjString::copyString(this, interloped.c_str(), interloped.size()));
+    return true;
+}
+
 bool VM::clockNative(int argCount, Value *args) {
     args[-1] = ValueOP::number_val((double)clock() / CLOCKS_PER_SEC);
     return true;
@@ -104,6 +147,7 @@ VM::VM() : strings(this), globalNames(this), globalValues(this){
     defineNative("hasField", &VM::hasFieldNative, 2);
     defineNative("getField", &VM::getFieldNative, 2);
     defineNative("setField", &VM::setFieldNative, 3);
+    defineNative("interpolate", &VM::interpolateNative, 2);
 }
 
 void VM::resetStacks() {
@@ -790,7 +834,7 @@ bool VM::callValue(Value callee, int argCount) {
             case OBJ_NATIVE: {
                 ObjNative* native = ValueOP::as_native(callee);
                 
-                if(argCount != native->arity) {
+                if(native->arity != -1 && argCount != native->arity) {
                     runtimeError("Expected %d arguments but got %d.", native->arity, argCount);
                     return false;
                 }

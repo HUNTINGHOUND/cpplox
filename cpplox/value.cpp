@@ -406,3 +406,26 @@ ObjCollection* ValueOP::as_collection(Value value) {
     if(!is_collection(value)) return nullptr;
     return (ObjCollection*)as_obj(value);
 }
+
+ObjString* ValueOP::to_string(Value value, VM* vm) {
+    switch (value.type) {
+        case VAL_BOOL: {
+            return ObjString::copyString(vm, value.as.boolean ? "True" : "False", value.as.boolean ? 4 : 5);
+        }
+        case VAL_NUL: {
+            return ObjString::copyString(vm, "Nul", 3);
+        }
+        case VAL_NUMBER: {
+            std::string num = std::to_string(value.as.number);
+            return ObjString::copyString(vm, num.c_str(), num.length());
+        }
+        case VAL_OBJ: {
+            std::stringstream ss;
+            ss << ((void *)value.as.obj);
+            return ObjString::copyString(vm, ss.str().c_str(), ss.str().length());
+        }
+        default: {
+            return ObjString::copyString(vm, "", 0);
+        }
+    }
+}
