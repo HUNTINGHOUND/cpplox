@@ -79,6 +79,8 @@ ObjBoundMethod* as_bound_method(Value value);
 ObjCollection* as_collection(Value value);
 
 ObjString* to_string(Value value, VM* vm);
+ObjString* object_to_string(Value object, VM* vm);
+ObjString* function_to_string(ObjFunction* function, VM* vm);
 
 Value bool_val(bool value);
 Value nul_val();

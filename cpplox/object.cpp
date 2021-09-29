@@ -7,8 +7,6 @@
 #include "debug.hpp"
 
 
-
-
 uint32_t ObjString::hashString(const char* key, size_t length) {
     uint32_t hash = 2166136261u;
     

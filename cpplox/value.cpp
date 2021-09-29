@@ -267,7 +267,6 @@ void ValueOP::printObject(Value value) {
             std::cout << "}";
             break;
         }
-            
     }
 }
 
@@ -410,22 +409,74 @@ ObjCollection* ValueOP::as_collection(Value value) {
 ObjString* ValueOP::to_string(Value value, VM* vm) {
     switch (value.type) {
         case VAL_BOOL: {
-            return ObjString::copyString(vm, value.as.boolean ? "True" : "False", value.as.boolean ? 4 : 5);
+            return ObjString::copyString(vm, value.as.boolean ? "true" : "false", value.as.boolean ? 4 : 5);
         }
         case VAL_NUL: {
-            return ObjString::copyString(vm, "Nul", 3);
+            return ObjString::copyString(vm, "nul", 3);
         }
         case VAL_NUMBER: {
             std::string num = std::to_string(value.as.number);
             return ObjString::copyString(vm, num.c_str(), num.length());
         }
         case VAL_OBJ: {
-            std::stringstream ss;
-            ss << ((void *)value.as.obj);
-            return ObjString::copyString(vm, ss.str().c_str(), ss.str().length());
+            
         }
         default: {
             return ObjString::copyString(vm, "", 0);
         }
     }
+}
+
+ObjString* ValueOP::object_to_string(Value value, VM* vm) {
+    switch(obj_type(value)) {
+        case OBJ_BOUND_METHOD:
+            return function_to_string(get_value_function(value), vm);
+        case OBJ_STRING:
+            return as_string(value);
+        case OBJ_FUNCTION:
+            return function_to_string(get_value_function(value), vm);
+        case OBJ_NATIVE:
+            return ObjString::copyString(vm, "<native fn>", 11);
+        case OBJ_CLOSURE:
+            return function_to_string(get_value_function(value), vm);
+        case OBJ_UPVALUE:
+            return ObjString::copyString(vm, "upvalue", 7);
+        case OBJ_CLASS:
+            return ObjString::copyString(vm, &as_class(value)->name->chars[0], as_class(value)->name->length);
+        case OBJ_INSTANCE: {
+            std::string buffer(as_instance(value)->_class->name->chars);
+            buffer += " instance";
+            return ObjString::copyString(vm, buffer.c_str(), buffer.size());
+        }
+        case OBJ_COLLECTION: {
+            std::string buffer = "{";
+            ObjCollection* collection = ValueOP::as_collection(value);
+            std::cout << "{";
+            for(int i = 0; i < collection->values->count; i++) {
+                ObjString* element = to_string(collection->values->values[i], vm);
+                buffer += std::string(element->chars);
+                if(i != collection->values->count - 1) buffer += ", ";
+            }
+            buffer += "}";
+            return ObjString::copyString(vm, buffer.c_str(), buffer.size());
+        }
+            
+        default: {
+            Obj* object = as_obj(value);
+            std::stringstream ss;
+            ss << ((void *)object);
+            return ObjString::copyString(vm, ss.str().c_str(), ss.str().length());
+        }
+    }
+}
+
+ObjString* ValueOP::function_to_string(ObjFunction* function, VM* vm) {
+    if(function->name == nullptr) {
+        return ObjString::copyString(vm, "<script>", 8);
+    }
+    
+    std::string buffer = "<fn ";
+    buffer += std::string(function->name->chars);
+    buffer += ">";
+    return ObjString::copyString(vm, buffer.c_str(), buffer.size());
 }
