@@ -419,7 +419,7 @@ ObjString* ValueOP::to_string(Value value, VM* vm) {
             return ObjString::copyString(vm, num.c_str(), num.length());
         }
         case VAL_OBJ: {
-            
+            return object_to_string(value, vm);
         }
         default: {
             return ObjString::copyString(vm, "", 0);

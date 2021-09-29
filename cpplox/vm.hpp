@@ -100,6 +100,8 @@ class VM {
     
     bool interpolateNative(int argCount, Value* args);
     
+    bool toStringNative(int argCount, Value* args);
+    
 public:
     Compiler* current;
     ClassCompiler* currentClass;

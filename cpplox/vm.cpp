@@ -8,6 +8,11 @@
 
 //NATIVE FUNCTIONS====================================================>
 
+bool VM::toStringNative(int argCount, Value *args) {
+    args[-1] = ValueOP::obj_val(ValueOP::to_string(args[0], this));
+    return true;
+}
+
 bool VM::interpolateNative(int argCount, Value *args) {
     if(!ValueOP::is_string(args[0])) {
         args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first element to be a string.", 38));
@@ -148,6 +153,7 @@ VM::VM() : strings(this), globalNames(this), globalValues(this){
     defineNative("getField", &VM::getFieldNative, 2);
     defineNative("setField", &VM::setFieldNative, 3);
     defineNative("interpolate", &VM::interpolateNative, 2);
+    defineNative("toString", &VM::toStringNative, 1);
 }
 
 void VM::resetStacks() {
