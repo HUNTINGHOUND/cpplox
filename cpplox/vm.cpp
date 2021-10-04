@@ -463,9 +463,6 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_GET_PROPERTY: {
-                
-                
-                
                 if(!ValueOP::is_instance(peek(0))) {
                     
                     if(ValueOP::is_collection(peek(0))) {
