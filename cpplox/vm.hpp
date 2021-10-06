@@ -76,9 +76,9 @@ class VM {
     
     void addCollectionMethods(ObjCollection* collection);
     
-    bool invoke(ObjString* name, int argCount);
+    bool invoke(ObjString* name, int argCount, bool interrupt);
     
-    bool invokeFromClass(ObjClass* _class, ObjString* name, int argCount);
+    bool invokeFromClass(ObjClass* _class, ObjString* name, int argCount, bool interrupt);
     
     void appendCollection();
     
