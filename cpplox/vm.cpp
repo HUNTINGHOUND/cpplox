@@ -358,10 +358,11 @@ InterpretResult VM::run() {
             case OP_PRINT: {
                 if(ValueOP::is_instance(stack.back())) {
                     ObjString* name = ObjString::copyString(this, "toString", 8);
-                    invoke(name, 0, false);
-                    frame->ip--;
-                    frame = &frames.back();
-                    break;
+                    if(invoke(name, 0, false)) {
+                        frame->ip--;
+                        frame = &frames.back();
+                        break;
+                    }
                 }
                 
                 ValueOP::printValue(stack.back());
