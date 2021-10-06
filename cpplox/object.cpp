@@ -138,12 +138,13 @@ ObjCollection* ObjCollection::newCollection(Value *values, size_t size, size_t c
     return collection;
 }
 
-CustomResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::vector<Value>& arguments) {
-    CustomResponse response;
+CollectionResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::vector<Value>& arguments) {
+    CollectionResponse response;
     response.hasErr = false;
     if(strcmp(method->chars, "addBack") == 0) {
         if(arguments.size() != 1) {
             response.hasErr = true;
+            response.propertyMissing = false;
             
             response.errorMessage = "addBack method expects 1 argument.";
             return response;
@@ -154,6 +155,7 @@ CustomResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::ve
     } else if (strcmp(method->chars, "deleteBack") == 0) {
         if(arguments.size() != 0) {
             response.hasErr = true;
+            response.propertyMissing = false;
             
             response.errorMessage = "deleteBack method expects 0 argument.";
             return response;
@@ -164,14 +166,16 @@ CustomResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::ve
     } else if (strcmp(method->chars, "swap") == 0) {
         if(arguments.size() != 2) {
             response.hasErr = true;
+            response.propertyMissing = false;
             
             response.errorMessage = "swap method expects 2 argument.";
             return response;
         } else {
-            //error checking
+            
             double dummy;
             if(!ValueOP::is_number(arguments[0]) || modf(ValueOP::as_number(arguments[0]), &dummy) != 0.0) {
                 response.hasErr = true;
+                response.propertyMissing = false;
                 
                 response.errorMessage = "Swap index argument must be an integer";
                 return response;
@@ -179,6 +183,7 @@ CustomResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::ve
             
             if(values->count <= ValueOP::as_number(arguments[0])) {
                 response.hasErr = true;
+                response.propertyMissing = false;
                 
                 response.errorMessage = "Out of bound access to collection object.";
                 return response;
@@ -192,6 +197,7 @@ CustomResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::ve
     } else if (strcmp(method->chars, "getSize") == 0) {
         if(arguments.size() != 0) {
             response.hasErr = true;
+            response.propertyMissing = false;
             
             response.errorMessage = "getSize method expects 0 argument.";
             return response;
@@ -201,6 +207,7 @@ CustomResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::ve
         }
     } else {
         response.hasErr = true;
+        response.propertyMissing = true;
         
         response.errorMessage = "Collection class does not contain property '";
         response.errorMessage + method->chars;

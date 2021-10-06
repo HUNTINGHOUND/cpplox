@@ -356,6 +356,14 @@ InterpretResult VM::run() {
                 push_stack(ValueOP::bool_val(false));
                 break;
             case OP_PRINT: {
+                if(ValueOP::is_instance(stack.back())) {
+                    ObjString* name = ObjString::copyString(this, "toString", 8);
+                    invoke(name, 0, false);
+                    frame->ip--;
+                    frame = &frames.back();
+                    break;
+                }
+                
                 ValueOP::printValue(stack.back());
                 stack.pop_back();
                 std::cout << std::endl;
@@ -463,9 +471,6 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_GET_PROPERTY: {
-                
-                
-                
                 if(!ValueOP::is_instance(peek(0))) {
                     
                     if(ValueOP::is_collection(peek(0))) {
@@ -543,7 +548,7 @@ InterpretResult VM::run() {
             case OP_INVOKE: {
                 ObjString* method = read_string(frame);
                 int argCount = read_byte(frame);
-                if(!invoke(method, argCount)) {
+                if(!invoke(method, argCount, true)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
@@ -579,7 +584,7 @@ InterpretResult VM::run() {
                 ObjClass* superclass = ValueOP::as_class(stack.back());
                 stack.pop_back();
                 
-                if(!invokeFromClass(superclass, method, argCount)) {
+                if(!invokeFromClass(superclass, method, argCount, true)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
@@ -678,7 +683,7 @@ InterpretResult VM::run() {
     }
 }
 
-bool VM::invoke(ObjString *name, int argCount) {
+bool VM::invoke(ObjString *name, int argCount, bool interrupt) {
     Value receiver = peek(argCount);
     
     if(ValueOP::is_collection(receiver)) {
@@ -687,9 +692,11 @@ bool VM::invoke(ObjString *name, int argCount) {
         for(int i = argCount - 1; i >= 0; i--) {
             arguments.push_back(peek(i));
         }
-        CustomResponse response = collection->invokeCollectionMethods(name, arguments);
+        
+        CollectionResponse response = collection->invokeCollectionMethods(name, arguments);
         if(response.hasErr) {
-            runtimeError(response.errorMessage);
+            if(!response.propertyMissing || interrupt)
+                runtimeError(response.errorMessage);
             return false;
         }
         
@@ -716,13 +723,13 @@ bool VM::invoke(ObjString *name, int argCount) {
         return callValue(value, argCount);
     }
     
-    return invokeFromClass(instance->_class, name, argCount);
+    return invokeFromClass(instance->_class, name, argCount, interrupt);
 }
 
-bool VM::invokeFromClass(ObjClass *_class, ObjString *name, int argCount) {
+bool VM::invokeFromClass(ObjClass *_class, ObjString *name, int argCount, bool interrupt) {
     Value method;
     if (!_class->methods.tableGet(ValueOP::obj_val(name), &method)) {
-        runtimeError("Undefined property '%s'.", name->chars);
+        if(interrupt) runtimeError("Undefined property '%s'.", name->chars);
         return false;
     }
     
@@ -816,7 +823,7 @@ bool VM::callValue(Value callee, int argCount) {
                     for(int i = argCount - 1; i >= 0; i--) {
                         arguments.push_back(peek(i));
                     }
-                    CustomResponse response = collection->invokeCollectionMethods((ObjString*)bound->method, arguments);
+                    CollectionResponse response = collection->invokeCollectionMethods((ObjString*)bound->method, arguments);
                     if(response.hasErr) {
                         runtimeError(response.errorMessage);
                         return false;

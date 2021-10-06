@@ -118,8 +118,10 @@ public:
     static ObjBoundMethod* newBoundMethod(Value receiver, Obj* method, VM* vm);
 };
 
-struct CustomResponse {
+struct CollectionResponse {
     bool hasErr;
+    bool propertyMissing;
+    
     std::string errorMessage;
     bool isVoid;
     Value returnVal;
@@ -134,7 +136,7 @@ public:
     
     static ObjCollection* newCollection(Value* values, size_t size, size_t capacity, VM* vm);
     
-    CustomResponse invokeCollectionMethods(ObjString* method, std::vector<Value>& arguments);
+    CollectionResponse invokeCollectionMethods(ObjString* method, std::vector<Value>& arguments);
     void addBack(Value value);
     void deleteBack();
     void swap(Value index, Value value);
