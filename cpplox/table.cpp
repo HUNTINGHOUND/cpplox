@@ -3,24 +3,23 @@
 #include "object.hpp"
 
 
+Table::Table() {
+    vm = nullptr;
+}
+
 Table::Table(VM* vm) {
     this->vm = vm;
     count = 0;
-    capacity = 0;
-    entries = nullptr;
 }
 
-void Table::freeTable() {
-    free_array(entries, capacity, vm);
-}
 
 bool Table::tableSet(Value key, Value value) {
-    if(count + 1 > capacity * TABLE_MAX_LOAD) {
-        size_t newCapacity = grow_capacity(capacity);
+    if(count + 1 > this->entries.size() * TABLE_MAX_LOAD) {
+        size_t newCapacity = grow_capacity(this->entries.capacity());
         adjustCapacity(newCapacity);
     }
     
-    Entry* entry = findEntry(entries, key, this->capacity);
+    Entry* entry = findEntry(entries, key, this->entries.capacity());
     
     bool isNewKey = ValueOP::is_empty(entry->key);
     if (isNewKey && ValueOP::is_nul(entry->value)) count++;
@@ -30,7 +29,7 @@ bool Table::tableSet(Value key, Value value) {
     return isNewKey;
 }
 
-Entry* Table::findEntry(Entry* entries, Value key, size_t capacity) {
+Entry* Table::findEntry(std::vector<Entry>& entries, Value key, size_t capacity) {
     uint32_t index = ValueOP::hashValue(key) & (capacity - 1);
     Entry* tombstone = nullptr;
     
@@ -53,14 +52,14 @@ Entry* Table::findEntry(Entry* entries, Value key, size_t capacity) {
 }
 
 void Table::adjustCapacity(size_t newCapacity) {
-    Entry* newEntries = allocate<Entry>(newCapacity, vm);
+    std::vector<Entry> newEntries(newCapacity);
     for(int i = 0; i < newCapacity; i++) {
         newEntries[i].key = ValueOP::empty_val();
         newEntries[i].value = ValueOP::nul_val();
     }
     
     count = 0;
-    for (int i = 0; i < this->capacity; i++) {
+    for (int i = 0; i < this->entries.size(); i++) {
         Entry* entry = &entries[i];
         if(ValueOP::is_empty(entry->key)) continue;
         
@@ -70,13 +69,12 @@ void Table::adjustCapacity(size_t newCapacity) {
         count++;
     }
     
-    this->entries = newEntries;
-    this->capacity = newCapacity;
+    entries.swap(newEntries);
     
 }
 
 void Table::tableAddAll(Table* from) {
-    for (int i = 0; i < from->capacity; i++) {
+    for (int i = 0; i < from->entries.size(); i++) {
         Entry* entry = &from->entries[i];
         if(ValueOP::is_empty(entry->key)) {
             tableSet(entry->key, entry->value);
@@ -87,7 +85,7 @@ void Table::tableAddAll(Table* from) {
 bool Table::tableGet(Value key, Value *value) {
     if (count == 0) return false;
     
-    Entry* entry = findEntry(entries, key, this->capacity);
+    Entry* entry = findEntry(entries, key, entries.size());
     if(ValueOP::is_empty(entry->key)) return false;
     
     *value = entry->value;
@@ -97,7 +95,7 @@ bool Table::tableGet(Value key, Value *value) {
 bool Table::tableDelete(Value key) {
     if (count == 0) return false;
     
-    Entry* entry = findEntry(entries, key, this->capacity);
+    Entry* entry = findEntry(entries, key, entries.size());
     if(ValueOP::is_empty(entry->key)) return false;
     
     entry->key = ValueOP::empty_val();
@@ -109,7 +107,7 @@ bool Table::tableDelete(Value key) {
 ObjString* Table::tableFindString(const char *chars, size_t length, uint32_t hash) {
     if (count == 0) return nullptr;
     
-    uint32_t index = hash & (capacity - 1);
+    uint32_t index = hash & (entries.size() - 1);
     
     while(true) {
         Entry* entry = &entries[index];
@@ -119,18 +117,18 @@ ObjString* Table::tableFindString(const char *chars, size_t length, uint32_t has
             
             ObjString* key = ValueOP::as_string(entry->key);
             
-            if (key->length == length && key->hash == hash &&
-                strcmp(key->chars, chars) == 0) {
+            if (key->chars.length() == length && key->hash == hash &&
+                key->chars.compare(chars) == 0) {
                 return key;
             }
         }
         
-        index = (index + 1) & (capacity - 1);
+        index = (index + 1) & (entries.size() - 1);
     }
 }
 
 void Table::removeWhite(VM* vm) {
-    for(int i = 0; i < capacity; i++) {
+    for(int i = 0; i < entries.size(); i++) {
         Entry* entry = &entries[i];
         if(!ValueOP::is_empty(entry->key) &&
            ValueOP::as_obj(entry->key)->mark != vm->marker) {

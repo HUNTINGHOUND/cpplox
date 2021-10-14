@@ -52,7 +52,7 @@ bool as_bool(Value value);
 double as_number(Value value);
 Obj* as_obj(Value value);
 ObjString* as_string(Value value);
-char* as_c_string(Value value);
+std::string* as_std_string(Value value);
 ObjFunction* as_function(Value value);
 ObjNative* as_native(Value value);
 ObjClosure* as_closure(Value value);

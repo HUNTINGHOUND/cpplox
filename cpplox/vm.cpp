@@ -24,10 +24,10 @@ bool VM::interpolateNative(int argCount, Value *args) {
     }
     
     ObjString* format = ValueOP::as_string(args[0]);
-    size_t n = format->length;
+    size_t n = format->chars.length();
     
     ObjCollection* input = ValueOP::as_collection(args[1]);
-    size_t m = input->values->count;
+    size_t m = input->values.count;
     
     std::string interloped = "";
     int j = 0;
@@ -39,7 +39,7 @@ bool VM::interpolateNative(int argCount, Value *args) {
                 return false;
             }
             
-            ObjString* arg = ValueOP::to_string(input->values->values[j++], this);
+            ObjString* arg = ValueOP::to_string(input->values.values[j++], this);
             push_stack(ValueOP::obj_val(arg));
             std::string inserted(arg->chars);
             interloped += inserted;
@@ -68,7 +68,7 @@ bool VM::errNative(int argCount, Value* args) {
 
 bool VM::runtimeErrNative(int argCount, Value *args) {
     ObjString* errMessage = ValueOP::as_string(args[0]);
-    args[-1] = ValueOP::obj_val(ObjString::copyString(this, errMessage->chars, errMessage->length));
+    args[-1] = ValueOP::obj_val(ObjString::copyString(this, errMessage->chars.c_str(), errMessage->chars.length()));
     return false;
 }
 
@@ -198,10 +198,7 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
 }
 
 void VM::freeVM() {
-    strings.freeTable();
     initString = nullptr;
-    globalNames.freeTable();
-    globalValues.freeValueArray();
     freeObjects(this);
 }
 
@@ -239,7 +236,7 @@ InterpretResult VM::run() {
             }
             std::cout << std::endl;
             
-            uint8_t* start = getFrameFunction(frame)->chunk.code;
+            uint8_t* start = &getFrameFunction(frame)->chunk.code[0];
             Disassembler::disassembleInstruction(&getFrameFunction(frame)->chunk, this, (int)(frame->ip - start));
         }
         
@@ -487,7 +484,7 @@ InterpretResult VM::run() {
                             break;
                         }
                         
-                        runtimeError("Collection does not contain property '%s'", name->chars);
+                        runtimeError("Collection does not contain property '%s'", name->chars.c_str());
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     
@@ -539,7 +536,7 @@ InterpretResult VM::run() {
                     break;
                 }
                 
-                runtimeError("Undefined Property '%s'.", name->chars);
+                runtimeError("Undefined Property '%s'.", name->chars.c_str());
                 return INTERPRET_RUNTIME_ERROR;
             }
             case OP_METHOD: {
@@ -606,10 +603,10 @@ InterpretResult VM::run() {
                         push_stack(ValueOP::obj_val(newCollection));
                         
                         ObjCollection* indexes = ValueOP::as_collection(potentialIndex);
-                        for(int i = 0; i < indexes->values->count; i++) {
-                            double index = ValueOP::as_number(indexes->values->values[i]);
+                        for(int i = 0; i < indexes->values.count; i++) {
+                            double index = ValueOP::as_number(indexes->values.values[i]);
                             
-                            if(collection->values->count <= index) {
+                            if(collection->values.count <= index) {
                                 runtimeError("Random access out of bound.");
                                 return INTERPRET_RUNTIME_ERROR;
                             }
@@ -620,7 +617,7 @@ InterpretResult VM::run() {
                                 return INTERPRET_RUNTIME_ERROR;
                             }
                             
-                            newCollection->addBack(collection->values->values[(int)index]);
+                            newCollection->addBack(collection->values.values[(int)index]);
                         }
                         
                         break;
@@ -641,7 +638,7 @@ InterpretResult VM::run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                if(collection->values->count <= index) {
+                if(collection->values.count <= index) {
                     runtimeError("Random access out of bound.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -652,7 +649,7 @@ InterpretResult VM::run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                push_stack(collection->values->values[(int)index]);
+                push_stack(collection->values.values[(int)index]);
                 break;
             }
             case OP_COLLECTION: {
@@ -730,7 +727,7 @@ bool VM::invoke(ObjString *name, int argCount, bool interrupt) {
 bool VM::invokeFromClass(ObjClass *_class, ObjString *name, int argCount, bool interrupt) {
     Value method;
     if (!_class->methods.tableGet(ValueOP::obj_val(name), &method)) {
-        if(interrupt) runtimeError("Undefined property '%s'.", name->chars);
+        if(interrupt) runtimeError("Undefined property '%s'.", name->chars.c_str());
         return false;
     }
     
@@ -742,13 +739,9 @@ void VM::concatenate() {
     ObjString* b = ValueOP::as_string(peek(0));
     ObjString* a = ValueOP::as_string(peek(1));
     
-    size_t length = a->length + b->length;
-    char* newString = allocate<char>(length + 1, this);
-    memcpy(newString, a->chars, a->length);
-    memcpy(newString+ a->length, b->chars, b->length);
-    newString[length] = '\0';
+    std::string newString = a->chars + b->chars;
     
-    ObjString* result = ObjString::copyString(this, newString, length);
+    ObjString* result = ObjString::copyString(this, newString.c_str(), newString.length());
     
     stack.pop_back();
     stack.pop_back();
@@ -762,11 +755,11 @@ void VM::appendCollection() {
     ObjCollection* a = ValueOP::as_collection(peek(1));
     
     ObjCollection* newCollection = ObjCollection::newCollection(nullptr, 0, 0, this);
-    for(int i = 0; i < a->values->count; i++) {
-        newCollection->addBack(a->values->values[i]);
+    for(int i = 0; i < a->values.count; i++) {
+        newCollection->addBack(a->values.values[i]);
     }
-    for(int i = 0; i < b->values->count; i++) {
-        newCollection->addBack(b->values->values[i]);
+    for(int i = 0; i < b->values.count; i++) {
+        newCollection->addBack(b->values.values[i]);
     }
     
     stack.pop_back();
@@ -794,7 +787,7 @@ void VM::runtimeError(const std::string& format, ... ) {
         CallFrame* frame = &frames[i];
         ObjFunction* function = getFrameFunction(frame);
         
-        size_t instruction = frame->ip - function->chunk.code - 1;
+        size_t instruction = frame->ip - (&function->chunk.code[0]) - 1;
         std::cerr << "[line " << function->chunk.getLine(instruction) << "] in ";
         
         if(function->name == nullptr) {
@@ -934,7 +927,7 @@ bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
         }
     }
     
-    frames.push_back(CallFrame(callee, function->chunk.code,
+    frames.push_back(CallFrame(callee, &function->chunk.code[0],
                                stack.size() - argCount - (argCount - (function->arity - function->defaults)) - 1));
     return true;
 }
@@ -999,7 +992,7 @@ void VM::defineMethod(ObjString *name) {
 bool VM::bindMethod(ObjClass *_class, ObjString *name) {
     Value method;
     if(!_class->methods.tableGet(ValueOP::obj_val(name), &method)) {
-        runtimeError("Undefined property '%s'.", name->chars);
+        runtimeError("Undefined property '%s'.", name->chars.c_str());
         return false;
     }
     

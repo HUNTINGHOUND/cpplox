@@ -37,7 +37,7 @@ public:
     bool mark;
     
     template<typename T>
-    static T* allocate_obj(ObjType objectType, size_t extra, VM* vm);
+    static T* allocate_obj(ObjType objectType, VM* vm);
 };
 
 class ObjString : public Obj {
@@ -45,9 +45,8 @@ class ObjString : public Obj {
     static ObjString* makeString(VM* vm, size_t length, uint32_t hash);
     
 public:
-    size_t length;
     uint32_t hash;
-    char chars[];
+    std::string chars;
     static ObjString* copyString(VM* vm, const char* chars, size_t length);
     static uint32_t hashString(const char* key, size_t length);
 };
@@ -87,7 +86,7 @@ public:
 class ObjClosure : public Obj {
 public:
     ObjFunction* function;
-    ObjUpvalue** upvalues;
+    std::vector<ObjUpvalue*> upvalues;
     int upvalueCount;
     
     static ObjClosure* newClosure(ObjFunction* function, VM* vm);
@@ -131,7 +130,7 @@ class ObjCollection : public Obj {
     void expandCapacity();
     VM* vm;
 public:
-    ValueArray* values;
+    ValueArray values;
     Table methods;
     
     static ObjCollection* newCollection(Value* values, size_t size, size_t capacity, VM* vm);

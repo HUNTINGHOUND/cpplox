@@ -76,13 +76,12 @@ public:
     
     //current count of bytes in code
     size_t count;
-    size_t capacity;
+    
     //current count of lines(Data structure) in lines
     size_t lineCount;
-    size_t lineCapacity;
     
-    uint8_t* code;
-    Line* lines;
+    std::vector<uint8_t> code;
+    std::vector<Line> lines;
     
     //constants each chunk keeps
     ValueArray constants;
@@ -93,11 +92,8 @@ public:
     /// @return position added
     int addConstant(Value value);
     
+    Chunk();
     Chunk(VM* vm);
-    
-    /// Free the chunk from memroy
-    void freeChunk();
-    
     
     /// Write bytecode to chunk
     /// @param byte The bytecode to be writen

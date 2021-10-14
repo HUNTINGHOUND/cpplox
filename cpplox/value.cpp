@@ -227,8 +227,8 @@ ObjString* ValueOP::as_string(Value value) {
     return (ObjString*)as_obj(value);
 }
 
-char* ValueOP::as_c_string(Value value) {
-    return ((ObjString*)as_obj(value))->chars;
+std::string* ValueOP::as_std_string(Value value) {
+    return &((ObjString*)as_obj(value))->chars;
 }
 
 void ValueOP::printObject(Value value) {
@@ -237,7 +237,7 @@ void ValueOP::printObject(Value value) {
             printFunction(get_value_function(value));
             break;
         case OBJ_STRING:
-            std::cout << as_c_string(value);
+            std::cout << *as_std_string(value);
             break;
         case OBJ_FUNCTION:
             printFunction(as_function(value));
@@ -260,9 +260,9 @@ void ValueOP::printObject(Value value) {
         case OBJ_COLLECTION: {
             ObjCollection* collection = ValueOP::as_collection(value);
             std::cout << "{";
-            for(int i = 0; i < collection->values->count; i++) {
-                printValue(collection->values->values[i]);
-                if(i != collection->values->count - 1) std::cout << ", ";
+            for(int i = 0; i < collection->values.count; i++) {
+                printValue(collection->values.values[i]);
+                if(i != collection->values.count - 1) std::cout << ", ";
             }
             std::cout << "}";
             break;
@@ -442,7 +442,7 @@ ObjString* ValueOP::object_to_string(Value value, VM* vm) {
         case OBJ_UPVALUE:
             return ObjString::copyString(vm, "upvalue", 7);
         case OBJ_CLASS:
-            return ObjString::copyString(vm, &as_class(value)->name->chars[0], as_class(value)->name->length);
+            return ObjString::copyString(vm, &as_class(value)->name->chars[0], as_class(value)->name->chars.length());
         case OBJ_INSTANCE: {
             std::string buffer(as_instance(value)->_class->name->chars);
             buffer += " instance";
@@ -452,10 +452,10 @@ ObjString* ValueOP::object_to_string(Value value, VM* vm) {
             std::string buffer = "{";
             ObjCollection* collection = ValueOP::as_collection(value);
             std::cout << "{";
-            for(int i = 0; i < collection->values->count; i++) {
-                ObjString* element = to_string(collection->values->values[i], vm);
+            for(int i = 0; i < collection->values.count; i++) {
+                ObjString* element = to_string(collection->values.values[i], vm);
                 buffer += std::string(element->chars);
-                if(i != collection->values->count - 1) buffer += ", ";
+                if(i != collection->values.count - 1) buffer += ", ";
             }
             buffer += "}";
             return ObjString::copyString(vm, buffer.c_str(), buffer.size());

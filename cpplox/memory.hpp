@@ -4,45 +4,18 @@
 #include "pch.pch"
 #include "vm.hpp"
 #include "object.hpp"
+#include "flags.hpp"
 
 class ValueArray;
-
-//central allocation method that helps keep track of memory usage
-void* reallocate(void* pointer, size_t oldsize, size_t newsize, VM* vm);
-/*
- oldSize           newSize           Operation
- 0                 Non-zero          Allocate new block.
- Non-zero          0                 Free block.
- Non-zero          < oldSize         Shrink block.
- Non-zero          > oldSize         Expand block.
- */
 
 //Free objects from heap space
 void freeObjects(VM* vm);
 
 void freeObject(Obj* object, VM* vm);
 
-
 //return the expanded capacity size
 inline size_t grow_capacity(size_t capacity) {
     return capacity < 8 ? 8 : capacity * 2;
-}
-
-//grow an array
-template <typename V>
-inline V* grow_array(V* pointer, size_t oldCount, size_t newCount, VM* vm) {
-    return (V*)reallocate(pointer, sizeof(V) * (oldCount), sizeof(V) * newCount, vm);
-}
-
-//free an array
-template <typename V>
-inline void free_array(V* pointer, size_t oldCount, VM* vm) {
-    reallocate(pointer, sizeof(V) * (oldCount), 0, vm);
-}
-
-template<typename T>
-inline T* allocate(size_t count, VM* vm) {
-    return (T*)reallocate(nullptr, 0, sizeof(T) * count, vm);
 }
 
 void markValue(VM* vm, Value value);
@@ -60,5 +33,35 @@ class GarbageCollector {
 public:
     static void collectGarbage(VM* vm);
 };
+
+//central allocation method that helps keep track of memory usage
+template<typename V>
+V* mem_allocate(size_t newsize, VM* vm) {
+    vm->bytesAllocated += newsize;
+    
+    if(DEBUG_STRESS_GC) {
+        GarbageCollector::collectGarbage(vm);
+    }
+    
+    if(vm->bytesAllocated > vm->nextGC) {
+        GarbageCollector::collectGarbage(vm);
+    }
+    
+    V* result = new V;
+    return result;
+}
+
+//Central free method to help keep track of memory usage
+template<typename V>
+void mem_deallocate(V* pointer, size_t oldsize, VM* vm) {
+    vm->bytesAllocated -= oldsize;
+    
+    delete pointer;
+}
+
+template<typename T>
+inline T* allocate(size_t count, VM* vm) {
+    return mem_allocate<T>(sizeof(T) * count, vm);
+}
 
 #endif /* memory_h */

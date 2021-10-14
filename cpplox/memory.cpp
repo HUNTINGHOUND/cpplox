@@ -12,36 +12,6 @@
 #include "value.hpp"
 #endif
 
-void* reallocate(void* pointer, size_t oldsize, size_t newsize, VM* vm) {
-    vm->bytesAllocated += newsize - oldsize;
-    
-    if(newsize > oldsize) {
-        if(DEBUG_STRESS_GC) {
-            GarbageCollector::collectGarbage(vm);
-        }
-    }
-    
-    if(vm->bytesAllocated > vm->nextGC) {
-        GarbageCollector::collectGarbage(vm);
-    }
-    
-    if (newsize == 0) {
-        if(oldsize != 0) {
-            free(pointer);
-        }
-        return nullptr;
-    }
-    
-    void* result;
-    
-    if(oldsize == 0) {
-        result = malloc(newsize);
-    } else {
-        result = realloc(pointer, newsize);
-    }
-    return result;
-}
-
 void freeObjects(VM* vm) {
     Obj* object = vm->objects;
     while (object != nullptr) {
@@ -53,53 +23,45 @@ void freeObjects(VM* vm) {
 
 void freeObject(Obj* object, VM* vm) {
     if(DEBUG_LOG_GC) {
-        std::cout << (void*)object << " free type " << object->type << std::endl;
+        std::cout << (void*)object << " free type ";
     }
     
     switch (object->type) {
-        case OBJ_STRING: {
-            ObjString* string = (ObjString*) object;
-            reallocate(object, sizeof(ObjString) + string->length + 1, 0, vm);
+        case OBJ_STRING:
+            mem_deallocate<ObjString>((ObjString*)object, sizeof(ObjString), vm);
+            if(DEBUG_LOG_GC) std::cout << "OBJ_STRING" << std::endl;
             break;
-        }
-        case OBJ_FUNCTION: {
-            ObjFunction* function = (ObjFunction*)object;
-            function->chunk.freeChunk();
-            reallocate(object, sizeof(ObjFunction), 0, vm);
+        case OBJ_FUNCTION:
+            mem_deallocate<ObjFunction>((ObjFunction*)object, sizeof(ObjFunction), vm);
+            if(DEBUG_LOG_GC) std::cout << "OBJ_FUNCTION" << std::endl;
             break;
-        }
         case OBJ_NATIVE:
-            reallocate(object, sizeof(ObjNative), 0, vm);
+            mem_deallocate<ObjNative>((ObjNative*)object, sizeof(ObjNative), vm);
+            if(DEBUG_LOG_GC) std::cout << "OBJ_NATIVE" << std::endl;
             break;
         case OBJ_UPVALUE:
-            reallocate(object, sizeof(ObjUpvalue), 0, vm);
+            mem_deallocate<ObjUpvalue>((ObjUpvalue*)object, sizeof(ObjUpvalue), vm);
+            if(DEBUG_LOG_GC) std::cout << "OBJ_UPVALUE" << std::endl;
             break;
-        case OBJ_CLOSURE: {
-            ObjClosure* closure = (ObjClosure*) object;
-            free_array<ObjUpvalue*>(closure->upvalues, closure->upvalueCount, vm);
-            reallocate(object, sizeof(ObjClosure), 0, vm);
+        case OBJ_CLOSURE:
+            mem_deallocate<ObjClosure>((ObjClosure*)object, sizeof(ObjClosure), vm);
+            if(DEBUG_LOG_GC) std::cout << "OBJ_CLOSURE" << std::endl;
             break;
-        }
-        case OBJ_CLASS: {
-            ObjClass* _class = (ObjClass*)object;
-            _class->methods.freeTable();
-            reallocate(object, sizeof(ObjClass),0,vm);
+        case OBJ_CLASS:
+            mem_deallocate<ObjClass>((ObjClass*)object, sizeof(ObjClass), vm);
+            if(DEBUG_LOG_GC) std::cout << "OBJ_CLASS" << std::endl;
             break;
-        }
-        case OBJ_INSTANCE: {
-            ObjInstance* instance = (ObjInstance*)object;
-            instance->fields.freeTable();
-            reallocate(object, sizeof(ObjInstance), 0, vm);
+        case OBJ_INSTANCE:
+            mem_deallocate<ObjInstance>((ObjInstance*)object, sizeof(ObjInstance), vm);
+            if(DEBUG_LOG_GC) std::cout << "OBJ_INSTANCE" << std::endl;
             break;
-        }
-        case OBJ_BOUND_METHOD: {
-            reallocate(object, sizeof(ObjBoundMethod), 0, vm);
+        case OBJ_BOUND_METHOD:
+            mem_deallocate<ObjBoundMethod>((ObjBoundMethod*)object, sizeof(ObjBoundMethod), vm);
+            if(DEBUG_LOG_GC) std::cout << "OBJ_BOUND_METHOD" << std::endl;
             break;
-        }
         case OBJ_COLLECTION: {
-            ObjCollection* collection = (ObjCollection*)object;
-            delete collection->values;
-            reallocate(object, sizeof(ObjCollection), 0, vm);
+            mem_deallocate<ObjCollection>((ObjCollection*)object, sizeof(ObjCollection), vm);
+            if(DEBUG_LOG_GC) std::cout << "OBJ_COLLECTION" << std::endl;
             break;
         }
     }
@@ -146,7 +108,7 @@ void GarbageCollector::markRoots(VM* vm) {
 }
 
 void markGlobal(Table* table, VM* vm) {
-    for(int i = 0; i < table->capacity; i++) {
+    for(int i = 0; i < table->entries.size(); i++) {
         Entry* entry = &table->entries[i];
         if(ValueOP::is_obj(entry->key)) {
             markObject(vm, ValueOP::as_obj(entry->key));
@@ -192,8 +154,8 @@ void blackenObject(Obj* object, VM* vm) {
     switch (object->type) {
         case OBJ_COLLECTION: {
             ObjCollection* collection = (ObjCollection*)object;
-            for(int i = 0; i < collection->values->count; i++) {
-                markValue(vm, collection->values->values[i]);
+            for(int i = 0; i < collection->values.count; i++) {
+                markValue(vm, collection->values.values[i]);
             }
             markTable(vm, &collection->methods);
         }
@@ -244,7 +206,7 @@ void markArray(VM* vm, ValueArray* array) {
 }
 
 void markTable(VM* vm, Table* table) {
-    for(int i = 0; i < table->capacity; i++) {
+    for(int i = 0; i < table->entries.size(); i++) {
         Entry* entry = &table->entries[i];
         markValue(vm, entry->key);
         markValue(vm, entry->value);

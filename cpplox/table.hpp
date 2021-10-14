@@ -19,20 +19,17 @@ struct Entry {
 class Table {
     
     VM* vm;
-    Entry* findEntry(Entry* entries, Value key, size_t capacity);
+    Entry* findEntry(std::vector<Entry>& entries, Value key, size_t capacity);
     void adjustCapacity(size_t capacity);
     
 public:
     
     int count;
-    size_t capacity;
     
-    Entry* entries;
+    std::vector<Entry> entries;
     
-
-    
+    Table();
     Table(VM* vm);
-    void freeTable();
     bool tableSet(Value key, Value value);
     void tableAddAll(Table* from);
     bool tableGet(Value key, Value* value);

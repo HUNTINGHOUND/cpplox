@@ -20,28 +20,22 @@ uint32_t ObjString::hashString(const char* key, size_t length) {
 
 
 template<typename T>
-T* Obj::allocate_obj(ObjType objectType, size_t extra, VM* vm) {
-    return (T*)allocateObject(sizeof(T) + extra, objectType, vm);
-}
-
-Obj* Obj::allocateObject(size_t size, ObjType type, VM* vm) {
-    Obj* object = (Obj*)reallocate(nullptr, 0, size, vm);
-    object->type = type;
+T* Obj::allocate_obj(ObjType objectType, VM* vm) {
+    Obj* object = (Obj* )mem_allocate<T>(sizeof(T), vm);
+    object->type = objectType;
     object->mark = !vm->marker;
     
     object->next = vm->objects;
     vm->objects = object;
-    
     if(DEBUG_LOG_GC) {
-        std::cout << (void*)object << " allocate " << size << " for " << type << std::endl;
+        std::cout << (void*)object << " allocate " << sizeof(T) << " for " << objectType << std::endl;
     }
     
-    return object;
+    return (T*)object;
 }
 
 ObjString* ObjString::makeString(VM* vm, size_t length, uint32_t hash) {
-    ObjString* string = Obj::allocate_obj<ObjString>(OBJ_STRING, sizeof(char) * (length + 1), vm);
-    string->length = length;
+    ObjString* string = Obj::allocate_obj<ObjString>(OBJ_STRING, vm);
     string->hash = hash;
     
     vm->stack.push_back(ValueOP::obj_val(string));
@@ -63,14 +57,13 @@ ObjString* ObjString::copyString(VM* vm, const char* chars, size_t length) {
     }
     
     ObjString* string = makeString(vm, length, hash);
-    memcpy(string->chars, chars, length);
-    string->chars[length] = '\0';
+    string->chars = std::string(chars, length);
     
     return string;
 }
 
 ObjFunction* ObjFunction::newFunction(VM* vm) {
-    ObjFunction* function = allocate_obj<ObjFunction>(OBJ_FUNCTION, 0, vm);
+    ObjFunction* function = allocate_obj<ObjFunction>(OBJ_FUNCTION, vm);
     
     function->arity = 0;
     function->defaults = 0;
@@ -81,27 +74,22 @@ ObjFunction* ObjFunction::newFunction(VM* vm) {
 }
 
 ObjNative* ObjNative::newNative(NativeFn function, int arity, VM* vm) {
-    ObjNative* native = allocate_obj<ObjNative>(OBJ_NATIVE, 0, vm);
+    ObjNative* native = allocate_obj<ObjNative>(OBJ_NATIVE, vm);
     native->function = function;
     native->arity = arity;
     return native;
 }
 
 ObjClosure* ObjClosure::newClosure(ObjFunction* function, VM* vm) {
-    ObjUpvalue** upvalues = allocate<ObjUpvalue*>(function->upvalueCount, vm);
-    for (int i = 0; i < function->upvalueCount; i++) {
-        upvalues[i] = NULL;
-    }
-    
-    ObjClosure* closure = allocate_obj<ObjClosure>(OBJ_CLOSURE, 0, vm);
+    ObjClosure* closure = allocate_obj<ObjClosure>(OBJ_CLOSURE, vm);
     closure->function = function;
-    closure->upvalues = upvalues;
+    closure->upvalues = std::vector<ObjUpvalue*>(function->upvalueCount, nullptr);
     closure->upvalueCount = function->upvalueCount;
     return closure;
 }
 
 ObjUpvalue* ObjUpvalue::newUpvalue(Value* slot, VM* vm) {
-    ObjUpvalue* upvalue = allocate_obj<ObjUpvalue>(OBJ_UPVALUE, 0, vm);
+    ObjUpvalue* upvalue = allocate_obj<ObjUpvalue>(OBJ_UPVALUE, vm);
     upvalue->nextUp = nullptr;
     upvalue->location = slot;
     upvalue->closed = ValueOP::nul_val();
@@ -109,7 +97,7 @@ ObjUpvalue* ObjUpvalue::newUpvalue(Value* slot, VM* vm) {
 }
 
 ObjClass* ObjClass::newClass(ObjString* name, VM* vm) {
-    ObjClass* _class = Obj::allocate_obj<ObjClass>(OBJ_CLASS, 0, vm);
+    ObjClass* _class = Obj::allocate_obj<ObjClass>(OBJ_CLASS, vm);
     _class->name = name;
     _class->methods = Table(vm);
     _class->initializer = nullptr;
@@ -117,22 +105,22 @@ ObjClass* ObjClass::newClass(ObjString* name, VM* vm) {
 }
 
 ObjInstance* ObjInstance::newInstance(ObjClass *_class, VM* vm) {
-    ObjInstance* instance = allocate_obj<ObjInstance>(OBJ_INSTANCE, 0, vm);
+    ObjInstance* instance = allocate_obj<ObjInstance>(OBJ_INSTANCE, vm);
     instance->_class = _class;
     instance->fields = Table(vm);
     return instance;
 }
 
 ObjBoundMethod* ObjBoundMethod::newBoundMethod(Value receiver, Obj *method, VM* vm) {
-    ObjBoundMethod* bound = allocate_obj<ObjBoundMethod>(OBJ_BOUND_METHOD, 0, vm);
+    ObjBoundMethod* bound = allocate_obj<ObjBoundMethod>(OBJ_BOUND_METHOD, vm);
     bound->method = method;
     bound->receiver = receiver;
     return bound;
 }
 
 ObjCollection* ObjCollection::newCollection(Value *values, size_t size, size_t capacity, VM* vm) {
-    ObjCollection* collection = allocate_obj<ObjCollection>(OBJ_COLLECTION, 0, vm);
-    collection->values = new ValueArray(vm);
+    ObjCollection* collection = allocate_obj<ObjCollection>(OBJ_COLLECTION, vm);
+    collection->values = ValueArray(vm);
     collection->vm = vm;
     collection->methods = Table(vm);
     return collection;
@@ -141,7 +129,7 @@ ObjCollection* ObjCollection::newCollection(Value *values, size_t size, size_t c
 CollectionResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::vector<Value>& arguments) {
     CollectionResponse response;
     response.hasErr = false;
-    if(strcmp(method->chars, "addBack") == 0) {
+    if(method->chars.compare("addBack") == 0) {
         if(arguments.size() != 1) {
             response.hasErr = true;
             response.propertyMissing = false;
@@ -152,7 +140,7 @@ CollectionResponse ObjCollection::invokeCollectionMethods(ObjString* method, std
             response.isVoid = true;
             addBack(arguments[0]);
         }
-    } else if (strcmp(method->chars, "deleteBack") == 0) {
+    } else if (method->chars.compare("deleteBack") == 0) {
         if(arguments.size() != 0) {
             response.hasErr = true;
             response.propertyMissing = false;
@@ -163,7 +151,7 @@ CollectionResponse ObjCollection::invokeCollectionMethods(ObjString* method, std
             response.isVoid = true;
             deleteBack();
         }
-    } else if (strcmp(method->chars, "swap") == 0) {
+    } else if (method->chars.compare("swap") == 0) {
         if(arguments.size() != 2) {
             response.hasErr = true;
             response.propertyMissing = false;
@@ -181,7 +169,7 @@ CollectionResponse ObjCollection::invokeCollectionMethods(ObjString* method, std
                 return response;
             }
             
-            if(values->count <= ValueOP::as_number(arguments[0])) {
+            if(values.count <= ValueOP::as_number(arguments[0])) {
                 response.hasErr = true;
                 response.propertyMissing = false;
                 
@@ -194,7 +182,7 @@ CollectionResponse ObjCollection::invokeCollectionMethods(ObjString* method, std
             response.isVoid = true;
             swap(arguments[0], arguments[1]);
         }
-    } else if (strcmp(method->chars, "getSize") == 0) {
+    } else if (method->chars.compare("getSize") == 0) {
         if(arguments.size() != 0) {
             response.hasErr = true;
             response.propertyMissing = false;
@@ -220,17 +208,17 @@ CollectionResponse ObjCollection::invokeCollectionMethods(ObjString* method, std
 
 
 void ObjCollection::addBack(Value value) {
-    values->writeValueArray(value);
+    values.writeValueArray(value);
 }
 
 void ObjCollection::deleteBack() {
-    values->count--;
+    values.count--;
 }
 
 int ObjCollection::getSize() {
-    return (int)values->count;
+    return (int)values.count;
 }
 
 void ObjCollection::swap(Value index, Value value) {
-    values->values[(int)ValueOP::as_number(index)] = value;
+    values.values[(int)ValueOP::as_number(index)] = value;
 }
