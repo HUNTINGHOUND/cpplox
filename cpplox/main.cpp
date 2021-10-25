@@ -2,6 +2,9 @@
 #include "vm.hpp"
 #include "flags.hpp"
 #include "loxtext/startEditor.hpp"
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
 
 void repl(VM* vm) {
     std::stringstream ss;
@@ -51,56 +54,57 @@ void runFile(VM* vm, const char* path) {
     if(result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
-void usageError(){
-    std::cout << "Usage: ./cpplox -[options] [editor] [filepath]" << std::endl;
-    return exit(1);
-}
-
 int main(int argc, const char* argv[]) {
     
     VM vm;
     
-    if(argc == 1) {
-        repl(&vm);
-    } else if(argc >= 2) {
-        
-        bool openeditor = false;
-        for(int i = 1; i < argc; i++) {
-            std::string option(argv[i]);
-            if(option.compare("editor") == 0) {
-                if(i != argc - 2 || i != argc - 1) usageError();
-                
-                openeditor = true;
-                std::string filename;
-                if(i == argc - 2) {
-                    filename = std::string(argv[i + 1]);
-                }
-                startEditor(filename);
-            } else if(option[0] == '-') {
-                if(option.compare("-verb") == 0) {
-                    DEBUG_PRINT_CODE = true;
-                } else if(option.compare("-trace") == 0) {
-                    DEBUG_TRACE_EXECUTION = true;
-                } else if(option.compare("-stress") == 0) {
-                    DEBUG_STRESS_GC = true;
-                } else if(option.compare("-loggc") == 0) {
-                    DEBUG_LOG_GC = true;
-                } else {
-                    std::cout << option << " not recognized as valid option." << std::endl;
-                    exit(1);
-                }
-            } else if(i == argc - 1) {
-                runFile(&vm, argv[i]);
-            } else {
-                usageError();
-            }
-            
-        }
-        
-        if(!openeditor) repl(&vm);
-    } else {
-        usageError();
+    bool openeditor = false;
+    std::string filename = "";
+    
+    po::options_description desc("Allowed options");
+    desc.add_options()
+    ("help,h", "produce help message")
+    ("print_code,p", "print the bytecode")
+    ("trace_exec,t", "trace the execution of the byte")
+    ("stress_gc,s", "stress test the garbage collector")
+    ("debug_gc,d", "print debug log for garbage collector")
+    ("input-file,I", po::value<std::string>(), "open given file")
+    ("editor,e", "open editor");
+    
+    po::positional_options_description p;
+    p.add("input-file", -1);
+    
+    po::variables_map varm;
+    po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), varm);
+    po::notify(varm);
+    
+    if(varm.count("help")) {
+        std::cout << desc << "\n";
+        return 0;
     }
+    
+    if(varm.count("print_code")) {
+        DEBUG_PRINT_CODE = true;
+    }
+    if(varm.count("trace_exec")) {
+        DEBUG_TRACE_EXECUTION = true;
+    }
+    if(varm.count("stress_gc")) {
+        DEBUG_STRESS_GC = true;
+    }
+    if(varm.count("debug_gc")) {
+        DEBUG_LOG_GC = true;
+    }
+    if(varm.count("editor")) {
+        openeditor = true;
+    }
+    if(varm.count("input-file")) {
+        filename = varm["input-file"].as<std::string>();
+    }
+    
+    if(openeditor) startEditor(filename);
+    else if(!filename.empty()) runFile(&vm, filename.c_str());
+    else repl(&vm);
     
     vm.freeVM();
 }
