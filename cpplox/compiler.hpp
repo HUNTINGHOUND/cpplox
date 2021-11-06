@@ -44,7 +44,7 @@ public:
     /// Constructor
     /// @param scanner scanner for the parser
     Parser(Scanner* scanner);
-
+    
     
 };
 
@@ -59,7 +59,7 @@ enum Precedence {
     PREC_TERM,       // + -
     PREC_FACTOR,     // * /
     PREC_UNARY,      // ! -
-    PREC_CALL,       // .() 
+    PREC_CALL,       // .()
     PREC_PRIMARY
 };
 
@@ -73,31 +73,46 @@ struct Local {
     Local();
 };
 
+/// Struct to indicate a break statement
 struct Break {
+    /// Position of the break jump
     size_t position;
+    /// The depth of the break statement
     int depth;
 };
 
+/// Struct for keeping track of Upvalues.
 struct Upvalue {
+    /// Position of the upvalue in the stack
     uint8_t index;
+    /// Track if the upvalue is local to the ENCLOSING function
     bool isLocal;
 };
 
+
+/// Class representing a compiler. Compiles functions (including base script) into chunks of byte code
 class Compiler {
-    
+    /// Current function compiling
     ObjFunction* function;
     
+    /// Enclosing compiler / functon
     Compiler* enclosing;
     
+    /// Virtual machine that this compiler is compiling for
     VM* vm;
     
+    /// Type of the current function that is being compiled
     FunctionType type;
     
+    /// Vector of breakstatements in the current function
     std::vector<Break> breakStatements;
     
+    /// Vector of upvalues in the current function
     std::vector<Upvalue> upvalues;
     
+    /// Start of the inner most loop in terms of byte code, used to patch loop
     int innermostLoopStart = -1;
+    /// The depth of inner most loop, use to detect whther or not current loop exists
     int innermostLoopScopeDepth = 0;
     
     
@@ -123,29 +138,55 @@ class Compiler {
     /// @param byte1 first byte to be appended
     /// @param byte2 second byte to be appended
     void emitBytes(uint8_t byte1, uint8_t byte2);
-
+    
+    /// Compile an expression
     void expression();
     
+    /// Parse tokens based on their precedence. Tokens with precedence higher or equal to the given precedence will be parsed recursively to simulate higher priority.
+    /// If the parser's current token does not have a prefix function (It is not a valid token to start a expression), error will be thrown.
+    /// The function checks the current token's precedence BEFORE calling advance on parser. In the case where precedence is higher, the uncompiled token will be at current instead of previous.
+    /// @param precedence All infix with precedence higher than equal this precedence will be invoked. 
     void parsePrecedence(Precedence precedence);
     
+    /// Add given value to the constant table of the chunk. Returns the index of the constant in the constant table.
+    /// @param value Value to be added to the constant table
     uint8_t makeConstant(Value value);
     
-    void declaration();
+    /// Handle statements. Specifically variable declaration, function delcaration, class delcaration, and normal statements.
+    void compileStatement();
     
+    /// Handle statements. See definition for more detail.
     void statement();
     
+    /// Match given type to current token of the parser.
+    /// If the match, parser will advance and return true.
+    /// Else parser will not advance and return false.
+    /// @param type Type to match.
     bool match(TokenType type);
     
+    /// Compile print statement
     void printStatement();
     
+    /// Compile normal expression statement
     void expressionStatement();
     
+    /// Called during panic, skip the statement that failed to compile and relax panic.
     void synchronize();
     
+    /// Handles compilation of variable delcaration.
+    /// @param isConst Is this variable constant
     void varDeclaration(bool isConst);
     
+    /// Parse a variable identifier on the current token of parser. Declare said identifier.
+    /// @param errorMessage Error message that will be displayed incase of error.
+    /// @param isConst Whether or not the declared variable will be constant
     uint8_t parseVariable(const std::string& errorMessage, bool isConst);
     
+    /// Attempt to find a global value based on the name given.
+    /// If the global value is found, return its index in the global value array.
+    /// Else, make a new entry in the global value array.
+    /// @param name Name of the global value to search
+    /// @param isConst Whether or not the global value is constant if created.
     uint8_t globalConstant(Token* name, bool isConst);
     
     uint8_t addIdentifierConstant(Token* name);

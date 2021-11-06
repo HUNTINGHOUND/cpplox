@@ -358,7 +358,7 @@ ObjFunction* Compiler::compile(const std::string& src) {
     parser->advance();
     
     while(!match(TOKEN_EOF)) {
-        declaration();
+        compileStatement();
     }
     
     ObjFunction* function = endCompiler();
@@ -369,7 +369,7 @@ ParseRule*  ParseRule::getRule(TokenType type) {
     return &rules[type];
 }
 
-void Compiler::declaration() {
+void Compiler::compileStatement() {
     bool isConst = false;
     if (match(TOKEN_VAR) || (isConst = match(TOKEN_CONST))) {
         varDeclaration(isConst);
@@ -551,7 +551,7 @@ void Compiler::namedVariable(Token* name, bool canAssign) {
 
 void Compiler::block() {
     while (!parser->check(TOKEN_RIGHT_BRACE) && !parser->check(TOKEN_EOF)) {
-        declaration();
+        compileStatement();
     }
     
     parser->consume(TOKEN_RIGHT_BRACE, "Expect '}' after block,");
