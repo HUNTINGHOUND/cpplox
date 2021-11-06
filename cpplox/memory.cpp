@@ -158,6 +158,7 @@ void blackenObject(Obj* object, VM* vm) {
                 markValue(vm, collection->values.values[i]);
             }
             markTable(vm, &collection->methods);
+            break;
         }
         case OBJ_BOUND_METHOD: {
             ObjBoundMethod* bound = (ObjBoundMethod*)object;
