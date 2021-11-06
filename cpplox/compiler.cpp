@@ -2,10 +2,10 @@
 #include "memory.hpp"
 #include "debug.hpp"
 #include "flags.hpp"
-
+#include "util.hpp"
 
 //Table containing precedence and compiling rules for all tokens
-ParseRule rules[52] = {
+ParseRule rules[53] = {
     [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, &Compiler::call,   PREC_CALL},
     [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
@@ -56,6 +56,7 @@ ParseRule rules[52] = {
     [TOKEN_CASE]          = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_DEFAULT]       = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_DEL]           = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_IMPORT]        = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_ERROR]         = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
 };
@@ -407,6 +408,8 @@ void Compiler::statement() {
         returnStatement();
     } else if(match(TOKEN_DEL)) {
         delStatement();
+    } else if(match(TOKEN_IMPORT)) {
+        importStatement();
     } else {
         expressionStatement();
     }
@@ -463,7 +466,7 @@ void Compiler::varDeclaration(bool isConst) {
     if (match(TOKEN_EQUAL)) {
         expression();
     } else {
-        emitByte(OP_NUL);;
+        emitByte(OP_NUL);
     }
     
     parser->consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
@@ -948,7 +951,7 @@ void Compiler::_function(FunctionType type) {
     
     uint8_t functionConstant = makeConstant(ValueOP::obj_val(function));
     if(function->upvalueCount > 0) {
-        emitBytes(OP_CLOSURE, makeConstant(ValueOP::obj_val(function)));
+        emitBytes(OP_CLOSURE, functionConstant);
         
         for(int i = 0; i < function->upvalueCount; i++) {
             emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
@@ -1196,4 +1199,9 @@ void Compiler::steps(bool canAssign) {
     }
     
     emitByte(OP_RANGE);
+}
+
+void Compiler::importStatement() {
+    parser->consume(TOKEN_STRING, "Expect file path after import statement");
+    
 }

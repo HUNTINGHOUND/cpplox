@@ -212,10 +212,7 @@ InterpretResult VM::interpret(const std::string& source) {
     if(function == nullptr) return INTERPRET_COMPILE_ERROR;
     
     push_stack(ValueOP::obj_val(function));
-    ObjClosure* closure = ObjClosure::newClosure(function, this);
-    stack.pop_back();
-    push_stack(ValueOP::obj_val(closure));
-    callValue(ValueOP::obj_val(closure), 0);
+    callValue(ValueOP::obj_val(function), 0);
     
     return run();
 }

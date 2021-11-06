@@ -1,5 +1,6 @@
 #include "pch.pch"
 #include "vm.hpp"
+#include "util.hpp"
 #include "flags.hpp"
 #include "loxtext/startEditor.hpp"
 #include <boost/program_options.hpp>
@@ -24,26 +25,6 @@ void repl(VM* vm) {
         vm->interpret(ss.str());
         ss.str(std::string());
     }
-}
-
-std::string readFile(const char* path) {
-    std::fstream file(path);
-    std::string source;
-    std::string line;
-    
-    if(file.is_open()) {
-        while(getline(file, line)) {
-            source += line;
-            source += '\n';
-        }
-        
-        file.close();
-    } else {
-        std::cerr << "Could not open file \\" << path;
-        exit(74);
-    }
-    
-    return source;
 }
 
 void runFile(VM* vm, const char* path) {

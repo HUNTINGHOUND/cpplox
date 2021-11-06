@@ -146,8 +146,8 @@ TokenType Scanner::identifierType() {
                 case 'e':
                     if(current - start > 2) {
                         switch (source[start + 2]) {
-                            case 'f': return checkKeyword(1, 4, "ault", TOKEN_DEFAULT);
-                            case 'l': return checkKeyword(1, 3, "ete", TOKEN_DEL);
+                            case 'f': return checkKeyword(3, 4, "ault", TOKEN_DEFAULT);
+                            case 'l': return checkKeyword(3, 3, "ete", TOKEN_DEL);
                         }
                     }
             }

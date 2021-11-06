@@ -180,6 +180,8 @@ class Compiler {
     
     void forStatement();
     
+    void importStatement();
+    
     void continueStatement();
     
     void breakStatement();

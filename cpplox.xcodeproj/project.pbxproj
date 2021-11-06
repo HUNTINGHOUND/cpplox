@@ -27,6 +27,7 @@
 		90A4208925DFB74800DE641F /* value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4DD25BC9C34003A74C5 /* value.cpp */; };
 		90A4208B25DFB74C00DE641F /* vm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4E325BD98D8003A74C5 /* vm.cpp */; };
 		90A4208D25DFB75600DE641F /* chunk.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4CF25BC8F53003A74C5 /* chunk.cpp */; };
+		90DAF9542736F6FF00C2FC71 /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90DAF9522736F6FF00C2FC71 /* util.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -74,6 +75,8 @@
 		9085E94725FD0DE800C0E1F0 /* table.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = table.cpp; sourceTree = "<group>"; };
 		908D972025C7FD3600F9AB2E /* compiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compiler.cpp; sourceTree = "<group>"; };
 		90D528AB25E2BD7100DA0BFD /* flags.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = flags.hpp; sourceTree = "<group>"; };
+		90DAF9522736F6FF00C2FC71 /* util.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = util.cpp; sourceTree = "<group>"; };
+		90DAF9532736F6FF00C2FC71 /* util.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = util.hpp; sourceTree = "<group>"; };
 		90E1B4BD25BC870C003A74C5 /* cpplox */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = cpplox; sourceTree = BUILT_PRODUCTS_DIR; };
 		90E1B4C025BC870C003A74C5 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		90E1B4CE25BC87FB003A74C5 /* chunk.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = chunk.hpp; sourceTree = "<group>"; };
@@ -184,6 +187,8 @@
 				90E1B4E125BD8518003A74C5 /* vm.hpp */,
 				9085E94725FD0DE800C0E1F0 /* table.cpp */,
 				9085E94625FD0D5900C0E1F0 /* table.hpp */,
+				90DAF9522736F6FF00C2FC71 /* util.cpp */,
+				90DAF9532736F6FF00C2FC71 /* util.hpp */,
 			);
 			path = cpplox;
 			sourceTree = "<group>";
@@ -247,6 +252,7 @@
 				90A4208D25DFB75600DE641F /* chunk.cpp in Sources */,
 				9011AB0626F399DB00D762E8 /* flags.cpp in Sources */,
 				90270FDC2671EEBC002C211C /* fileio.cpp in Sources */,
+				90DAF9542736F6FF00C2FC71 /* util.cpp in Sources */,
 				90270FE02671EEBC002C211C /* startEditor.cpp in Sources */,
 				9085E84F25F54A9F00C0E1F0 /* object.cpp in Sources */,
 				90270FDA2671EEBB002C211C /* input.cpp in Sources */,
