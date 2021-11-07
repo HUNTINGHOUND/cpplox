@@ -13,8 +13,9 @@ std::string readFile(const char* path) {
         
         file.close();
     } else {
-        std::cerr << "Could not open file \\" << path;
-        exit(74);
+        std::string errormessage = "Cannot open file ";
+        errormessage += path;
+        throw errormessage;
     }
     
     return source;

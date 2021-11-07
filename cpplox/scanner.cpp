@@ -161,7 +161,13 @@ TokenType Scanner::identifierType() {
                     case 'u': return checkKeyword(2, 1, "n", TOKEN_FUN);
                 }
             }
-        case 'i': return checkKeyword(1, 1, "f", TOKEN_IF);
+        case 'i': if(current - start > 1) {
+            switch (source[start + 1]) {
+                case 'f': return TOKEN_IF;
+                case 'm': return checkKeyword(2, 4, "port", TOKEN_IMPORT);
+            }
+        }
+            
         case 'n': return checkKeyword(1, 2, "ul", TOKEN_NUL);
         case 'o': return checkKeyword(1, 1, "r", TOKEN_OR);
         case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT);

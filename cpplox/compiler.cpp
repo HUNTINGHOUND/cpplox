@@ -1203,5 +1203,21 @@ void Compiler::steps(bool canAssign) {
 
 void Compiler::importStatement() {
     parser->consume(TOKEN_STRING, "Expect file path after import statement");
+    std::string import = "";
+    try {
+        import = readFile(parser->previous.source.substr(1, parser->previous.source.size() - 2).c_str());
+    } catch(std::string e) {
+        parser->error(e);
+    }
+    parser->consume(TOKEN_SEMICOLON, "Expect : after import statement");
     
+    Scanner scanner;
+    Parser parser(&scanner);
+    
+    
+    Compiler importScript(this->vm, TYPE_SCRIPT, nullptr, &scanner, &parser);
+    ObjFunction* importedFunction = importScript.compile(import);
+    
+    emitBytes(OP_CONSTANT, makeConstant(ValueOP::obj_val(importedFunction)));
+    emitBytes(OP_CALL, 0);
 }
