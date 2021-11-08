@@ -93,6 +93,8 @@ class Compiler {
     
     FunctionType type;
     
+    std::unordered_set<std::string> imported_module;
+    
     std::vector<Break> breakStatements;
     
     std::vector<Upvalue> upvalues;

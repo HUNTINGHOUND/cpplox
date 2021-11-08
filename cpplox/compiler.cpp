@@ -1201,15 +1201,30 @@ void Compiler::steps(bool canAssign) {
     emitByte(OP_RANGE);
 }
 
+std::string getModuleName(std::string& path) {
+    int index = path.rfind("/");
+    return path.substr(index + 1);
+}
+
 void Compiler::importStatement() {
-    parser->consume(TOKEN_STRING, "Expect file path after import statement");
+    parser->consume(TOKEN_STRING, "Expect module name after import statement");
+    std::string module_option = parser->previous.source.substr(1, parser->previous.source.size() - 2);
+    std::string module_name = getModuleName(module_option);
+    module_option += ".lox";
+    
+    parser->consume(TOKEN_SEMICOLON, "Expect ; after import statement");
+    
+    if(imported_module.count(module_name)) {
+        return;
+    }
+    imported_module.insert(module_name);
+    
     std::string import = "";
     try {
-        import = readFile(parser->previous.source.substr(1, parser->previous.source.size() - 2).c_str());
+        import = readFile(module_option.c_str());
     } catch(std::string e) {
         parser->error(e);
     }
-    parser->consume(TOKEN_SEMICOLON, "Expect : after import statement");
     
     Scanner scanner;
     Parser parser(&scanner);
