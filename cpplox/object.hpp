@@ -56,10 +56,11 @@ public:
     int arity;
     int upvalueCount;
     int defaults;
+    FunctionType funcType;
     Chunk chunk;
     ObjString* name;
     
-    static ObjFunction* newFunction(VM* vm);
+    static ObjFunction* newFunction(VM* vm, FunctionType type);
     
 };
 

@@ -62,12 +62,13 @@ ObjString* ObjString::copyString(VM* vm, const char* chars, size_t length) {
     return string;
 }
 
-ObjFunction* ObjFunction::newFunction(VM* vm) {
+ObjFunction* ObjFunction::newFunction(VM* vm, FunctionType type) {
     ObjFunction* function = allocate_obj<ObjFunction>(OBJ_FUNCTION, vm);
     
     function->arity = 0;
     function->defaults = 0;
     function->upvalueCount = 0;
+    function->funcType = type;
     function->name = nullptr;
     function->chunk = Chunk(vm);
     return function;

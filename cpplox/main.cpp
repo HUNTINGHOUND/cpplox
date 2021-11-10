@@ -83,6 +83,13 @@ int main(int argc, const char* argv[]) {
         filename = varm["input-file"].as<std::string>();
     }
     
+    if(filename.empty()) {
+        std::filesystem::path openPath(filename);
+        std::filesystem::path absoluteSourcePath = std::filesystem::absolute(openPath);
+        EXECUTION_PATH = absoluteSourcePath.string();
+        filename = EXECUTION_PATH;
+    }
+    
     if(openeditor) startEditor(filename);
     else if(!filename.empty()) runFile(&vm, filename.c_str());
     else repl(&vm);

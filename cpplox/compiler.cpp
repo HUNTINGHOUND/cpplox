@@ -3,6 +3,7 @@
 #include "debug.hpp"
 #include "flags.hpp"
 #include "util.hpp"
+#include <filesystem>
 
 //Table containing precedence and compiling rules for all tokens
 ParseRule rules[53] = {
@@ -77,7 +78,7 @@ Local::Local() : name(TOKEN_NUL, "", 0, 0, 0) {
     this->isCaptured = false;
 }
 
-Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser) : stringConstants(vm) {
+Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser, std::string& current_source) : stringConstants(vm) {
     this->enclosing = enclosing;
     
     this->scanner = scanner;
@@ -90,9 +91,11 @@ Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scan
     this->scopeDepth = 0;
     this->vm = vm;
     
+    this->current_source = current_source;
+    
     vm->current = this;
     
-    function = ObjFunction::newFunction(vm);
+    function = ObjFunction::newFunction(vm, type);
     
     if (type != TYPE_SCRIPT) {
         function->name = ObjString::copyString(vm, parser->previous.source.c_str(), parser->previous.length);
@@ -118,7 +121,7 @@ Parser::Parser(Scanner* scanner) : current(TOKEN_NUL, "", 0, 0, 0), previous(TOK
     this->scanner = scanner;
 }
 
-void Parser::errorAt(Token* token, const std::string& message) {
+void Parser::errorAt(Token* token, std::string message) {
     if(panicMode) return;
     panicMode = true;
     std::cerr << "[line " << token->line << "] Error";
@@ -135,11 +138,11 @@ void Parser::errorAt(Token* token, const std::string& message) {
     hadError = true;
 }
 
-void Parser::errorAtCurrent(const std::string& message) {
+void Parser::errorAtCurrent(std::string message) {
     errorAt(&this->current, message);
 }
 
-void Parser::error(const std::string& message) {
+void Parser::error(std::string message) {
     errorAt(&this->previous, message);
 }
 
@@ -154,7 +157,7 @@ void Parser::advance() {
     }
 }
 
-void Parser::consume(TokenType type, const std::string& message) {
+void Parser::consume(TokenType type, std::string message) {
     if (current.type == type) {
         advance();
         return;
@@ -908,7 +911,7 @@ void Compiler::funDeclaration() {
 }
 
 void Compiler::_function(FunctionType type) {
-    Compiler compiler(vm, type, this, scanner, parser);
+    Compiler compiler(vm, type, this, scanner, parser, current_source);
     compiler.beginScope();
     
     parser->consume(TOKEN_LEFT_PAREN, "Expect '(' after function name,");
@@ -1002,7 +1005,7 @@ void Compiler::returnStatement() {
 }
 
 int Compiler::resolveUpvalue(Token *name) {
-    if(enclosing == NULL) return -1;
+    if(enclosing == nullptr || enclosing->function->funcType == TYPE_SCRIPT) return -1;
     
     int local = enclosing->resolveLocal(name);
     if(local != -1) {
@@ -1201,27 +1204,25 @@ void Compiler::steps(bool canAssign) {
     emitByte(OP_RANGE);
 }
 
-std::string getModuleName(std::string& path) {
-    int index = path.rfind("/");
-    return path.substr(index + 1);
-}
 
 void Compiler::importStatement() {
     parser->consume(TOKEN_STRING, "Expect module name after import statement");
-    std::string module_option = parser->previous.source.substr(1, parser->previous.source.size() - 2);
-    std::string module_name = getModuleName(module_option);
+    std::filesystem::path module_option = parser->previous.source.substr(1, parser->previous.source.size() - 2);
     module_option += ".lox";
+    std::filesystem::path module_absolute = std::filesystem::absolute(module_option);
+    std::string module_string = module_absolute.string();
     
     parser->consume(TOKEN_SEMICOLON, "Expect ; after import statement");
     
-    if(imported_module.count(module_name)) {
+    if(imported_module.count(module_string) || compiled_source.count(module_string)) {
         return;
     }
-    imported_module.insert(module_name);
+    imported_module.insert(module_string);
+    
     
     std::string import = "";
     try {
-        import = readFile(module_option.c_str());
+        import = readFile(module_string.c_str());
     } catch(std::string e) {
         parser->error(e);
     }
@@ -1230,9 +1231,15 @@ void Compiler::importStatement() {
     Parser parser(&scanner);
     
     
-    Compiler importScript(this->vm, TYPE_SCRIPT, nullptr, &scanner, &parser);
+    Compiler importScript(this->vm, TYPE_SCRIPT, this, &scanner, &parser, module_string);
+    importScript.compiled_source.insert(current_source);
+    importScript.compiled_source.insert(compiled_source.begin(), compiled_source.end());
+    
     ObjFunction* importedFunction = importScript.compile(import);
+    
+    imported_module.insert(importScript.imported_module.begin(), importScript.imported_module.end());
     
     emitBytes(OP_CONSTANT, makeConstant(ValueOP::obj_val(importedFunction)));
     emitBytes(OP_CALL, 0);
+    emitByte(OP_POP);
 }

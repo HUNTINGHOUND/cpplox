@@ -206,7 +206,7 @@ InterpretResult VM::interpret(const std::string& source) {
     Scanner scanner;
     Parser parser(&scanner);
     
-    Compiler compiler(this, TYPE_SCRIPT, nullptr, &scanner, &parser);
+    Compiler compiler(this, TYPE_SCRIPT, nullptr, &scanner, &parser, EXECUTION_PATH);
     ObjFunction* function = compiler.compile(source);
     
     if(function == nullptr) return INTERPRET_COMPILE_ERROR;
