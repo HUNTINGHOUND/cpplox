@@ -83,7 +83,7 @@ int main(int argc, const char* argv[]) {
         filename = varm["input-file"].as<std::string>();
     }
     
-    if(filename.empty()) {
+    if(!filename.empty()) {
         std::filesystem::path openPath(filename);
         std::filesystem::path absoluteSourcePath = std::filesystem::absolute(openPath);
         EXECUTION_PATH = absoluteSourcePath.string();

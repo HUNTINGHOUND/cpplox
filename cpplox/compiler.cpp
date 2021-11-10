@@ -1207,7 +1207,10 @@ void Compiler::steps(bool canAssign) {
 
 void Compiler::importStatement() {
     parser->consume(TOKEN_STRING, "Expect module name after import statement");
-    std::filesystem::path module_option = parser->previous.source.substr(1, parser->previous.source.size() - 2);
+    
+    size_t path_index = current_source.rfind("/");
+    std::filesystem::path module_option = current_source.substr(0, path_index == std::string::npos ? 0 : path_index + 1) + parser->previous.source.substr(1, parser->previous.source.size() - 2);
+    
     module_option += ".lox";
     std::filesystem::path module_absolute = std::filesystem::absolute(module_option);
     std::string module_string = module_absolute.string();
@@ -1229,7 +1232,6 @@ void Compiler::importStatement() {
     
     Scanner scanner;
     Parser parser(&scanner);
-    
     
     Compiler importScript(this->vm, TYPE_SCRIPT, this, &scanner, &parser, module_string);
     importScript.compiled_source.insert(current_source);
