@@ -97,8 +97,10 @@ Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scan
     
     function = ObjFunction::newFunction(vm, type);
     
-    if (type != TYPE_SCRIPT) {
+    if (type != TYPE_SCRIPT && type != TYPE_IMPORT) {
         function->name = ObjString::copyString(vm, parser->previous.source.c_str(), parser->previous.length);
+    } else if(type == TYPE_IMPORT) {
+        function->name = ObjString::copyString(vm, "<import>", 8);
     }
     
     if(localCount + 1 >= locals.capacity()) {
@@ -1005,7 +1007,7 @@ void Compiler::returnStatement() {
 }
 
 int Compiler::resolveUpvalue(Token *name) {
-    if(enclosing == nullptr || enclosing->function->funcType == TYPE_SCRIPT) return -1;
+    if(enclosing == nullptr || enclosing->function->funcType == TYPE_SCRIPT || enclosing->function->funcType == TYPE_IMPORT) return -1;
     
     int local = enclosing->resolveLocal(name);
     if(local != -1) {
@@ -1233,7 +1235,7 @@ void Compiler::importStatement() {
     Scanner scanner;
     Parser parser(&scanner);
     
-    Compiler importScript(this->vm, TYPE_SCRIPT, this, &scanner, &parser, module_string);
+    Compiler importScript(this->vm, TYPE_IMPORT, this, &scanner, &parser, module_string);
     importScript.compiled_source.insert(current_source);
     importScript.compiled_source.insert(compiled_source.begin(), compiled_source.end());
     

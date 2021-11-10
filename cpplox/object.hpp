@@ -24,7 +24,8 @@ enum FunctionType : short{
     TYPE_FUNCTION,
     TYPE_SCRIPT,
     TYPE_METHOD,
-    TYPE_INITIALIZER
+    TYPE_INITIALIZER,
+    TYPE_IMPORT
 };
 
 class Obj {
