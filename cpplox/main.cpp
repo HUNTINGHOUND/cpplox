@@ -88,6 +88,9 @@ int main(int argc, const char* argv[]) {
         std::filesystem::path absoluteSourcePath = std::filesystem::absolute(openPath);
         EXECUTION_PATH = absoluteSourcePath.string();
         filename = EXECUTION_PATH;
+    } else {
+        std::filesystem::path currentPath(".");
+        EXECUTION_PATH = std::filesystem::absolute(currentPath).string();
     }
     
     if(openeditor) startEditor(filename);

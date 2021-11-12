@@ -194,7 +194,7 @@ TokenType Scanner::identifierType() {
 }
 
 Token Scanner::identifier() {
-    while (isalpha(peek()) || isdigit(peek())) advance();
+    while (isalpha(peek()) || isdigit(peek()) || peek() == '_') advance();
     
     return makeToken(identifierType());
 }
