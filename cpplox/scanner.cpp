@@ -146,8 +146,8 @@ TokenType Scanner::identifierType() {
                 case 'e':
                     if(current - start > 2) {
                         switch (source[start + 2]) {
-                            case 'f': return checkKeyword(1, 4, "ault", TOKEN_DEFAULT);
-                            case 'l': return checkKeyword(1, 3, "ete", TOKEN_DEL);
+                            case 'f': return checkKeyword(3, 4, "ault", TOKEN_DEFAULT);
+                            case 'l': return checkKeyword(3, 3, "ete", TOKEN_DEL);
                         }
                     }
             }
@@ -161,7 +161,13 @@ TokenType Scanner::identifierType() {
                     case 'u': return checkKeyword(2, 1, "n", TOKEN_FUN);
                 }
             }
-        case 'i': return checkKeyword(1, 1, "f", TOKEN_IF);
+        case 'i': if(current - start > 1) {
+            switch (source[start + 1]) {
+                case 'f': return TOKEN_IF;
+                case 'm': return checkKeyword(2, 4, "port", TOKEN_IMPORT);
+            }
+        }
+            
         case 'n': return checkKeyword(1, 2, "ul", TOKEN_NUL);
         case 'o': return checkKeyword(1, 1, "r", TOKEN_OR);
         case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT);
@@ -188,7 +194,7 @@ TokenType Scanner::identifierType() {
 }
 
 Token Scanner::identifier() {
-    while (isalpha(peek()) || isdigit(peek())) advance();
+    while (isalpha(peek()) || isdigit(peek()) || peek() == '_') advance();
     
     return makeToken(identifierType());
 }

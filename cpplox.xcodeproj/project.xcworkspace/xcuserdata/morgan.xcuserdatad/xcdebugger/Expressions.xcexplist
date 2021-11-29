@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "Table::tableSet(Value, Value):table.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "Compiler::globalConstant(Token*, bool):compiler.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjString *)identifier.as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Compiler::identifierConstant(Token*, bool):compiler.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjString *)identifier.as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "freeObject(Obj*, VM*):memory.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjNative*)object">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "VM::VM():vm.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "Table::findEntry(std::__1::vector&lt;Entry, std::__1::allocator&lt;Entry&gt; &gt;&amp;, Value):table.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjString *)entry-&gt;key.as.obj">
+            </PersistentString>
+            <PersistentString
+               value = "(ObjString *)key.as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Compiler::markCompilerRoots():compiler.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "Table::tableGet(Value, Value*):table.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "VM::run():vm.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjClass *)it.__ptr_-&gt;as.obj">
+            </PersistentString>
+            <PersistentString
+               value = "this-&gt;globalValues.values[4]">
+            </PersistentString>
+            <PersistentString
+               value = "(ObjClass*)stack[1].as.obj">
+            </PersistentString>
+            <PersistentString
+               value = "(ObjClass *)[1].as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "ObjString::makeString(VM*, unsigned long, unsigned int):object.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "ValueOP::hashValue(Value):value.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjString *)value.as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Value::valuesEqual(Value, Value):value.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "Value::hashValue(Value):value.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjString *)value.as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Table::adjustCapacity(int):table.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "VM::read_byte(CallFrame*):vm.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "Compiler::classDeclaration():compiler.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "this-&gt;vm-&gt;globalValues.values[4]">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Table::tableFindString(char const*, int, unsigned int):table.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjString *)entry-&gt;key.as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "VM::read_string(CallFrame*):vm.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "this-&gt;globalValues.values[4]">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Table::findEntry(std::__1::vector&lt;Entry, std::__1::allocator&lt;Entry&gt; &gt;&amp;, Value, int):table.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjString *)key.as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Table::findEntry(Entry*, Value, unsigned long):table.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjString *)key.as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "GarbageCollector::markRoots(VM*):memory.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "Value::printObject(Value):value.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjBoundMethod *)value.as.obj">
+            </PersistentString>
+            <PersistentString
+               value = "(ObjClass *)value.as.obj">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Compiler::namedVariable(Token, bool):compiler.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "Compiler::parsePrecedence(Precedence):compiler.cpp">
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>

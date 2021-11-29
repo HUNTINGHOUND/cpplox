@@ -2,10 +2,11 @@
 #include "memory.hpp"
 #include "debug.hpp"
 #include "flags.hpp"
-
+#include "util.hpp"
+#include <filesystem>
 
 //Table containing precedence and compiling rules for all tokens
-ParseRule rules[52] = {
+ParseRule rules[53] = {
     [TOKEN_LEFT_PAREN]    = {&Compiler::grouping, &Compiler::call,   PREC_CALL},
     [TOKEN_RIGHT_PAREN]   = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_LEFT_BRACE]    = {nullptr,     nullptr,   PREC_NONE},
@@ -56,6 +57,7 @@ ParseRule rules[52] = {
     [TOKEN_CASE]          = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_DEFAULT]       = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_DEL]           = {nullptr,     nullptr,   PREC_NONE},
+    [TOKEN_IMPORT]        = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_ERROR]         = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_EOF]           = {nullptr,     nullptr,   PREC_NONE},
 };
@@ -76,7 +78,7 @@ Local::Local() : name(TOKEN_NUL, "", 0, 0, 0) {
     this->isCaptured = false;
 }
 
-Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser) : stringConstants(vm) {
+Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser, std::string& current_source) : stringConstants(vm) {
     this->enclosing = enclosing;
     
     this->scanner = scanner;
@@ -89,12 +91,16 @@ Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scan
     this->scopeDepth = 0;
     this->vm = vm;
     
+    this->current_source = current_source;
+    
     vm->current = this;
     
-    function = ObjFunction::newFunction(vm);
+    function = ObjFunction::newFunction(vm, type);
     
-    if (type != TYPE_SCRIPT) {
+    if (type != TYPE_SCRIPT && type != TYPE_IMPORT) {
         function->name = ObjString::copyString(vm, parser->previous.source.c_str(), parser->previous.length);
+    } else if(type == TYPE_IMPORT) {
+        function->name = ObjString::copyString(vm, "<import>", 8);
     }
     
     if(localCount + 1 >= locals.capacity()) {
@@ -117,7 +123,7 @@ Parser::Parser(Scanner* scanner) : current(TOKEN_NUL, "", 0, 0, 0), previous(TOK
     this->scanner = scanner;
 }
 
-void Parser::errorAt(Token* token, const std::string& message) {
+void Parser::errorAt(Token* token, std::string message) {
     if(panicMode) return;
     panicMode = true;
     std::cerr << "[line " << token->line << "] Error";
@@ -134,11 +140,11 @@ void Parser::errorAt(Token* token, const std::string& message) {
     hadError = true;
 }
 
-void Parser::errorAtCurrent(const std::string& message) {
+void Parser::errorAtCurrent(std::string message) {
     errorAt(&this->current, message);
 }
 
-void Parser::error(const std::string& message) {
+void Parser::error(std::string message) {
     errorAt(&this->previous, message);
 }
 
@@ -153,7 +159,7 @@ void Parser::advance() {
     }
 }
 
-void Parser::consume(TokenType type, const std::string& message) {
+void Parser::consume(TokenType type, std::string message) {
     if (current.type == type) {
         advance();
         return;
@@ -175,6 +181,17 @@ void Compiler::emitByte(uint8_t byte) {
 }
 
 ObjFunction* Compiler::endCompiler() {
+    if(type == TYPE_SCRIPT) {
+        Value main_loc;
+        Value identifier = ValueOP::obj_val(ObjString::copyString(vm, "main", 4));
+        if(vm->globalNames.tableGet(identifier, &main_loc)) {
+            uint8_t main_index = (uint8_t)ValueOP::as_number(main_loc);
+            emitBytes(OP_GET_GLOBAL, main_index);
+            emitBytes(OP_CALL, 0);
+            emitByte(OP_POP);
+        }
+    }
+    
     emitReturn();
     ObjFunction* function = this->function;
     
@@ -407,6 +424,8 @@ void Compiler::statement() {
         returnStatement();
     } else if(match(TOKEN_DEL)) {
         delStatement();
+    } else if(match(TOKEN_IMPORT)) {
+        importStatement();
     } else {
         expressionStatement();
     }
@@ -458,12 +477,12 @@ void Compiler::synchronize() {
 }
 
 void Compiler::varDeclaration(bool isConst) {
-    uint8_t global = parseVariable("Expect variable name.", isConst);
+    uint8_t global = parseVariable("Expect variable name.", isConst, false);
     
     if (match(TOKEN_EQUAL)) {
         expression();
     } else {
-        emitByte(OP_NUL);;
+        emitByte(OP_NUL);
     }
     
     parser->consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
@@ -471,11 +490,16 @@ void Compiler::varDeclaration(bool isConst) {
     defineVariable(global);
 }
 
-uint8_t Compiler::parseVariable(const std::string& errorMessage, bool isConst) {
+uint8_t Compiler::parseVariable(const std::string& errorMessage, bool isConst, bool isFunc) {
     parser->consume(TOKEN_IDENTIFIER, errorMessage);
     
     declareVariable(isConst);
     if (scopeDepth > 0) return 0;
+    
+    if(parser->previous.source.compare("main") == 0 && !isFunc) {
+        parser->error("Identifier \"main\" is reserved for global scope main function declaration.");
+        return 0;
+    }
     
     return globalConstant(&parser->previous, isConst);
 }
@@ -898,14 +922,14 @@ void Compiler::switchStatement() {
 }
 
 void Compiler::funDeclaration() {
-    uint8_t global = parseVariable("Expect function name", false);
+    uint8_t global = parseVariable("Expect function name", false, true);
     markInitialized();
     _function(TYPE_FUNCTION);
     defineVariable(global);
 }
 
 void Compiler::_function(FunctionType type) {
-    Compiler compiler(vm, type, this, scanner, parser);
+    Compiler compiler(vm, type, this, scanner, parser, current_source);
     compiler.beginScope();
     
     parser->consume(TOKEN_LEFT_PAREN, "Expect '(' after function name,");
@@ -918,7 +942,7 @@ void Compiler::_function(FunctionType type) {
                 parser->errorAtCurrent("Can't have more than 255 paramethers.");
             }
             
-            uint8_t paramConstant = compiler.parseVariable("Expect parameter name.", false);
+            uint8_t paramConstant = compiler.parseVariable("Expect parameter name.", false, false);
             if(match(TOKEN_EQUAL)) {
                 parser->consume(TOKEN_LEFT_BRACE, "Expect '{' after default parameter.");
                 found_default = true;
@@ -948,7 +972,7 @@ void Compiler::_function(FunctionType type) {
     
     uint8_t functionConstant = makeConstant(ValueOP::obj_val(function));
     if(function->upvalueCount > 0) {
-        emitBytes(OP_CLOSURE, makeConstant(ValueOP::obj_val(function)));
+        emitBytes(OP_CLOSURE, functionConstant);
         
         for(int i = 0; i < function->upvalueCount; i++) {
             emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
@@ -999,7 +1023,7 @@ void Compiler::returnStatement() {
 }
 
 int Compiler::resolveUpvalue(Token *name) {
-    if(enclosing == NULL) return -1;
+    if(enclosing == nullptr || enclosing->function->funcType == TYPE_SCRIPT || enclosing->function->funcType == TYPE_IMPORT) return -1;
     
     int local = enclosing->resolveLocal(name);
     if(local != -1) {
@@ -1196,4 +1220,46 @@ void Compiler::steps(bool canAssign) {
     }
     
     emitByte(OP_RANGE);
+}
+
+
+void Compiler::importStatement() {
+    parser->consume(TOKEN_STRING, "Expect module name after import statement");
+    
+    size_t path_index = current_source.rfind("/");
+    std::filesystem::path module_option = current_source.substr(0, path_index == std::string::npos ? 0 : path_index + 1) + parser->previous.source.substr(1, parser->previous.source.size() - 2);
+    
+    module_option += ".lox";
+    std::filesystem::path module_absolute = std::filesystem::absolute(module_option);
+    std::string module_string = module_absolute.string();
+    
+    parser->consume(TOKEN_SEMICOLON, "Expect ; after import statement");
+    
+    if(imported_module.count(module_string) || compiled_source.count(module_string)) {
+        return;
+    }
+    imported_module.insert(module_string);
+    
+    
+    std::string import = "";
+    try {
+        import = readFile(module_string.c_str());
+    } catch(std::string e) {
+        parser->error(e);
+    }
+    
+    Scanner scanner;
+    Parser parser(&scanner);
+    
+    Compiler importScript(this->vm, TYPE_IMPORT, this, &scanner, &parser, module_string);
+    importScript.compiled_source.insert(current_source);
+    importScript.compiled_source.insert(compiled_source.begin(), compiled_source.end());
+    
+    ObjFunction* importedFunction = importScript.compile(import);
+    
+    imported_module.insert(importScript.imported_module.begin(), importScript.imported_module.end());
+    
+    emitBytes(OP_CONSTANT, makeConstant(ValueOP::obj_val(importedFunction)));
+    emitBytes(OP_CALL, 0);
+    emitByte(OP_POP);
 }

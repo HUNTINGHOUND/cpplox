@@ -206,16 +206,13 @@ InterpretResult VM::interpret(const std::string& source) {
     Scanner scanner;
     Parser parser(&scanner);
     
-    Compiler compiler(this, TYPE_SCRIPT, nullptr, &scanner, &parser);
+    Compiler compiler(this, TYPE_SCRIPT, nullptr, &scanner, &parser, EXECUTION_PATH);
     ObjFunction* function = compiler.compile(source);
     
     if(function == nullptr) return INTERPRET_COMPILE_ERROR;
     
     push_stack(ValueOP::obj_val(function));
-    ObjClosure* closure = ObjClosure::newClosure(function, this);
-    stack.pop_back();
-    push_stack(ValueOP::obj_val(closure));
-    callValue(ValueOP::obj_val(closure), 0);
+    callValue(ValueOP::obj_val(function), 0);
     
     return run();
 }
@@ -284,8 +281,7 @@ InterpretResult VM::run() {
                 } else if (ValueOP::is_collection(peek(0)) && ValueOP::is_collection(peek(1))) {
                     appendCollection();
                 } else {
-                    runtimeError(
-                                 "Operands must be two numbers, two strings, or two collections.");
+                    runtimeError("Operands must be two numbers, two strings, or two collections.");
                     
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -478,8 +474,7 @@ InterpretResult VM::run() {
                         Value dummy;
                         if(collection->methods.tableGet(ValueOP::obj_val(name), &dummy)) {
                             stack.pop_back();
-                            push_stack(ValueOP::obj_val(
-                                                        ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
+                            push_stack(ValueOP::obj_val(ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
                             
                             break;
                         }

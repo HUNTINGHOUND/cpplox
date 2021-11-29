@@ -204,7 +204,7 @@ bool ValueOP::valuesEqual(Value a, Value b) {
         case VAL_NUMBER:
             return ValueOP::as_number(a) == ValueOP::as_number(b);
         case VAL_OBJ:
-            return as_obj(a) == as_obj(b);
+            return as_obj(a) == as_obj(b); // covers string as all strings are interned
         default:
             return false; //unreachable
     }

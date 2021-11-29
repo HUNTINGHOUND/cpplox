@@ -24,7 +24,8 @@ enum FunctionType : short{
     TYPE_FUNCTION,
     TYPE_SCRIPT,
     TYPE_METHOD,
-    TYPE_INITIALIZER
+    TYPE_INITIALIZER,
+    TYPE_IMPORT
 };
 
 class Obj {
@@ -56,10 +57,11 @@ public:
     int arity;
     int upvalueCount;
     int defaults;
+    FunctionType funcType;
     Chunk chunk;
     ObjString* name;
     
-    static ObjFunction* newFunction(VM* vm);
+    static ObjFunction* newFunction(VM* vm, FunctionType type);
     
 };
 

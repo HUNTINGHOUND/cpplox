@@ -19,20 +19,20 @@ class Parser{
     /// Consumes the current token, if type mismatch, report error
     /// @param type type of the token to be consumed
     /// @param message error message if type mismatch
-    void consume(TokenType type, const std::string& message);
+    void consume(TokenType type, std::string message);
     
     /// Report error at previous token
     /// @param message error message
-    void error(const std::string& message);
+    void error(std::string message);
     
     /// Report error at current token
     /// @param message error message
-    void errorAtCurrent(const std::string& message);
+    void errorAtCurrent(std::string message);
     
     /// Report error at the token specified
     /// @param token token where the error occured
     /// @param message error message
-    void errorAt(Token* token, const std::string& message);
+    void errorAt(Token* token, std::string message);
     
     /// Advance current token, well continue when encounter error token
     void advance();
@@ -103,6 +103,11 @@ class Compiler {
     
     /// Type of the current function that is being compiled
     FunctionType type;
+    
+    std::string current_source;
+    
+    std::unordered_set<std::string> imported_module;
+    std::unordered_set<std::string> compiled_source;
     
     /// Vector of breakstatements in the current function
     std::vector<Break> breakStatements;
@@ -180,7 +185,7 @@ class Compiler {
     /// Parse a variable identifier on the current token of parser. Declare said identifier.
     /// @param errorMessage Error message that will be displayed incase of error.
     /// @param isConst Whether or not the declared variable will be constant
-    uint8_t parseVariable(const std::string& errorMessage, bool isConst);
+    uint8_t parseVariable(const std::string& errorMessage, bool isConst, bool isFunc);
     
     /// Attempt to find a global value based on the name given.
     /// If the global value is found, return its index in the global value array.
@@ -220,6 +225,8 @@ class Compiler {
     void emitLoop(int loopStart);
     
     void forStatement();
+    
+    void importStatement();
     
     void continueStatement();
     
@@ -301,7 +308,7 @@ public:
     /// @param enclosing The pointer to the outter compiler enclosing this one (used for compiling methods and functions)
     /// @param scanner The pointer to the scanner which the compiler will read from
     /// @param parser The pointer to the parser which the compiler will read from
-    Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser);
+    Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser, std::string& current_source);
     
     
     /// Compile a given source code and return an ObjFunction pointer containing the compiled function. Note that the compiled function is the "<script>"  as this method is only called by the VM.
