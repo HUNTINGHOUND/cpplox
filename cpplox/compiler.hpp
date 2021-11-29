@@ -149,7 +149,7 @@ class Compiler {
     
     void varDeclaration(bool isConst);
     
-    uint8_t parseVariable(const std::string& errorMessage, bool isConst);
+    uint8_t parseVariable(const std::string& errorMessage, bool isConst, bool isFunc);
     
     uint8_t globalConstant(Token* name, bool isConst);
     

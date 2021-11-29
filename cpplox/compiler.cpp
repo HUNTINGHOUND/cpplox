@@ -477,7 +477,7 @@ void Compiler::synchronize() {
 }
 
 void Compiler::varDeclaration(bool isConst) {
-    uint8_t global = parseVariable("Expect variable name.", isConst);
+    uint8_t global = parseVariable("Expect variable name.", isConst, false);
     
     if (match(TOKEN_EQUAL)) {
         expression();
@@ -490,11 +490,16 @@ void Compiler::varDeclaration(bool isConst) {
     defineVariable(global);
 }
 
-uint8_t Compiler::parseVariable(const std::string& errorMessage, bool isConst) {
+uint8_t Compiler::parseVariable(const std::string& errorMessage, bool isConst, bool isFunc) {
     parser->consume(TOKEN_IDENTIFIER, errorMessage);
     
     declareVariable(isConst);
     if (scopeDepth > 0) return 0;
+    
+    if(parser->previous.source.compare("main") == 0 && !isFunc) {
+        parser->error("Identifier \"main\" is reserved for global scope main function declaration.");
+        return 0;
+    }
     
     return globalConstant(&parser->previous, isConst);
 }
@@ -917,7 +922,7 @@ void Compiler::switchStatement() {
 }
 
 void Compiler::funDeclaration() {
-    uint8_t global = parseVariable("Expect function name", false);
+    uint8_t global = parseVariable("Expect function name", false, true);
     markInitialized();
     _function(TYPE_FUNCTION);
     defineVariable(global);
@@ -937,7 +942,7 @@ void Compiler::_function(FunctionType type) {
                 parser->errorAtCurrent("Can't have more than 255 paramethers.");
             }
             
-            uint8_t paramConstant = compiler.parseVariable("Expect parameter name.", false);
+            uint8_t paramConstant = compiler.parseVariable("Expect parameter name.", false, false);
             if(match(TOKEN_EQUAL)) {
                 parser->consume(TOKEN_LEFT_BRACE, "Expect '{' after default parameter.");
                 found_default = true;

@@ -474,8 +474,7 @@ InterpretResult VM::run() {
                         Value dummy;
                         if(collection->methods.tableGet(ValueOP::obj_val(name), &dummy)) {
                             stack.pop_back();
-                            push_stack(ValueOP::obj_val(
-                                                        ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
+                            push_stack(ValueOP::obj_val(ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
                             
                             break;
                         }
