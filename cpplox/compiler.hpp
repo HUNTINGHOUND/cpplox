@@ -185,6 +185,7 @@ class Compiler {
     /// Parse a variable identifier on the current token of parser. Declare said identifier.
     /// @param errorMessage Error message that will be displayed incase of error.
     /// @param isConst Whether or not the declared variable will be constant
+    /// @param isFunc Whether or not the declared variable is a function
     uint8_t parseVariable(const std::string& errorMessage, bool isConst, bool isFunc);
     
     /// Attempt to find a global value based on the name given.
@@ -194,8 +195,16 @@ class Compiler {
     /// @param isConst Whether or not the global value is constant if created.
     uint8_t globalConstant(Token* name, bool isConst);
     
+    /// Add an identifier to the constant array and return its index inside the constant array.
+    /// If string already exist in the constant array, return that position.
+    /// @param name String to be added.
     uint8_t addIdentifierConstant(Token* name);
     
+    /// Define variables.
+    /// If called in scope, the previous local variable will be initialized.
+    /// If called in global, the emit byte code to define global variable passed in with whatever is on the top of the stack.
+    /// It is the caller's responsibility that when ever OP_DEFINE_GLOBAL is executed that
+    /// @param global <#global description#>
     void defineVariable(uint8_t global);
     
     void namedVariable(Token* name, bool canAssign);

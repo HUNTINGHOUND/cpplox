@@ -1023,7 +1023,7 @@ void Compiler::returnStatement() {
 }
 
 int Compiler::resolveUpvalue(Token *name) {
-    if(enclosing == nullptr || enclosing->function->funcType == TYPE_SCRIPT || enclosing->function->funcType == TYPE_IMPORT) return -1;
+    if(enclosing == nullptr || enclosing->function->funcType == TYPE_IMPORT) return -1;
     
     int local = enclosing->resolveLocal(name);
     if(local != -1) {
@@ -1068,7 +1068,7 @@ void Compiler::markCompilerRoots() {
 
 void Compiler::classDeclaration() {
     parser->consume(TOKEN_IDENTIFIER, "Expect class name.");
-    Token* className = &parser->previous;
+    Token className = parser->previous;
     uint8_t global = globalConstant(&parser->previous, false);
     declareVariable(false);
     
@@ -1085,7 +1085,7 @@ void Compiler::classDeclaration() {
         parser->consume(TOKEN_IDENTIFIER, "Expect superclass name.");
         variable(false);
         
-        if(identifierEqual(className, &parser->previous)) {
+        if(identifierEqual(&className, &parser->previous)) {
             parser->error("A class can't inherit from itself.");
         }
         
@@ -1093,12 +1093,12 @@ void Compiler::classDeclaration() {
         addLocal(Token::createToken("super"), true);
         defineVariable(0);
         
-        namedVariable(className, false);
+        namedVariable(&className, false);
         emitByte(OP_INHERIT);
         classCompiler.hasSuperclass = true;
     }
     
-    namedVariable(className, false);
+    namedVariable(&className, false);
     parser->consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
     while(!parser->check(TOKEN_RIGHT_BRACE) && !parser->check(TOKEN_EOF)) {
         method();
@@ -1183,7 +1183,7 @@ void Compiler::super(bool canAssign) {
     } else if (!vm->currentClass->hasSuperclass) {
         parser->error("Can't use 'super' int a class with no superclass.");
     }
-    parser->consume(TOKEN_DOT, "Expect ',' after 'super'");
+    parser->consume(TOKEN_DOT, "Expect '.' after 'super'");
     parser->consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
     uint8_t name = addIdentifierConstant(&parser->previous);
     
