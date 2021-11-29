@@ -559,6 +559,7 @@ InterpretResult VM::run() {
                 
                 subclass->methods.tableAddAll(&superclass->methods);
                 stack.pop_back();
+                break;
             }
             case OP_GET_SUPER: {
                 ObjString* name = read_string(frame);
