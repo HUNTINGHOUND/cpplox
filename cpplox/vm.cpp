@@ -281,8 +281,7 @@ InterpretResult VM::run() {
                 } else if (ValueOP::is_collection(peek(0)) && ValueOP::is_collection(peek(1))) {
                     appendCollection();
                 } else {
-                    runtimeError(
-                                 "Operands must be two numbers, two strings, or two collections.");
+                    runtimeError("Operands must be two numbers, two strings, or two collections.");
                     
                     return INTERPRET_RUNTIME_ERROR;
                 }

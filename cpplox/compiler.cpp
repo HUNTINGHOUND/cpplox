@@ -181,6 +181,17 @@ void Compiler::emitByte(uint8_t byte) {
 }
 
 ObjFunction* Compiler::endCompiler() {
+    if(type == TYPE_SCRIPT) {
+        Value main_loc;
+        Value identifier = ValueOP::obj_val(ObjString::copyString(vm, "main", 4));
+        if(vm->globalNames.tableGet(identifier, &main_loc)) {
+            uint8_t main_index = (uint8_t)ValueOP::as_number(main_loc);
+            emitBytes(OP_GET_GLOBAL, main_index);
+            emitBytes(OP_CALL, 0);
+            emitByte(OP_POP);
+        }
+    }
+    
     emitReturn();
     ObjFunction* function = this->function;
     
