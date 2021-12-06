@@ -76,7 +76,7 @@ void Table::adjustCapacity(size_t newCapacity) {
 void Table::tableAddAll(Table* from) {
     for (int i = 0; i < from->entries.size(); i++) {
         Entry* entry = &from->entries[i];
-        if(ValueOP::is_empty(entry->key)) {
+        if(!ValueOP::is_empty(entry->key)) {
             tableSet(entry->key, entry->value);
         }
     }

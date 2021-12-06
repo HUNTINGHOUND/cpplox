@@ -203,22 +203,45 @@ class Compiler {
     /// Define variables.
     /// If called in scope, the previous local variable will be initialized.
     /// If called in global, the emit byte code to define global variable passed in with whatever is on the top of the stack.
-    /// It is the caller's responsibility that when ever OP_DEFINE_GLOBAL is executed that
-    /// @param global <#global description#>
+    /// It is the caller's responsibility that when ever OP_DEFINE_GLOBAL is executed that the stack is not empty.
+    /// It is not recommended to use this function alone unless absolutely necessary,
+    /// @param global The index of the variable in the global value array.
     void defineVariable(uint8_t global);
     
+    /// Compile a named variable, this function will emit the correct bytecode depending on whether or not the variable should be set or get.
+    /// This function will attempt to search for variables in the following order:
+    ///     1. Local variable
+    ///     2. Closure variable
+    ///     3. Global variable
+    /// Note that due to the implmentation of global variable, a global variable can be delayed in delcaration as long as the variable is delcared before execution.
+    /// @param name Name of the variable
+    /// @param canAssign Whether or not this variable can be assigned
     void namedVariable(Token* name, bool canAssign);
     
+    /// Increase scope of the compiler.
     void beginScope();
     
+    /// Compile statment until either EOF or a right brace is encountered.
+    /// Note that this function does NOT increase scope of the compiler.
     void block();
     
+    /// Decrease the scope of the compiler.
     void endScope();
     
+    /// Declare a local variable.
+    /// Note that this function does not delcare global variable. Instead, use parseVariable.
+    /// The name of the local variable will be parser->previous. In the case of duplicate name in the same scope, report error.
+    /// @param isConst Whether or not the variable is constant
     void declareVariable(bool isConst);
     
+    /// Add a local variable to the local variable stack.
+    /// This function will not check for duplicate name. Only use this function unless absolutely neccessary and prefer declareVariable.
+    /// @param name Name of the local variable
+    /// @param isConst Whether or not the local variable is constant
     void addLocal(Token name, bool isConst);
     
+    /// <#Description#>
+    /// @param name <#name description#>
     int resolveLocal(Token* name);
     
     void markInitialized();
