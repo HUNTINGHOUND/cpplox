@@ -240,12 +240,16 @@ class Compiler {
     /// @param isConst Whether or not the local variable is constant
     void addLocal(Token name, bool isConst);
     
-    /// <#Description#>
-    /// @param name <#name description#>
+    /// Resolve a local variable.
+    /// @param name Name of the local variable to be found.
+    /// @return The index of the return value. If the local variable can't be found, return -1.
     int resolveLocal(Token* name);
     
+    /// Mark the last local variable as initialized by marking its depth.
     void markInitialized();
     
+    /// Parse and compile an if statement.
+    /// This will compile its conditional statement, else if, and else statement. 
     void ifStatement();
     
     size_t emitJump(uint8_t instruction);
