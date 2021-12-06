@@ -1023,7 +1023,7 @@ void Compiler::returnStatement() {
 }
 
 int Compiler::resolveUpvalue(Token *name) {
-    if(enclosing == nullptr || enclosing->function->funcType == TYPE_IMPORT) return -1;
+    if(enclosing == nullptr || type != TYPE_IMPORT) return -1;
     
     int local = enclosing->resolveLocal(name);
     if(local != -1) {

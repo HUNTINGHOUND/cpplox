@@ -249,39 +249,85 @@ class Compiler {
     void markInitialized();
     
     /// Parse and compile an if statement.
-    /// This will compile its conditional statement, else if, and else statement. 
+    /// This will compile its conditional statement, else if, and else statement.
     void ifStatement();
     
+    /// Emit a jump related byte code and related jump offset.
+    /// The jump offset will be set at the maximum when unpatched.
+    /// Note that any bytecode instruction not jump related to jump instruction will break the bytecodes.
+    /// @param instruction Jump instruction to be emitted
+    /// @return The position of the offset in the bytecode, can be passed to patchJump
     size_t emitJump(uint8_t instruction);
     
+    /// Patch the jump offset to the current bytecode position.
+    /// Note that the difference cannot be longer than max of uint16.
+    /// @param offset Position of the jump offset to be patched
     void patchJump(size_t offset);
     
+    /// Parse and compile a while statement.
     void whileStatement();
     
+    /// Emit a OP_LOOP byte code and the proper offsets.
+    /// @param loopStart Index of the bytecode where the loop starts
     void emitLoop(int loopStart);
     
+    /// Parse and compile a for statement.
     void forStatement();
     
+    /// Parse and compile an import statement.
     void importStatement();
     
+    /// Parse and compile a continue statement
     void continueStatement();
     
+    /// Parse and compile a break statement
     void breakStatement();
     
+    /// Patch break statements that have depth more than or equal to the current loop depth.
+    /// Once a break statement is patched, it will be popped out of the break statement stack.
     void patchBreaks();
     
+    /// Parse and compile a switch statement
     void switchStatement();
     
+    /// Parse and compile a function declaration
     void funDeclaration();
     
+    /// Parse and compile the function body.
+    ///
+    /// A new compiler and chunk is created for the function and the current function will be set as the enclosing functon.
+    /// @param type The type of the function to be compiled
     void _function(FunctionType type);
     
+    /// Parse and compile an argument list of a function
     uint8_t argumentList();
     
+    /// Parse a return statement.
+    ///
+    /// When no variable is returned, an OP_NUL will be emited to be treated as a NULL value.
     void returnStatement();
     
+    /// Resolve upvalue.
+    /// 
+    /// The compiler will look into enclosing compiler and attempt to find a upvalue.
+    /// This function will walk up the compiler chain to find a variable with the given name.
+    /// The base case will either be if there is no enclosing function, or if the current function if a TYPE_IMPORT type.
+    ///
+    /// If the variable is found, it will be added to the upvalue list of the current function with isLocal set to true. The local index will then be passed down the chain and added to each calling compiler.
+    /// @param name The name the function is looking for.
+    /// @return The position of the upvalue in the upvalue list if found, else return -1
     int resolveUpvalue(Token* name);
     
+    /// Add a upvalue to the compiler's upvalue list
+    ///
+    /// The function will walk through the upvalue list to look if given upvalue was already capture.
+    ///
+    /// If true, return the index of the already captured value. If false, return the inserted index (end of the list).
+    ///
+    /// A global variable would never be captured as a upvalue
+    /// @param index Index of the upvalue, depending on isLocal, index could refer to local variable index or upvalue index of the enclosing compiler.
+    /// @param isLocal Whether or not the upvalue is local to the current compiler.
+    /// @return The index of the inserted or found value in the upvalue list.
     int addUpvalue(uint8_t index, bool isLocal);
     
     void classDeclaration();
