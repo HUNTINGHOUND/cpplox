@@ -330,10 +330,16 @@ class Compiler {
     /// @return The index of the inserted or found value in the upvalue list.
     int addUpvalue(uint8_t index, bool isLocal);
     
+    /// Parse and compile a class declaration.
+    /// This method will compile the class body and add the super class is necessary.
     void classDeclaration();
     
+    /// Parse and compile a delete statement.
+    /// Delete statement removes property of a class instance.
     void delStatement();
     
+    /// Parse and compile a method.
+    /// Very simmilar to _function() except for methods.
     void method();
     
 public:
