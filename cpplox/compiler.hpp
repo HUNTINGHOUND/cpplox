@@ -9,6 +9,8 @@
 enum FunctionType : short;
 
 
+/// Parser class that uses a scanner to parse through the tokens.
+/// This class mainly contain helper function that makes parsing easier with error recovery.
 class Parser{
     Token current;
     Token previous;
@@ -37,6 +39,8 @@ class Parser{
     /// Advance current token, well continue when encounter error token
     void advance();
     
+    /// Check if the current token matches with the given type.
+    /// @param type Type to check against.
     bool check(TokenType type);
     
     friend class Compiler;
@@ -63,6 +67,9 @@ enum Precedence {
     PREC_PRIMARY
 };
 
+/// Class representing a local variable.
+/// A local variable contains it's own name, it's depth in terms of scope and whether or not it's constant or captured as an upvalue.
+/// isCaptured will be used to close an upvalue when it's poped out of scope. 
 struct Local {
     Token name;
     int depth;
@@ -203,64 +210,143 @@ class Compiler {
     /// Define variables.
     /// If called in scope, the previous local variable will be initialized.
     /// If called in global, the emit byte code to define global variable passed in with whatever is on the top of the stack.
-    /// It is the caller's responsibility that when ever OP_DEFINE_GLOBAL is executed that
-    /// @param global <#global description#>
+    /// It is the caller's responsibility that when ever OP_DEFINE_GLOBAL is executed that the stack is not empty.
+    /// It is not recommended to use this function alone unless absolutely necessary,
+    /// @param global The index of the variable in the global value array.
     void defineVariable(uint8_t global);
     
+    /// Compile a named variable, this function will emit the correct bytecode depending on whether or not the variable should be set or get.
+    /// This function will attempt to search for variables in the following order:
+    ///     1. Local variable
+    ///     2. Closure variable
+    ///     3. Global variable
+    /// Note that due to the implmentation of global variable, a global variable can be delayed in delcaration as long as the variable is delcared before execution.
+    /// @param name Name of the variable
+    /// @param canAssign Whether or not this variable can be assigned
     void namedVariable(Token* name, bool canAssign);
     
+    /// Increase scope of the compiler.
     void beginScope();
     
+    /// Compile statment until either EOF or a right brace is encountered.
+    /// Note that this function does NOT increase scope of the compiler.
     void block();
     
+    /// Decrease the scope of the compiler.
     void endScope();
     
+    /// Declare a local variable.
+    /// Note that this function does not delcare global variable. Instead, use parseVariable.
+    /// The name of the local variable will be parser->previous. In the case of duplicate name in the same scope, report error.
+    /// @param isConst Whether or not the variable is constant
     void declareVariable(bool isConst);
     
+    /// Add a local variable to the local variable stack.
+    /// This function will not check for duplicate name. Only use this function unless absolutely neccessary and prefer declareVariable.
+    /// @param name Name of the local variable
+    /// @param isConst Whether or not the local variable is constant
     void addLocal(Token name, bool isConst);
     
+    /// Resolve a local variable.
+    /// @param name Name of the local variable to be found.
+    /// @return The index of the return value. If the local variable can't be found, return -1.
     int resolveLocal(Token* name);
     
+    /// Mark the last local variable as initialized by marking its depth.
     void markInitialized();
     
+    /// Parse and compile an if statement.
+    /// This will compile its conditional statement, else if, and else statement.
     void ifStatement();
     
+    /// Emit a jump related byte code and related jump offset.
+    /// The jump offset will be set at the maximum when unpatched.
+    /// Note that any bytecode instruction not jump related to jump instruction will break the bytecodes.
+    /// @param instruction Jump instruction to be emitted
+    /// @return The position of the offset in the bytecode, can be passed to patchJump
     size_t emitJump(uint8_t instruction);
     
+    /// Patch the jump offset to the current bytecode position.
+    /// Note that the difference cannot be longer than max of uint16.
+    /// @param offset Position of the jump offset to be patched
     void patchJump(size_t offset);
     
+    /// Parse and compile a while statement.
     void whileStatement();
     
+    /// Emit a OP_LOOP byte code and the proper offsets.
+    /// @param loopStart Index of the bytecode where the loop starts
     void emitLoop(int loopStart);
     
+    /// Parse and compile a for statement.
     void forStatement();
     
+    /// Parse and compile an import statement.
     void importStatement();
     
+    /// Parse and compile a continue statement
     void continueStatement();
     
+    /// Parse and compile a break statement
     void breakStatement();
     
+    /// Patch break statements that have depth more than or equal to the current loop depth.
+    /// Once a break statement is patched, it will be popped out of the break statement stack.
     void patchBreaks();
     
+    /// Parse and compile a switch statement
     void switchStatement();
     
+    /// Parse and compile a function declaration
     void funDeclaration();
     
+    /// Parse and compile the function body.
+    ///
+    /// A new compiler and chunk is created for the function and the current function will be set as the enclosing functon.
+    /// @param type The type of the function to be compiled
     void _function(FunctionType type);
     
+    /// Parse and compile an argument list of a function
     uint8_t argumentList();
     
+    /// Parse a return statement.
+    ///
+    /// When no variable is returned, an OP_NUL will be emited to be treated as a NULL value.
     void returnStatement();
     
+    /// Resolve upvalue.
+    /// 
+    /// The compiler will look into enclosing compiler and attempt to find a upvalue.
+    /// This function will walk up the compiler chain to find a variable with the given name.
+    /// The base case will either be if there is no enclosing function, or if the current function if a TYPE_IMPORT type.
+    ///
+    /// If the variable is found, it will be added to the upvalue list of the current function with isLocal set to true. The local index will then be passed down the chain and added to each calling compiler.
+    /// @param name The name the function is looking for.
+    /// @return The position of the upvalue in the upvalue list if found, else return -1
     int resolveUpvalue(Token* name);
     
+    /// Add a upvalue to the compiler's upvalue list
+    ///
+    /// The function will walk through the upvalue list to look if given upvalue was already capture.
+    ///
+    /// If true, return the index of the already captured value. If false, return the inserted index (end of the list).
+    ///
+    /// A global variable would never be captured as a upvalue
+    /// @param index Index of the upvalue, depending on isLocal, index could refer to local variable index or upvalue index of the enclosing compiler.
+    /// @param isLocal Whether or not the upvalue is local to the current compiler.
+    /// @return The index of the inserted or found value in the upvalue list.
     int addUpvalue(uint8_t index, bool isLocal);
     
+    /// Parse and compile a class declaration.
+    /// This method will compile the class body and add the super class is necessary.
     void classDeclaration();
     
+    /// Parse and compile a delete statement.
+    /// Delete statement removes property of a class instance.
     void delStatement();
     
+    /// Parse and compile a method.
+    /// Very simmilar to _function() except for methods.
     void method();
     
 public:
@@ -275,40 +361,84 @@ public:
     Table stringConstants;
     
     
+    /// Parse the parser->previous token and compile to number.
+    /// Emit a OP_CONSTANT as well.
+    /// @param canAssign Not used
     void number(bool canAssign);
     
+    /// Break the normal precedence execution and start a brand new parse.
+    /// @param canAssign Not used
     void grouping(bool canAssign);
     
+    /// Parse unary expression like ! or -.
+    /// Look at the parsing rule table for details.
+    /// @param canAssign Not used
     void unary(bool canAssign);
     
+    /// Parsing and compiling a binary expression.
+    /// This function assumes that the left part of the binary expression has been parsed and compiled already.
+    /// The function will compile the right part with the correct precedence.
+    /// @param canAssign Not used
     void binary(bool canAssign);
     
+    /// Parse a conditional statement (? and :)
+    /// @param canAssign Not used
     void condition(bool canAssign);
     
+    /// Parse literal token such as true, false, and nul
+    /// @param canAssign Not used
     void literal(bool canAssign);
     
+    /// Parse and generate a string object.
+    /// In the case where the string is already created, intern the string.
+    /// @param canAssign Not used
     void string(bool canAssign);
     
+    /// Parse and compile a identifier. Essentially calls namedVariable on the previous token.
+    /// @param canAssign Passed to namedVariable
     void variable(bool canAssign);
     
+    /// Parse and compile an and statement.
+    /// @param canAssign Not used
     void _and(bool canAssign);
     
+    /// Parse and compile an or statement
+    /// @param canAssign Not used
     void _or(bool canAssign);
     
+    /// Parse and compile a call.
+    /// This method compile the argument list and emit the OP_CALL bytecode.
+    /// @param canAssign Not used.
     void call(bool canAssign);
     
+    /// Parse a . symbol.
+    /// It will also parse identifier after the dot and determine the appropriate bytecode to emit.
+    /// @param canAssign Not used
     void dot(bool canAssign);
     
+    /// Parse this keyword.
+    /// Worth noting that "this" is located at the 0 location at the local variable stack of the call frame (usually reserved for the function themselve for non-method functions).
+    /// @param canAssign Not used
     void _this(bool canAssign);
     
+    /// Parse super.
+    /// Note that super is upvalue (super class) captured by the method that uses it.
+    /// @param canAssign Not used
     void super(bool canAssign);
     
+    /// Parse random access operator.
+    /// @param canAssign Not used
     void randomAccess(bool canAssign);
     
+    /// Parse collection object and emite  OP_COLLECTION
+    /// @param canAssign Not used
     void collection(bool canAssign);
     
+    /// Parse and compile range expression. 
+    /// @param canAssign Not used
     void steps(bool canAssign);
     
+    /// Move up the enclosing list and mark all the compiler for the garbage collector.
     void markCompilerRoots();
     
     /// Constructor for the bytecode compiler
@@ -327,6 +457,8 @@ public:
 
 using ParseFn = void (Compiler::*)(bool canAssign);
 
+/// Class to prepresent the parsing rules of a token.
+/// Includes the rule if token is encoutered as a prefix, infix, and the precedence of the token.
 struct ParseRule {
 public:
     ParseFn prefix;
@@ -336,6 +468,7 @@ public:
     static ParseRule* getRule(TokenType type);
 };
 
+/// Compiler that represents a class. Used to determine whether or not the current class is nested and whether or not it has a super class.
 class ClassCompiler {
 public:
     ClassCompiler* enclosing;
