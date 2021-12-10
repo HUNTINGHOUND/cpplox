@@ -340,7 +340,7 @@ void Compiler::parsePrecedence(Precedence precedence) {
         std::invoke(infixRule, *this, canAssign);
     }
     
-    if (canAssign && match(TOKEN_EQUAL)) {
+    if (!canAssign && match(TOKEN_EQUAL)) {
         parser->error("Invalid assignment target.");
     }
 }
@@ -1023,7 +1023,7 @@ void Compiler::returnStatement() {
 }
 
 int Compiler::resolveUpvalue(Token *name) {
-    if(enclosing == nullptr || type != TYPE_IMPORT) return -1;
+    if(enclosing == nullptr || type == TYPE_IMPORT) return -1;
     
     int local = enclosing->resolveLocal(name);
     if(local != -1) {

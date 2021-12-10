@@ -354,32 +354,68 @@ public:
     Table stringConstants;
     
     
+    /// Parse the parser->previous token and compile to number.
+    /// Emit a OP_CONSTANT as well.
+    /// @param canAssign Not used
     void number(bool canAssign);
     
+    /// Break the normal precedence execution and start a brand new parse.
+    /// @param canAssign Not used
     void grouping(bool canAssign);
     
+    /// Parse unary expression like ! or -.
+    /// Look at the parsing rule table for details.
+    /// @param canAssign Not used
     void unary(bool canAssign);
     
+    /// Parsing and compiling a binary expression.
+    /// This function assumes that the left part of the binary expression has been parsed and compiled already.
+    /// The function will compile the right part with the correct precedence.
+    /// @param canAssign Not used
     void binary(bool canAssign);
     
+    /// Parse a conditional statement (? and :)
+    /// @param canAssign Not used
     void condition(bool canAssign);
     
+    /// Parse literal token such as true, false, and nul
+    /// @param canAssign Not used
     void literal(bool canAssign);
     
+    /// Parse and generate a string object.
+    /// In the case where the string is already created, intern the string.
+    /// @param canAssign Not used
     void string(bool canAssign);
     
+    /// Parse and compile a identifier. Essentially calls namedVariable on the previous token.
+    /// @param canAssign Passed to namedVariable
     void variable(bool canAssign);
     
+    /// Parse and compile an and statement.
+    /// @param canAssign Not used
     void _and(bool canAssign);
     
+    /// Parse and compile an or statement
+    /// @param canAssign Not used
     void _or(bool canAssign);
     
+    /// Parse and compile a call.
+    /// This method compile the argument list and emit the OP_CALL bytecode.
+    /// @param canAssign Not used.
     void call(bool canAssign);
     
+    /// Parse a . symbol.
+    /// It will also parse identifier after the dot and determine the appropriate bytecode to emit.
+    /// @param canAssign Not used
     void dot(bool canAssign);
     
+    /// Parse this keyword.
+    /// Worth noting that "this" is located at the 0 location at the local variable stack of the call frame (usually reserved for the function themselve for non-method functions).
+    /// @param canAssign Not used
     void _this(bool canAssign);
     
+    /// <#Description#>
+    /// @param canAssign <#canAssign description#>
     void super(bool canAssign);
     
     void randomAccess(bool canAssign);
