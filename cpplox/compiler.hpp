@@ -9,6 +9,8 @@
 enum FunctionType : short;
 
 
+/// Parser class that uses a scanner to parse through the tokens.
+/// This class mainly contain helper function that makes parsing easier with error recovery.
 class Parser{
     Token current;
     Token previous;
@@ -37,6 +39,8 @@ class Parser{
     /// Advance current token, well continue when encounter error token
     void advance();
     
+    /// Check if the current token matches with the given type.
+    /// @param type Type to check against.
     bool check(TokenType type);
     
     friend class Compiler;
@@ -63,6 +67,9 @@ enum Precedence {
     PREC_PRIMARY
 };
 
+/// Class representing a local variable.
+/// A local variable contains it's own name, it's depth in terms of scope and whether or not it's constant or captured as an upvalue.
+/// isCaptured will be used to close an upvalue when it's poped out of scope. 
 struct Local {
     Token name;
     int depth;
@@ -414,16 +421,24 @@ public:
     /// @param canAssign Not used
     void _this(bool canAssign);
     
-    /// <#Description#>
-    /// @param canAssign <#canAssign description#>
+    /// Parse super.
+    /// Note that super is upvalue (super class) captured by the method that uses it.
+    /// @param canAssign Not used
     void super(bool canAssign);
     
+    /// Parse random access operator.
+    /// @param canAssign Not used
     void randomAccess(bool canAssign);
     
+    /// Parse collection object and emite  OP_COLLECTION
+    /// @param canAssign Not used
     void collection(bool canAssign);
     
+    /// Parse and compile range expression. 
+    /// @param canAssign Not used
     void steps(bool canAssign);
     
+    /// Move up the enclosing list and mark all the compiler for the garbage collector.
     void markCompilerRoots();
     
     /// Constructor for the bytecode compiler
@@ -442,6 +457,8 @@ public:
 
 using ParseFn = void (Compiler::*)(bool canAssign);
 
+/// Class to prepresent the parsing rules of a token.
+/// Includes the rule if token is encoutered as a prefix, infix, and the precedence of the token.
 struct ParseRule {
 public:
     ParseFn prefix;
@@ -451,6 +468,7 @@ public:
     static ParseRule* getRule(TokenType type);
 };
 
+/// Compiler that represents a class. Used to determine whether or not the current class is nested and whether or not it has a super class.
 class ClassCompiler {
 public:
     ClassCompiler* enclosing;
