@@ -18,7 +18,7 @@ bool VM::interpolateNative(int argCount, Value *args) {
         args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first element to be a string.", 38));
         return false;
     }
-    if(!ValueOP::is_collection(args[1])) {
+    if(!ValueOP::is_native_subclass(args[1], OBJ_NATIVE_COLLECTION)) {
         args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected the second argument to be collection.", 46));
         return false;
     }
@@ -26,7 +26,7 @@ bool VM::interpolateNative(int argCount, Value *args) {
     ObjString* format = ValueOP::as_string(args[0]);
     size_t n = format->chars.length();
     
-    ObjCollection* input = ValueOP::as_collection(args[1]);
+    ObjCollectionClass* input = ValueOP::as_native_subclass<ObjCollectionClass>(args[1]);
     size_t m = input->values.count;
     
     std::string interloped = "";
@@ -154,6 +154,7 @@ VM::VM() : strings(this), globalNames(this), globalValues(this){
     defineNative("setField", &VM::setFieldNative, 3);
     defineNative("interpolate", &VM::interpolateNative, 2);
     defineNative("toString", &VM::toStringNative, 1);
+    
 }
 
 void VM::resetStacks() {
@@ -278,7 +279,7 @@ InterpretResult VM::run() {
                     concatenate();
                 } else if (ValueOP::is_number(peek(0)) && ValueOP::is_number(peek(1))) {
                     binary_op<double,double>(ValueOP::number_val, std::plus<double>());
-                } else if (ValueOP::is_collection(peek(0)) && ValueOP::is_collection(peek(1))) {
+                } else if (ValueOP::is_native_subclass(peek(0), OBJ_NATIVE_COLLECTION) && ValueOP::is_native_subclass(peek(1), OBJ_NATIVE_COLLECTION)) {
                     appendCollection();
                 } else {
                     runtimeError("Operands must be two numbers, two strings, or two collections.");
@@ -465,24 +466,7 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_GET_PROPERTY: {
-                if(!ValueOP::is_instance(peek(0))) {
-                    
-                    if(ValueOP::is_collection(peek(0))) {
-                        ObjCollection* collection = ValueOP::as_collection(peek(0));
-                        ObjString* name = read_string(frame);
-                        
-                        Value dummy;
-                        if(collection->methods.tableGet(ValueOP::obj_val(name), &dummy)) {
-                            stack.pop_back();
-                            push_stack(ValueOP::obj_val(ObjBoundMethod::newBoundMethod(ValueOP::obj_val(collection), name, this)));
-                            
-                            break;
-                        }
-                        
-                        runtimeError("Collection does not contain property '%s'", name->chars.c_str());
-                        return INTERPRET_RUNTIME_ERROR;
-                    }
-                    
+                if(!ValueOP::is_instance(peek(0))) {                    
                     runtimeError("Cannot reference property of non-instances.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -585,73 +569,6 @@ InterpretResult VM::run() {
                 frame = &frames.back();
                 break;
             }
-            case OP_RANDOM_ACCESS: {
-                Value potentialIndex = stack.back();
-                stack.pop_back();
-                
-                if(!ValueOP::is_number(potentialIndex)) {
-                    if(ValueOP::is_collection(potentialIndex)) {
-                        
-                        ObjCollection* collection = ValueOP::as_collection(stack.back());
-                        stack.pop_back();
-                        
-                        ObjCollection* newCollection = ObjCollection::newCollection(nullptr, 0, 0, this);
-                        push_stack(ValueOP::obj_val(newCollection));
-                        
-                        ObjCollection* indexes = ValueOP::as_collection(potentialIndex);
-                        for(int i = 0; i < indexes->values.count; i++) {
-                            double index = ValueOP::as_number(indexes->values.values[i]);
-                            
-                            if(collection->values.count <= index) {
-                                runtimeError("Random access out of bound.");
-                                return INTERPRET_RUNTIME_ERROR;
-                            }
-                            
-                            double dummy;
-                            if(modf(index, &dummy) != 0.0) {
-                                runtimeError("Random access index must be an integer. The %d element was not an integer.", i);
-                                return INTERPRET_RUNTIME_ERROR;
-                            }
-                            
-                            newCollection->addBack(collection->values.values[(int)index]);
-                        }
-                        
-                        break;
-                        
-                    } else {
-                        runtimeError("Random access index must be a number");
-                        return INTERPRET_RUNTIME_ERROR;
-                    }
-                }
-                
-                double index = ValueOP::as_number(potentialIndex);
-                
-                ObjCollection* collection = ValueOP::as_collection(stack.back());
-                stack.pop_back();
-                
-                if(!collection) {
-                    runtimeError("Can only random access collection.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-                
-                if(collection->values.count <= index) {
-                    runtimeError("Random access out of bound.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-                
-                double dummy;
-                if(modf(index, &dummy) != 0.0) {
-                    runtimeError("Random access index must be an integer.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-                
-                push_stack(collection->values.values[(int)index]);
-                break;
-            }
-            case OP_COLLECTION: {
-                push_stack(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
-                break;
-            }
             case OP_RANGE: {
                 double step = ValueOP::as_number(stack.back());
                 stack.pop_back();
@@ -662,15 +579,7 @@ InterpretResult VM::run() {
                 double start = ValueOP::as_number(stack.back());
                 stack.pop_back();
                 
-                push_stack(ValueOP::obj_val(ObjCollection::newCollection(nullptr, 0, 0, this)));
                 
-                int count = 0;
-                for(;start <= end; start += step) {
-                    push_stack(ValueOP::number_val(start));
-                    count++;
-                }
-                
-                callValue(peek(count), count);
                 break;
             }
         }
@@ -679,30 +588,6 @@ InterpretResult VM::run() {
 
 bool VM::invoke(ObjString *name, int argCount, bool interrupt) {
     Value receiver = peek(argCount);
-    
-    if(ValueOP::is_collection(receiver)) {
-        ObjCollection* collection = ValueOP::as_collection(receiver);
-        std::vector<Value> arguments;
-        for(int i = argCount - 1; i >= 0; i--) {
-            arguments.push_back(peek(i));
-        }
-        
-        CollectionResponse response = collection->invokeCollectionMethods(name, arguments);
-        if(response.hasErr) {
-            if(!response.propertyMissing || interrupt)
-                runtimeError(response.errorMessage);
-            return false;
-        }
-        
-        for(int i = 0; i <= argCount; i++) {
-            stack.pop_back();
-        }
-        
-        if(response.isVoid) push_stack(ValueOP::nul_val());
-        else push_stack(response.returnVal);
-        
-        return true;
-    }
     
     if(!ValueOP::is_instance(receiver)) {
         runtimeError("Only instances have methods.");
@@ -746,22 +631,6 @@ void VM::concatenate() {
     push_stack(ValueOP::obj_val(result));
 }
 
-void VM::appendCollection() {
-    ObjCollection* b = ValueOP::as_collection(peek(0));
-    ObjCollection* a = ValueOP::as_collection(peek(1));
-    
-    ObjCollection* newCollection = ObjCollection::newCollection(nullptr, 0, 0, this);
-    for(int i = 0; i < a->values.count; i++) {
-        newCollection->addBack(a->values.values[i]);
-    }
-    for(int i = 0; i < b->values.count; i++) {
-        newCollection->addBack(b->values.values[i]);
-    }
-    
-    stack.pop_back();
-    stack.pop_back();
-    push_stack(ValueOP::obj_val(newCollection));
-}
 
 bool VM::isFalsey(Value value) {
     return ValueOP::is_nul(value) || (ValueOP::is_bool(value) && !ValueOP::as_bool(value));
@@ -807,28 +676,6 @@ bool VM::callValue(Value callee, int argCount) {
             case OBJ_BOUND_METHOD: {
                 ObjBoundMethod* bound = ValueOP::as_bound_method(callee);
                 
-                if(ValueOP::is_collection(bound->receiver)) {
-                    ObjCollection* collection = ValueOP::as_collection(bound->receiver);
-                    std::vector<Value> arguments;
-                    for(int i = argCount - 1; i >= 0; i--) {
-                        arguments.push_back(peek(i));
-                    }
-                    CollectionResponse response = collection->invokeCollectionMethods((ObjString*)bound->method, arguments);
-                    if(response.hasErr) {
-                        runtimeError(response.errorMessage);
-                        return false;
-                    }
-                    
-                    for(int i = 0; i < argCount; i++) {
-                        stack.pop_back();
-                    }
-                    
-                    if(response.isVoid) push_stack(ValueOP::nul_val());
-                    else push_stack(response.returnVal);
-                    
-                    return true;
-                }
-                
                 auto it = stack.end();
                 it[-argCount - 1] = bound->receiver;
                 
@@ -868,20 +715,6 @@ bool VM::callValue(Value callee, int argCount) {
                     runtimeError("Expected 0 argument but got %d.", argCount);
                     return false;
                 }
-                
-                return true;
-            }
-            case OBJ_COLLECTION: {
-                ObjCollection* collection = ValueOP::as_collection(callee);
-                for (int i = argCount - 1; i >= 0; i--) {
-                    collection->addBack(peek(i));
-                }
-                
-                for (int i = argCount - 1; i >= 0; i--) {
-                    stack.pop_back();
-                }
-                
-                addCollectionMethods(collection);
                 
                 return true;
             }
@@ -931,6 +764,25 @@ bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
 void VM::defineNative(const std::string& name, NativeFn function, int arity) {
     push_stack(ValueOP::obj_val(ObjString::copyString(this, name.c_str(), (int)strlen(name.c_str()))));
     push_stack(ValueOP::obj_val(ObjNative::newNative(function,arity, this)));
+    globalValues.writeValueArray(stack[1]);
+    globalNames.tableSet(stack[0], ValueOP::number_val(globalValues.count - 1));
+    stack.pop_back();
+    stack.pop_back();
+}
+
+void VM::defineNativeClass(const std::string &name, ObjType type) {
+    ObjString* obj_name = ObjString::copyString(this, name.c_str(), (int)strlen(name.c_str()));
+    push_stack(ValueOP::obj_val(obj_name));
+    switch (type) {
+        case OBJ_NATIVE_COLLECTION:
+            push_stack(ValueOP::obj_val(ObjCollectionClass::newCollectionClass(obj_name, this)));
+            break;
+            
+        default:
+            // should never reach
+            break;
+    }
+    
     globalValues.writeValueArray(stack[1]);
     globalNames.tableSet(stack[0], ValueOP::number_val(globalValues.count - 1));
     stack.pop_back();
@@ -997,15 +849,6 @@ bool VM::bindMethod(ObjClass *_class, ObjString *name) {
     stack.pop_back();
     push_stack(ValueOP::obj_val(bound));
     return true;
-}
-
-void VM::addCollectionMethods(ObjCollection *collection) {
-    std::vector<std::string> methodNames{"addBack", "deleteBack", "swap", "getSize"};
-    for(std::string& name : methodNames) {
-        push_stack(ValueOP::obj_val(ObjString::copyString(this, name.c_str(), name.length())));
-        collection->methods.tableSet(stack.back(), ValueOP::nul_val());
-        stack.pop_back();
-    }
 }
 
 void VM::push_stack(Value value) {

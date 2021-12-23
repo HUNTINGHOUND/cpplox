@@ -44,8 +44,6 @@ class VM {
     template <typename T, typename U>
     InterpretResult binary_op(Value (*valuetype)(T),std::function<T (U, U)> func);
     
-    Value peek(int distance);
-    
     bool isFalsey(Value value);
     
     void concatenate();
@@ -62,6 +60,8 @@ class VM {
     
     void defineNative(const std::string& name, NativeFn function, int arity);
     
+    void defineNativeClass(const std::string& name, ObjType type);
+    
     ObjUpvalue* captureUpvalue(size_t localIndex);
     
     void closeUpvalues(Value* last);
@@ -73,8 +73,6 @@ class VM {
     void defineMethod(ObjString* name);
     
     bool bindMethod(ObjClass* _class, ObjString* name);
-    
-    void addCollectionMethods(ObjCollection* collection);
     
     bool invoke(ObjString* name, int argCount, bool interrupt);
     
@@ -132,7 +130,10 @@ public:
     VM();
     void freeVM();
     InterpretResult interpret(const std::string& source);
+    
     void push_stack(Value value);
+    
+    Value peek(int distance);
 };
 
 

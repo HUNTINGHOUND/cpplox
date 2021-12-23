@@ -430,10 +430,6 @@ public:
     /// @param canAssign Not used
     void randomAccess(bool canAssign);
     
-    /// Parse collection object and emite  OP_COLLECTION
-    /// @param canAssign Not used
-    void collection(bool canAssign);
-    
     /// Parse and compile range expression. 
     /// @param canAssign Not used
     void steps(bool canAssign);

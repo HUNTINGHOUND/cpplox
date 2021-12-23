@@ -59,11 +59,6 @@ void freeObject(Obj* object, VM* vm) {
             mem_deallocate<ObjBoundMethod>((ObjBoundMethod*)object, sizeof(ObjBoundMethod), vm);
             if(DEBUG_LOG_GC) std::cout << "OBJ_BOUND_METHOD" << std::endl;
             break;
-        case OBJ_COLLECTION: {
-            mem_deallocate<ObjCollection>((ObjCollection*)object, sizeof(ObjCollection), vm);
-            if(DEBUG_LOG_GC) std::cout << "OBJ_COLLECTION" << std::endl;
-            break;
-        }
     }
 }
 
@@ -152,14 +147,6 @@ void blackenObject(Obj* object, VM* vm) {
     }
     
     switch (object->type) {
-        case OBJ_COLLECTION: {
-            ObjCollection* collection = (ObjCollection*)object;
-            for(int i = 0; i < collection->values.count; i++) {
-                markValue(vm, collection->values.values[i]);
-            }
-            markTable(vm, &collection->methods);
-            break;
-        }
         case OBJ_BOUND_METHOD: {
             ObjBoundMethod* bound = (ObjBoundMethod*)object;
             markValue(vm, bound->receiver);

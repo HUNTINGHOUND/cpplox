@@ -119,107 +119,85 @@ ObjBoundMethod* ObjBoundMethod::newBoundMethod(Value receiver, Obj *method, VM* 
     return bound;
 }
 
-ObjCollection* ObjCollection::newCollection(Value *values, size_t size, size_t capacity, VM* vm) {
-    ObjCollection* collection = allocate_obj<ObjCollection>(OBJ_COLLECTION, vm);
+ObjNativeClassMethod* ObjNativeClassMethod::newNativeClassMethod(NativeClassMethod method, int arity, VM* vm) {
+    ObjNativeClassMethod* newMethod = Obj::allocate_obj<ObjNativeClassMethod>(OBJ_NATIVE_CLASS_METHOD, vm);
+    newMethod->method = method;
+    newMethod->arity = arity;
+    return newMethod;
+};
+
+ObjNativeClass* ObjNativeClass::newNativeClass(ObjString* name, VM* vm, ObjType subType) {
+    ObjNativeClass* nativeClass = (ObjNativeClass *) ObjClass::newClass(name, vm);
+    nativeClass->type = OBJ_NATIVE_CLASS;
+    nativeClass->subType = subType;
+    return nativeClass;
+};
+
+NativeClassRes NativeClassRes::genError(const std::string& errorMessage, bool propertyMissing) {
+    NativeClassRes erro{true, propertyMissing, std::move(errorMessage)};
+    return erro;
+}
+
+NativeClassRes NativeClassRes::genResponse(Value returnVal, bool isVoid) {
+    NativeClassRes res{false, false, "", isVoid, std::move(returnVal)};
+    return res;
+}
+
+void ObjNativeClass::addMethod(const std::string& name, NativeClassMethod method, int arity, VM* vm) {
+    vm->push_stack(ValueOP::obj_val(ObjString::copyString(vm, name.c_str(), name.size())));
+    vm->push_stack(ValueOP::obj_val(ObjNativeClassMethod::newNativeClassMethod(method, arity, vm)));
+    methods.tableSet(vm->peek(1), vm->peek(0));
+    vm->stack.pop_back();
+    vm->stack.pop_back();
+};
+
+NativeClassRes ObjCollectionClass::invokeMethod(ObjString* name, int argCount, Value* args) {
+    Value seek_method, name_val = ValueOP::obj_val(name);
+    if(methods.tableGet(name_val, &seek_method)) {
+        ObjNativeClassMethod* method_wrapper = static_cast<ObjNativeClassMethod*>(ValueOP::as_obj(seek_method));
+        NativeClassMethod native_method = method_wrapper->method;
+        CollectionClassMethod collection_method = static_cast<CollectionClassMethod>(native_method);
+        NativeClassRes res = std::invoke(collection_method, *this, argCount, args);
+        return res;
+        
+    } else {
+        return NativeClassRes::genError("Property Not Found.", true);
+    }
+}
+
+NativeClassRes ObjCollectionClass::indexAccess(int argCount, Value *args) {
+    if(argCount != 1)
+        return NativeClassRes::genError("Expected 1 argument, got " + std::to_string(argCount) + " instead.");
+    if(!ValueOP::is_number(args[0]))
+        return NativeClassRes::genError("Expected number as argument for collection random access.");
+    
+    long index = ValueOP::as_number(args[0]);
+    if(index < 0) index = values.count - index;
+    if(std::abs(index) == values.count)
+        return NativeClassRes::genError("Out of range random accees");
+    
+    return NativeClassRes::genResponse(values.values[index], false);
+}
+
+NativeClassRes ObjCollectionClass::addValue(int argCount, Value* args) {
+    if(argCount != 1)
+        return NativeClassRes::genError("Expected 1 argument, got " + std::to_string(argCount) + " instead.");
+    values.writeValueArray(args[0]);
+    return NativeClassRes::genResponse(ValueOP::empty_val(), true);
+}
+
+NativeClassRes ObjCollectionClass::initializer(int argCount, Value* args) {
+    
+}
+
+ObjCollectionClass* ObjCollectionClass::newCollectionClass(ObjString *name, VM *vm) {
+    ObjCollectionClass* collection = static_cast<ObjCollectionClass*>(ObjNativeClass::newNativeClass(name, vm, OBJ_NATIVE_COLLECTION));
     collection->values = ValueArray(vm);
-    collection->vm = vm;
-    collection->methods = Table(vm);
+    
+    collection->addMethod("addValue", static_cast<NativeClassMethod>(&ObjCollectionClass::addValue), 1, vm);
+    collection->addMethod("indexAccess", static_cast<NativeClassMethod>(&ObjCollectionClass::indexAccess), 1, vm);
+    
+    
     return collection;
 }
 
-CollectionResponse ObjCollection::invokeCollectionMethods(ObjString* method, std::vector<Value>& arguments) {
-    CollectionResponse response;
-    response.hasErr = false;
-    if(method->chars.compare("addBack") == 0) {
-        if(arguments.size() != 1) {
-            response.hasErr = true;
-            response.propertyMissing = false;
-            
-            response.errorMessage = "addBack method expects 1 argument.";
-            return response;
-        } else {
-            response.isVoid = true;
-            addBack(arguments[0]);
-        }
-    } else if (method->chars.compare("deleteBack") == 0) {
-        if(arguments.size() != 0) {
-            response.hasErr = true;
-            response.propertyMissing = false;
-            
-            response.errorMessage = "deleteBack method expects 0 argument.";
-            return response;
-        } else {
-            response.isVoid = true;
-            deleteBack();
-        }
-    } else if (method->chars.compare("swap") == 0) {
-        if(arguments.size() != 2) {
-            response.hasErr = true;
-            response.propertyMissing = false;
-            
-            response.errorMessage = "swap method expects 2 argument.";
-            return response;
-        } else {
-            
-            double dummy;
-            if(!ValueOP::is_number(arguments[0]) || modf(ValueOP::as_number(arguments[0]), &dummy) != 0.0) {
-                response.hasErr = true;
-                response.propertyMissing = false;
-                
-                response.errorMessage = "Swap index argument must be an integer";
-                return response;
-            }
-            
-            if(values.count <= ValueOP::as_number(arguments[0])) {
-                response.hasErr = true;
-                response.propertyMissing = false;
-                
-                response.errorMessage = "Out of bound access to collection object.";
-                return response;
-            }
-            
-            
-            
-            response.isVoid = true;
-            swap(arguments[0], arguments[1]);
-        }
-    } else if (method->chars.compare("getSize") == 0) {
-        if(arguments.size() != 0) {
-            response.hasErr = true;
-            response.propertyMissing = false;
-            
-            response.errorMessage = "getSize method expects 0 argument.";
-            return response;
-        } else {
-            response.isVoid = false;
-            response.returnVal = ValueOP::number_val(getSize());
-        }
-    } else {
-        response.hasErr = true;
-        response.propertyMissing = true;
-        
-        response.errorMessage = "Collection class does not contain property '";
-        response.errorMessage + method->chars;
-        response.errorMessage.pop_back();
-        response.errorMessage += "'.";
-    }
-    
-    return response;
-}
-
-
-void ObjCollection::addBack(Value value) {
-    values.writeValueArray(value);
-}
-
-void ObjCollection::deleteBack() {
-    values.count--;
-}
-
-int ObjCollection::getSize() {
-    return (int)values.count;
-}
-
-void ObjCollection::swap(Value index, Value value) {
-    values.values[(int)ValueOP::as_number(index)] = value;
-}

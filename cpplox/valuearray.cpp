@@ -3,7 +3,7 @@
 
 ValueArray::ValueArray() {
     count = 0;
-    vm = 0;
+    vm = nullptr;
 }
 
 ValueArray::ValueArray(VM* vm) {

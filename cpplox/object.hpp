@@ -17,7 +17,9 @@ enum ObjType : short{
     OBJ_CLASS,
     OBJ_INSTANCE,
     OBJ_BOUND_METHOD,
-    OBJ_COLLECTION
+    OBJ_NATIVE_CLASS_METHOD,
+    OBJ_NATIVE_CLASS,
+    OBJ_NATIVE_COLLECTION,
 };
 
 enum FunctionType : short{
@@ -119,7 +121,23 @@ public:
     static ObjBoundMethod* newBoundMethod(Value receiver, Obj* method, VM* vm);
 };
 
-struct CollectionResponse {
+
+struct NativeClassRes;
+class ObjNativeClass;
+using NativeClassMethod = NativeClassRes(ObjNativeClass::*)(int argCount, Value* args);
+
+class ObjNativeClassMethod : public Obj {
+public:
+    int arity;
+    NativeClassMethod method;
+    
+    static ObjNativeClassMethod* newNativeClassMethod(NativeClassMethod method, int arity, VM* vm);
+};
+
+struct NativeClassRes {
+    static NativeClassRes genError(const std::string& errorMessage, bool propertyMissing=false);
+    static NativeClassRes genResponse(Value returnVal, bool isVoid=false);
+    
     bool hasErr;
     bool propertyMissing;
     
@@ -128,20 +146,29 @@ struct CollectionResponse {
     Value returnVal;
 };
 
-class ObjCollection : public Obj {
-    void expandCapacity();
-    VM* vm;
+
+class ObjNativeClass : public ObjClass {
 public:
+    ObjType subType;
+    
+    static ObjNativeClass* newNativeClass(ObjString* name, VM* vm, ObjType subType);
+    
+    void addMethod(const std::string& name, NativeClassMethod method, int arity, VM* vm);
+    virtual NativeClassRes invokeMethod(ObjString* name, int argCount, Value* args)=0;
+};
+
+
+class ObjCollectionClass : public ObjNativeClass{
+    NativeClassRes initialize(int argCount, Value* args);
+    NativeClassRes addValue(int argCount, Value* args);
+    NativeClassRes indexAccess(int argCount, Value* args);
+public:
+    using CollectionClassMethod = NativeClassRes(ObjCollectionClass::*)(int argCount, Value* args);
+    
     ValueArray values;
-    Table methods;
     
-    static ObjCollection* newCollection(Value* values, size_t size, size_t capacity, VM* vm);
-    
-    CollectionResponse invokeCollectionMethods(ObjString* method, std::vector<Value>& arguments);
-    void addBack(Value value);
-    void deleteBack();
-    void swap(Value index, Value value);
-    int getSize();
+    static ObjCollectionClass* newCollectionClass(ObjString* name, VM* vm);
+    NativeClassRes invokeMethod(ObjString* name, int argCount, Value* args);
 };
 
 #endif /* object_h */

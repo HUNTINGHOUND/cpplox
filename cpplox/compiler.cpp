@@ -33,7 +33,6 @@ ParseRule rules[53] = {
     [TOKEN_IDENTIFIER]    = {&Compiler::variable,     nullptr,   PREC_NONE},
     [TOKEN_STRING]        = {&Compiler::string, nullptr, PREC_NONE},
     [TOKEN_NUMBER]        = {&Compiler::number, nullptr, PREC_NONE},
-    [TOKEN_COLLECTION]    = {&Compiler::collection, nullptr, PREC_NONE},
     [TOKEN_AND]           = {nullptr,     &Compiler::_and,   PREC_AND},
     [TOKEN_CLASS]         = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_ELSE]          = {nullptr,     nullptr,   PREC_NONE},
@@ -515,7 +514,6 @@ uint8_t Compiler::globalConstant(Token *name, bool isConst) {
     Value v = ValueOP::number_val((double)newIndex);
     ValueOP::setConst(isConst, v);
     vm->globalNames.tableSet(identifier, v);
-    
     vm->globalValues.writeValueArray(ValueOP::empty_val());
     
     return newIndex;
@@ -1207,9 +1205,6 @@ void Compiler::randomAccess(bool canAssign) {
     emitByte(OP_RANDOM_ACCESS);
 }
 
-void Compiler::collection(bool canAssign) {
-    emitByte(OP_COLLECTION);
-}
 
 void Compiler::steps(bool canAssign) {
     parsePrecedence(PREC_OR);

@@ -257,16 +257,6 @@ void ValueOP::printObject(Value value) {
         case OBJ_INSTANCE:
             std::cout << as_instance(value)->_class->name->chars << " instance";
             break;
-        case OBJ_COLLECTION: {
-            ObjCollection* collection = ValueOP::as_collection(value);
-            std::cout << "{";
-            for(int i = 0; i < collection->values.count; i++) {
-                printValue(collection->values.values[i]);
-                if(i != collection->values.count - 1) std::cout << ", ";
-            }
-            std::cout << "}";
-            break;
-        }
     }
 }
 
@@ -397,13 +387,16 @@ ObjFunction* ValueOP::get_obj_function(Obj* obj) {
     }
 }
 
-bool ValueOP::is_collection(Value value) {
-    return isObjType(value, OBJ_COLLECTION);
+bool ValueOP::is_native_class(Value value) {
+    return as_obj(value)->type == OBJ_NATIVE_CLASS;
 }
 
-ObjCollection* ValueOP::as_collection(Value value) {
-    if(!is_collection(value)) return nullptr;
-    return (ObjCollection*)as_obj(value);
+bool ValueOP::is_native_subclass(Value value, ObjType type) {
+    return is_native_class(value) && as_native_class(value)->subType == type;
+}
+
+ObjNativeClass* ValueOP::as_native_class(Value value) {
+    return (ObjNativeClass*) as_obj(value);
 }
 
 ObjString* ValueOP::to_string(Value value, VM* vm) {
@@ -446,18 +439,6 @@ ObjString* ValueOP::object_to_string(Value value, VM* vm) {
         case OBJ_INSTANCE: {
             std::string buffer(as_instance(value)->_class->name->chars);
             buffer += " instance";
-            return ObjString::copyString(vm, buffer.c_str(), buffer.size());
-        }
-        case OBJ_COLLECTION: {
-            std::string buffer = "{";
-            ObjCollection* collection = ValueOP::as_collection(value);
-            std::cout << "{";
-            for(int i = 0; i < collection->values.count; i++) {
-                ObjString* element = to_string(collection->values.values[i], vm);
-                buffer += std::string(element->chars);
-                if(i != collection->values.count - 1) buffer += ", ";
-            }
-            buffer += "}";
             return ObjString::copyString(vm, buffer.c_str(), buffer.size());
         }
             
