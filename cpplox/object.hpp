@@ -20,6 +20,8 @@ enum ObjType : short{
     OBJ_NATIVE_CLASS_METHOD,
     OBJ_NATIVE_CLASS,
     OBJ_NATIVE_COLLECTION,
+    OBJ_NATIVE_INSTANCE,
+    OBJ_NATIVE_COLLECTION_INSTANCE
 };
 
 enum FunctionType : short{
@@ -124,14 +126,14 @@ public:
 
 struct NativeClassRes;
 class ObjNativeClass;
-using NativeClassMethod = NativeClassRes(ObjNativeClass::*)(int argCount, Value* args);
+class ObjNativeInstance;
+using NativeClassMethod = NativeClassRes(ObjNativeClass::*)(ObjNativeInstance* instance, int argCount, Value* args);
 
 class ObjNativeClassMethod : public Obj {
 public:
-    int arity;
     NativeClassMethod method;
     
-    static ObjNativeClassMethod* newNativeClassMethod(NativeClassMethod method, int arity, VM* vm);
+    static ObjNativeClassMethod* newNativeClassMethod(NativeClassMethod method, VM* vm);
 };
 
 struct NativeClassRes {
@@ -149,26 +151,40 @@ struct NativeClassRes {
 
 class ObjNativeClass : public ObjClass {
 public:
+    bool hasInitializer;
     ObjType subType;
     
     static ObjNativeClass* newNativeClass(ObjString* name, VM* vm, ObjType subType);
     
-    void addMethod(const std::string& name, NativeClassMethod method, int arity, VM* vm);
-    virtual NativeClassRes invokeMethod(ObjString* name, int argCount, Value* args)=0;
+    void addMethod(const std::string& name, NativeClassMethod method, VM* vm);
+    virtual NativeClassRes invokeMethod(ObjString* name, ObjNativeInstance* instance, int argCount, Value* args)=0;
 };
 
 
-class ObjCollectionClass : public ObjNativeClass{
-    NativeClassRes initialize(int argCount, Value* args);
-    NativeClassRes addValue(int argCount, Value* args);
-    NativeClassRes indexAccess(int argCount, Value* args);
+class ObjCollectionClass : public ObjNativeClass {
+    NativeClassRes init(ObjNativeInstance* instance, int argCount, Value* args);
+    NativeClassRes addValue(ObjNativeInstance* instance, int argCount, Value* args);
+    NativeClassRes indexAccess(ObjNativeInstance* instance, int argCount, Value* args);
 public:
-    using CollectionClassMethod = NativeClassRes(ObjCollectionClass::*)(int argCount, Value* args);
-    
-    ValueArray values;
+    using CollectionClassMethod = NativeClassRes(ObjCollectionClass::*)(ObjNativeInstance* instance, int argCount, Value* args);
     
     static ObjCollectionClass* newCollectionClass(ObjString* name, VM* vm);
-    NativeClassRes invokeMethod(ObjString* name, int argCount, Value* args);
+    NativeClassRes invokeMethod(ObjString* name,  ObjNativeInstance* instance, int argCount, Value* args);
+};
+
+class ObjNativeInstance : public ObjInstance {
+public:
+    ObjType subType;
+    
+    static ObjNativeInstance* newNativeInstance(ObjNativeClass* _class, ObjType subtype, VM* vm);
+};
+
+
+class ObjCollectionInstance : public ObjNativeInstance {
+public:
+    ValueArray values;
+    
+    static ObjCollectionInstance* newCollectionInstance(ObjCollectionClass* _class, VM* vm);
 };
 
 #endif /* object_h */

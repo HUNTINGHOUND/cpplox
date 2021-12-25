@@ -15,6 +15,9 @@ class ObjInstance;
 class ObjBoundMethod;
 class ObjNativeClass;
 class ObjCollectionClass;
+class ObjNativeInstance;
+class ObjCollectionInstance;
+class ObjNativeClassMethod;
 enum ObjType : short;
 class VM;
 
@@ -64,6 +67,9 @@ bool is_instance(Value value);
 bool is_bound_method(Value value);
 bool is_native_class(Value value);
 bool is_native_subclass(Value value, ObjType type);
+bool is_native_instance(Value value);
+bool is_native_subinstance(Value value, ObjType type);
+bool is_native_method(Value value);
 bool isObjType(Value value, ObjType type);
 bool isConst(Value value);
 
@@ -81,8 +87,14 @@ ObjBoundMethod* as_bound_method(Value value);
 ObjNativeClass* as_native_class(Value value);
 template <typename T>
 T* as_native_subclass(Value value) {
-    return (T*)((ObjNativeClass*)as_obj(value));
+    return (T*)as_native_class(value);
 }
+ObjNativeInstance* as_native_instance(Value value);
+template <typename T>
+T* as_native_subinstance(Value value) {
+    return (T*)as_native_instance(value);
+}
+ObjNativeClassMethod* as_native_class_method(Value value);
 
 ObjString* to_string(Value value, VM* vm);
 ObjString* object_to_string(Value object, VM* vm);

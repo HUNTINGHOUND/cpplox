@@ -18,7 +18,7 @@ bool VM::interpolateNative(int argCount, Value *args) {
         args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first element to be a string.", 38));
         return false;
     }
-    if(!ValueOP::is_native_subclass(args[1], OBJ_NATIVE_COLLECTION)) {
+    if(!ValueOP::is_native_subinstance(args[1], OBJ_NATIVE_COLLECTION_INSTANCE)) {
         args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected the second argument to be collection.", 46));
         return false;
     }
@@ -26,7 +26,7 @@ bool VM::interpolateNative(int argCount, Value *args) {
     ObjString* format = ValueOP::as_string(args[0]);
     size_t n = format->chars.length();
     
-    ObjCollectionClass* input = ValueOP::as_native_subclass<ObjCollectionClass>(args[1]);
+    ObjCollectionInstance* input = ValueOP::as_native_subinstance<ObjCollectionInstance>(args[1]);
     size_t m = input->values.count;
     
     std::string interloped = "";
@@ -155,6 +155,7 @@ VM::VM() : strings(this), globalNames(this), globalValues(this){
     defineNative("interpolate", &VM::interpolateNative, 2);
     defineNative("toString", &VM::toStringNative, 1);
     
+    defineNativeClass("Collection", OBJ_NATIVE_COLLECTION);
 }
 
 void VM::resetStacks() {
@@ -279,7 +280,7 @@ InterpretResult VM::run() {
                     concatenate();
                 } else if (ValueOP::is_number(peek(0)) && ValueOP::is_number(peek(1))) {
                     binary_op<double,double>(ValueOP::number_val, std::plus<double>());
-                } else if (ValueOP::is_native_subclass(peek(0), OBJ_NATIVE_COLLECTION) && ValueOP::is_native_subclass(peek(1), OBJ_NATIVE_COLLECTION)) {
+                } else if (ValueOP::is_native_subinstance(peek(0), OBJ_NATIVE_COLLECTION_INSTANCE) && ValueOP::is_native_subinstance(peek(1), OBJ_NATIVE_COLLECTION_INSTANCE) ) {
                     appendCollection();
                 } else {
                     runtimeError("Operands must be two numbers, two strings, or two collections.");
@@ -718,6 +719,25 @@ bool VM::callValue(Value callee, int argCount) {
                 
                 return true;
             }
+            case OBJ_NATIVE_CLASS: {
+                ObjNativeClass* _class = ValueOP::as_native_class(callee);
+                Value* back = &stack.back();
+                switch(_class->subType) {
+                    case OBJ_NATIVE_COLLECTION:
+                        back[-argCount] = ValueOP::obj_val(ObjCollectionInstance::newCollectionInstance(static_cast<ObjCollectionClass*>(_class), this));
+                        break;
+                    default:
+                        // should never be reached;
+                        runtimeError("Invalid native class");
+                        return false;
+                }
+                
+                if(_class->hasInitializer) {
+                    _class->invokeMethod(ObjString::copyString(this, "init", 4), ValueOP::as_native_instance(back[-argCount]), argCount, &stack[stack.size() - 1] - argCount + 1);
+                } else if(argCount != 0) {
+                    runtimeError("Expected 0 argument, but got %d.", argCount);
+                }
+            }
             default:
                 break;
         }
@@ -756,6 +776,7 @@ bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
         }
     }
     
+
     frames.push_back(CallFrame(callee, &function->chunk.code[0],
                                stack.size() - argCount - (argCount - (function->arity - function->defaults)) - 1));
     return true;

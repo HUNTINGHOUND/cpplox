@@ -330,8 +330,7 @@ bool ValueOP::is_class(Value value) {
 }
 
 ObjClass* ValueOP::as_class(Value value) {
-    if(as_obj(value)->type == OBJ_CLASS) return (ObjClass*)as_obj(value);
-    return nullptr;
+    return (ObjClass*)as_obj(value);
 }
 
 bool ValueOP::is_instance(Value value) {
@@ -396,7 +395,7 @@ bool ValueOP::is_native_subclass(Value value, ObjType type) {
 }
 
 ObjNativeClass* ValueOP::as_native_class(Value value) {
-    return (ObjNativeClass*) as_obj(value);
+    return static_cast<ObjNativeClass*>(as_obj(value));
 }
 
 ObjString* ValueOP::to_string(Value value, VM* vm) {
@@ -460,4 +459,24 @@ ObjString* ValueOP::function_to_string(ObjFunction* function, VM* vm) {
     buffer += std::string(function->name->chars);
     buffer += ">";
     return ObjString::copyString(vm, buffer.c_str(), buffer.size());
+}
+
+ObjNativeInstance* ValueOP::as_native_instance(Value value) {
+    return (ObjNativeInstance*)as_obj(value);
+}
+
+bool ValueOP::is_native_instance(Value value) {
+    return as_obj(value)->type == OBJ_NATIVE_INSTANCE;
+}
+
+bool ValueOP::is_native_subinstance(Value value, ObjType type) {
+    return is_native_instance(value) && as_native_instance(value)->subType == type;
+}
+
+bool ValueOP::is_native_method(Value value) {
+    return as_obj(value)->type == OBJ_NATIVE_CLASS_METHOD;
+}
+
+ObjNativeClassMethod* ValueOP::as_native_class_method(Value value) {
+    return static_cast<ObjNativeClassMethod*>(as_obj(value));
 }

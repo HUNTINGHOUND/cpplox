@@ -119,16 +119,16 @@ ObjBoundMethod* ObjBoundMethod::newBoundMethod(Value receiver, Obj *method, VM* 
     return bound;
 }
 
-ObjNativeClassMethod* ObjNativeClassMethod::newNativeClassMethod(NativeClassMethod method, int arity, VM* vm) {
+ObjNativeClassMethod* ObjNativeClassMethod::newNativeClassMethod(NativeClassMethod method, VM* vm) {
     ObjNativeClassMethod* newMethod = Obj::allocate_obj<ObjNativeClassMethod>(OBJ_NATIVE_CLASS_METHOD, vm);
     newMethod->method = method;
-    newMethod->arity = arity;
     return newMethod;
 };
 
 ObjNativeClass* ObjNativeClass::newNativeClass(ObjString* name, VM* vm, ObjType subType) {
-    ObjNativeClass* nativeClass = (ObjNativeClass *) ObjClass::newClass(name, vm);
+    ObjNativeClass* nativeClass = static_cast<ObjNativeClass*>(ObjClass::newClass(name, vm));
     nativeClass->type = OBJ_NATIVE_CLASS;
+    nativeClass->hasInitializer = false;
     nativeClass->subType = subType;
     return nativeClass;
 };
@@ -143,21 +143,21 @@ NativeClassRes NativeClassRes::genResponse(Value returnVal, bool isVoid) {
     return res;
 }
 
-void ObjNativeClass::addMethod(const std::string& name, NativeClassMethod method, int arity, VM* vm) {
+void ObjNativeClass::addMethod(const std::string& name, NativeClassMethod method, VM* vm) {
     vm->push_stack(ValueOP::obj_val(ObjString::copyString(vm, name.c_str(), name.size())));
-    vm->push_stack(ValueOP::obj_val(ObjNativeClassMethod::newNativeClassMethod(method, arity, vm)));
+    vm->push_stack(ValueOP::obj_val(ObjNativeClassMethod::newNativeClassMethod(method, vm)));
     methods.tableSet(vm->peek(1), vm->peek(0));
     vm->stack.pop_back();
     vm->stack.pop_back();
 };
 
-NativeClassRes ObjCollectionClass::invokeMethod(ObjString* name, int argCount, Value* args) {
+NativeClassRes ObjCollectionClass::invokeMethod(ObjString* name, ObjNativeInstance* instance, int argCount, Value* args) {
     Value seek_method, name_val = ValueOP::obj_val(name);
     if(methods.tableGet(name_val, &seek_method)) {
         ObjNativeClassMethod* method_wrapper = static_cast<ObjNativeClassMethod*>(ValueOP::as_obj(seek_method));
         NativeClassMethod native_method = method_wrapper->method;
         CollectionClassMethod collection_method = static_cast<CollectionClassMethod>(native_method);
-        NativeClassRes res = std::invoke(collection_method, *this, argCount, args);
+        NativeClassRes res = std::invoke(collection_method, *this, instance, argCount, args);
         return res;
         
     } else {
@@ -165,39 +165,60 @@ NativeClassRes ObjCollectionClass::invokeMethod(ObjString* name, int argCount, V
     }
 }
 
-NativeClassRes ObjCollectionClass::indexAccess(int argCount, Value *args) {
+NativeClassRes ObjCollectionClass::indexAccess(ObjNativeInstance* instance, int argCount, Value *args) {
+    ObjCollectionInstance* collection = static_cast<ObjCollectionInstance*>(instance);
     if(argCount != 1)
         return NativeClassRes::genError("Expected 1 argument, got " + std::to_string(argCount) + " instead.");
     if(!ValueOP::is_number(args[0]))
         return NativeClassRes::genError("Expected number as argument for collection random access.");
     
     long index = ValueOP::as_number(args[0]);
-    if(index < 0) index = values.count - index;
-    if(std::abs(index) == values.count)
+    if(index < 0) index = collection->values.count - index;
+    if(std::abs(index) == collection->values.count)
         return NativeClassRes::genError("Out of range random accees");
     
-    return NativeClassRes::genResponse(values.values[index], false);
+    return NativeClassRes::genResponse(collection->values.values[index], false);
 }
 
-NativeClassRes ObjCollectionClass::addValue(int argCount, Value* args) {
+NativeClassRes ObjCollectionClass::addValue(ObjNativeInstance* instance, int argCount, Value* args) {
+    ObjCollectionInstance* collection = static_cast<ObjCollectionInstance*>(instance);
     if(argCount != 1)
         return NativeClassRes::genError("Expected 1 argument, got " + std::to_string(argCount) + " instead.");
-    values.writeValueArray(args[0]);
+    collection->values.writeValueArray(args[0]);
     return NativeClassRes::genResponse(ValueOP::empty_val(), true);
 }
 
-NativeClassRes ObjCollectionClass::initializer(int argCount, Value* args) {
+NativeClassRes ObjCollectionClass::init(ObjNativeInstance* instance, int argCount, Value* args) {
+    for(int i = 0; i < argCount; i++) {
+        addValue(instance, 1, &args[i]);
+    }
     
+    return NativeClassRes::genResponse(ValueOP::empty_val(), true);
 }
 
 ObjCollectionClass* ObjCollectionClass::newCollectionClass(ObjString *name, VM *vm) {
     ObjCollectionClass* collection = static_cast<ObjCollectionClass*>(ObjNativeClass::newNativeClass(name, vm, OBJ_NATIVE_COLLECTION));
-    collection->values = ValueArray(vm);
+    collection->hasInitializer = true;
     
-    collection->addMethod("addValue", static_cast<NativeClassMethod>(&ObjCollectionClass::addValue), 1, vm);
-    collection->addMethod("indexAccess", static_cast<NativeClassMethod>(&ObjCollectionClass::indexAccess), 1, vm);
+    collection->addMethod("init", static_cast<NativeClassMethod>(&ObjCollectionClass::init), vm);
+    collection->addMethod("addValue", static_cast<NativeClassMethod>(&ObjCollectionClass::addValue), vm);
+    collection->addMethod("indexAccess", static_cast<NativeClassMethod>(&ObjCollectionClass::indexAccess), vm);
     
     
     return collection;
 }
 
+ObjNativeInstance* ObjNativeInstance::newNativeInstance(ObjNativeClass* _class, ObjType subtype, VM* vm) {
+    ObjNativeInstance* instance = static_cast<ObjNativeInstance*>(ObjInstance::newInstance(_class, vm));
+    instance->type = OBJ_INSTANCE;
+    
+    instance->subType = subtype;
+    return instance;
+}
+
+ObjCollectionInstance* ObjCollectionInstance::newCollectionInstance(ObjCollectionClass *_class, VM *vm) {
+    ObjCollectionInstance* instance = static_cast<ObjCollectionInstance*>(ObjNativeInstance::newNativeInstance(_class, OBJ_NATIVE_COLLECTION_INSTANCE, vm));
+    instance->values = ValueArray(vm);
+    
+    return instance;
+}
