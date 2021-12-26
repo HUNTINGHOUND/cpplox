@@ -28,37 +28,69 @@ void freeObject(Obj* object, VM* vm) {
     
     switch (object->type) {
         case OBJ_STRING:
-            mem_deallocate<ObjString>((ObjString*)object, sizeof(ObjString), vm);
             if(DEBUG_LOG_GC) std::cout << "OBJ_STRING" << std::endl;
+            mem_deallocate<ObjString>((ObjString*)object, sizeof(ObjString), vm);
             break;
         case OBJ_FUNCTION:
-            mem_deallocate<ObjFunction>((ObjFunction*)object, sizeof(ObjFunction), vm);
             if(DEBUG_LOG_GC) std::cout << "OBJ_FUNCTION" << std::endl;
+            mem_deallocate<ObjFunction>((ObjFunction*)object, sizeof(ObjFunction), vm);
             break;
         case OBJ_NATIVE:
-            mem_deallocate<ObjNative>((ObjNative*)object, sizeof(ObjNative), vm);
             if(DEBUG_LOG_GC) std::cout << "OBJ_NATIVE" << std::endl;
+            mem_deallocate<ObjNative>((ObjNative*)object, sizeof(ObjNative), vm);
             break;
         case OBJ_UPVALUE:
-            mem_deallocate<ObjUpvalue>((ObjUpvalue*)object, sizeof(ObjUpvalue), vm);
             if(DEBUG_LOG_GC) std::cout << "OBJ_UPVALUE" << std::endl;
+            mem_deallocate<ObjUpvalue>((ObjUpvalue*)object, sizeof(ObjUpvalue), vm);
             break;
         case OBJ_CLOSURE:
-            mem_deallocate<ObjClosure>((ObjClosure*)object, sizeof(ObjClosure), vm);
             if(DEBUG_LOG_GC) std::cout << "OBJ_CLOSURE" << std::endl;
+            mem_deallocate<ObjClosure>((ObjClosure*)object, sizeof(ObjClosure), vm);
             break;
         case OBJ_CLASS:
-            mem_deallocate<ObjClass>((ObjClass*)object, sizeof(ObjClass), vm);
             if(DEBUG_LOG_GC) std::cout << "OBJ_CLASS" << std::endl;
+            mem_deallocate<ObjClass>((ObjClass*)object, sizeof(ObjClass), vm);
             break;
         case OBJ_INSTANCE:
-            mem_deallocate<ObjInstance>((ObjInstance*)object, sizeof(ObjInstance), vm);
             if(DEBUG_LOG_GC) std::cout << "OBJ_INSTANCE" << std::endl;
+            mem_deallocate<ObjInstance>((ObjInstance*)object, sizeof(ObjInstance), vm);
             break;
         case OBJ_BOUND_METHOD:
-            mem_deallocate<ObjBoundMethod>((ObjBoundMethod*)object, sizeof(ObjBoundMethod), vm);
             if(DEBUG_LOG_GC) std::cout << "OBJ_BOUND_METHOD" << std::endl;
+            mem_deallocate<ObjBoundMethod>((ObjBoundMethod*)object, sizeof(ObjBoundMethod), vm);
             break;
+        case OBJ_NATIVE_CLASS_METHOD:
+            if(DEBUG_LOG_GC) std::cout << "OBJ_NATIVE_CLASS_METHOD" << std::endl;
+            mem_deallocate<ObjNativeClassMethod>(static_cast<ObjNativeClassMethod*>(object), sizeof(ObjNativeClassMethod), vm);
+            break;
+        case OBJ_NATIVE_CLASS:
+            if(DEBUG_LOG_GC) {
+                switch(static_cast<ObjNativeClass*>(object)->subType) {
+                    case NATIVE_COLLECTION:
+                        std::cout << "NATIVE_COLLECTION";
+                        break;
+                    default:
+                        // should never reach
+                        std::cout << "OBJ_NATIVE_CLASS";
+                        break;
+                }
+            }
+            mem_deallocate<ObjNativeClass>(static_cast<ObjNativeClass*>(object), sizeof(ObjNativeClass), vm);
+            break;
+        case OBJ_NATIVE_INSTANCE:
+            if(DEBUG_LOG_GC) {
+                switch (static_cast<ObjNativeInstance*>(object)->subType) {
+                    case NATIVE_COLLECTION_INSTANCE:
+                        std::cout << "NATIVE_COLLECTION_INSTANCE";
+                        break;
+                    default:
+                        //  should never reach
+                        std::cout << "OBJ_NATIVE_INSTANCE";
+                        break;
+                }
+            }
+            mem_deallocate<ObjNativeInstance>(static_cast<ObjNativeInstance*>(object), sizeof(ObjNativeClass), vm);
+            
     }
 }
 
@@ -153,11 +185,25 @@ void blackenObject(Obj* object, VM* vm) {
             markObject(vm, bound->method);
             break;
         }
+        case OBJ_NATIVE_INSTANCE: {
+            ObjNativeInstance* instance = static_cast<ObjNativeInstance*>(object);
+            switch(instance->subType) {
+                case NATIVE_COLLECTION_INSTANCE: {
+                    ObjCollectionInstance* collection = static_cast<ObjCollectionInstance*>(instance);
+                    for(int i = 0; i < collection->values.count; i++) {
+                        markValue(vm, collection->values.values[i]);
+                    }
+                    break;
+                }
+            }
+        }
         case OBJ_INSTANCE: {
             ObjInstance* instance = (ObjInstance*)object;
             markObject(vm, (Obj*)instance->_class);
             markTable(vm, &instance->fields);
+            break;
         }
+        case OBJ_NATIVE_CLASS:
         case OBJ_CLASS: {
             ObjClass* _class = (ObjClass*)object;
             markObject(vm, (Obj*)_class->name);
@@ -182,6 +228,7 @@ void blackenObject(Obj* object, VM* vm) {
             markValue(vm, ((ObjUpvalue*)object)->closed);
             break;
         case OBJ_NATIVE:
+        case OBJ_NATIVE_CLASS_METHOD:
         case OBJ_STRING:
             break;
     }

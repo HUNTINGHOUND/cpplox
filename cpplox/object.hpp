@@ -19,12 +19,18 @@ enum ObjType : short{
     OBJ_BOUND_METHOD,
     OBJ_NATIVE_CLASS_METHOD,
     OBJ_NATIVE_CLASS,
-    OBJ_NATIVE_COLLECTION,
     OBJ_NATIVE_INSTANCE,
-    OBJ_NATIVE_COLLECTION_INSTANCE
 };
 
-enum FunctionType : short{
+enum NativeClassType : short {
+    NATIVE_COLLECTION,
+};
+
+enum NativeInstanceType : short {
+    NATIVE_COLLECTION_INSTANCE
+};
+
+enum FunctionType : short {
     TYPE_FUNCTION,
     TYPE_SCRIPT,
     TYPE_METHOD,
@@ -152,12 +158,13 @@ struct NativeClassRes {
 class ObjNativeClass : public ObjClass {
 public:
     bool hasInitializer;
-    ObjType subType;
+    NativeClassType subType;
     
-    static ObjNativeClass* newNativeClass(ObjString* name, VM* vm, ObjType subType);
+    static ObjNativeClass* newNativeClass(ObjString* name, VM* vm, NativeClassType subType);
     
     void addMethod(const std::string& name, NativeClassMethod method, VM* vm);
     virtual NativeClassRes invokeMethod(ObjString* name, ObjNativeInstance* instance, int argCount, Value* args)=0;
+    virtual ~ObjNativeClass()=default;
 };
 
 
@@ -174,9 +181,10 @@ public:
 
 class ObjNativeInstance : public ObjInstance {
 public:
-    ObjType subType;
+    NativeInstanceType subType;
     
-    static ObjNativeInstance* newNativeInstance(ObjNativeClass* _class, ObjType subtype, VM* vm);
+    static ObjNativeInstance* newNativeInstance(ObjNativeClass* _class, NativeInstanceType subtype, VM* vm);
+    NativeClassRes invokeMethod(ObjString* name, int argCount, Value* args);
 };
 
 

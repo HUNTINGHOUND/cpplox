@@ -257,6 +257,31 @@ void ValueOP::printObject(Value value) {
         case OBJ_INSTANCE:
             std::cout << as_instance(value)->_class->name->chars << " instance";
             break;
+        case OBJ_NATIVE_CLASS_METHOD:
+            std::cout << "Native class method...(you should not be seeing this)";
+            break;
+        case OBJ_NATIVE_CLASS: {
+            ObjNativeClass* _class = as_native_class(value);
+            switch (_class->subType) {
+                case NATIVE_COLLECTION:
+                    std::cout << "Collection Class";
+                    break;
+            }
+        }
+        case OBJ_NATIVE_INSTANCE: {
+            ObjNativeInstance* instance = as_native_instance(value);
+            switch (instance->subType) {
+                case NATIVE_COLLECTION_INSTANCE: {
+                    ObjCollectionInstance* collection = static_cast<ObjCollectionInstance*>(instance);
+                    std::cout << "{";
+                    for(int i = 0; i < collection->values.count; i++) {
+                        printValue(collection->values.values[i]);
+                        if(i != collection->values.count - 1) std::cout << ", ";
+                    }
+                    std::cout << "}";
+                }
+            }
+        }
     }
 }
 
@@ -390,7 +415,7 @@ bool ValueOP::is_native_class(Value value) {
     return as_obj(value)->type == OBJ_NATIVE_CLASS;
 }
 
-bool ValueOP::is_native_subclass(Value value, ObjType type) {
+bool ValueOP::is_native_subclass(Value value, NativeClassType type) {
     return is_native_class(value) && as_native_class(value)->subType == type;
 }
 
@@ -469,7 +494,7 @@ bool ValueOP::is_native_instance(Value value) {
     return as_obj(value)->type == OBJ_NATIVE_INSTANCE;
 }
 
-bool ValueOP::is_native_subinstance(Value value, ObjType type) {
+bool ValueOP::is_native_subinstance(Value value, NativeInstanceType type) {
     return is_native_instance(value) && as_native_instance(value)->subType == type;
 }
 

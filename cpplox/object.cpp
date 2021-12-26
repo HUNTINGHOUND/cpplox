@@ -125,7 +125,7 @@ ObjNativeClassMethod* ObjNativeClassMethod::newNativeClassMethod(NativeClassMeth
     return newMethod;
 };
 
-ObjNativeClass* ObjNativeClass::newNativeClass(ObjString* name, VM* vm, ObjType subType) {
+ObjNativeClass* ObjNativeClass::newNativeClass(ObjString* name, VM* vm, NativeClassType subType) {
     ObjNativeClass* nativeClass = static_cast<ObjNativeClass*>(ObjClass::newClass(name, vm));
     nativeClass->type = OBJ_NATIVE_CLASS;
     nativeClass->hasInitializer = false;
@@ -197,7 +197,7 @@ NativeClassRes ObjCollectionClass::init(ObjNativeInstance* instance, int argCoun
 }
 
 ObjCollectionClass* ObjCollectionClass::newCollectionClass(ObjString *name, VM *vm) {
-    ObjCollectionClass* collection = static_cast<ObjCollectionClass*>(ObjNativeClass::newNativeClass(name, vm, OBJ_NATIVE_COLLECTION));
+    ObjCollectionClass* collection = static_cast<ObjCollectionClass*>(ObjNativeClass::newNativeClass(name, vm, NATIVE_COLLECTION));
     collection->hasInitializer = true;
     
     collection->addMethod("init", static_cast<NativeClassMethod>(&ObjCollectionClass::init), vm);
@@ -208,7 +208,7 @@ ObjCollectionClass* ObjCollectionClass::newCollectionClass(ObjString *name, VM *
     return collection;
 }
 
-ObjNativeInstance* ObjNativeInstance::newNativeInstance(ObjNativeClass* _class, ObjType subtype, VM* vm) {
+ObjNativeInstance* ObjNativeInstance::newNativeInstance(ObjNativeClass* _class, NativeInstanceType subtype, VM* vm) {
     ObjNativeInstance* instance = static_cast<ObjNativeInstance*>(ObjInstance::newInstance(_class, vm));
     instance->type = OBJ_INSTANCE;
     
@@ -217,8 +217,13 @@ ObjNativeInstance* ObjNativeInstance::newNativeInstance(ObjNativeClass* _class, 
 }
 
 ObjCollectionInstance* ObjCollectionInstance::newCollectionInstance(ObjCollectionClass *_class, VM *vm) {
-    ObjCollectionInstance* instance = static_cast<ObjCollectionInstance*>(ObjNativeInstance::newNativeInstance(_class, OBJ_NATIVE_COLLECTION_INSTANCE, vm));
+    ObjCollectionInstance* instance = static_cast<ObjCollectionInstance*>(ObjNativeInstance::newNativeInstance(_class, NATIVE_COLLECTION_INSTANCE, vm));
     instance->values = ValueArray(vm);
     
     return instance;
+}
+
+NativeClassRes ObjNativeInstance::invokeMethod(ObjString* name, int argCount, Value* args) {
+    ObjNativeClass* native_class = static_cast<ObjNativeClass*>(_class);
+    return native_class->invokeMethod(name, this, argCount, args);
 }

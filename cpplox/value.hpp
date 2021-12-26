@@ -19,6 +19,8 @@ class ObjNativeInstance;
 class ObjCollectionInstance;
 class ObjNativeClassMethod;
 enum ObjType : short;
+enum NativeClassType : short;
+enum NativeInstanceType : short;
 class VM;
 
 #ifdef NAN_BOXING
@@ -66,9 +68,9 @@ bool is_class(Value value);
 bool is_instance(Value value);
 bool is_bound_method(Value value);
 bool is_native_class(Value value);
-bool is_native_subclass(Value value, ObjType type);
+bool is_native_subclass(Value value, NativeClassType type);
 bool is_native_instance(Value value);
-bool is_native_subinstance(Value value, ObjType type);
+bool is_native_subinstance(Value value, NativeInstanceType type);
 bool is_native_method(Value value);
 bool isObjType(Value value, ObjType type);
 bool isConst(Value value);

@@ -60,7 +60,7 @@ class VM {
     
     void defineNative(const std::string& name, NativeFn function, int arity);
     
-    void defineNativeClass(const std::string& name, ObjType type);
+    void defineNativeClass(const std::string& name, NativeClassType type);
     
     ObjUpvalue* captureUpvalue(size_t localIndex);
     

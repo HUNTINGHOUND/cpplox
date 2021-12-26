@@ -18,7 +18,7 @@ bool VM::interpolateNative(int argCount, Value *args) {
         args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first element to be a string.", 38));
         return false;
     }
-    if(!ValueOP::is_native_subinstance(args[1], OBJ_NATIVE_COLLECTION_INSTANCE)) {
+    if(!ValueOP::is_native_subinstance(args[1], NATIVE_COLLECTION_INSTANCE)) {
         args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected the second argument to be collection.", 46));
         return false;
     }
@@ -155,7 +155,7 @@ VM::VM() : strings(this), globalNames(this), globalValues(this){
     defineNative("interpolate", &VM::interpolateNative, 2);
     defineNative("toString", &VM::toStringNative, 1);
     
-    defineNativeClass("Collection", OBJ_NATIVE_COLLECTION);
+    defineNativeClass("Collection", NATIVE_COLLECTION);
 }
 
 void VM::resetStacks() {
@@ -280,7 +280,7 @@ InterpretResult VM::run() {
                     concatenate();
                 } else if (ValueOP::is_number(peek(0)) && ValueOP::is_number(peek(1))) {
                     binary_op<double,double>(ValueOP::number_val, std::plus<double>());
-                } else if (ValueOP::is_native_subinstance(peek(0), OBJ_NATIVE_COLLECTION_INSTANCE) && ValueOP::is_native_subinstance(peek(1), OBJ_NATIVE_COLLECTION_INSTANCE) ) {
+                } else if (ValueOP::is_native_subinstance(peek(0), NATIVE_COLLECTION_INSTANCE) && ValueOP::is_native_subinstance(peek(1), NATIVE_COLLECTION_INSTANCE)) {
                     appendCollection();
                 } else {
                     runtimeError("Operands must be two numbers, two strings, or two collections.");
@@ -583,6 +583,32 @@ InterpretResult VM::run() {
                 
                 break;
             }
+            case OP_RANDOM_ACCESS: {
+                if(!ValueOP::is_obj(peek(1))) {
+                    runtimeError("Index access can only be done on objects.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                switch(ValueOP::as_obj(peek(1))->type) {
+                    case OBJ_NATIVE_INSTANCE: {
+                        ObjNativeInstance* instance = ValueOP::as_native_instance(peek(1));
+                        switch(instance->subType) {
+                            case NATIVE_COLLECTION_INSTANCE: {
+                                ObjCollectionInstance* collection = ValueOP::as_native_subinstance<ObjCollectionInstance>(peek(1));
+                                collection->invokeMethod(ObjString::copyString(this, "indexAccess", 11), 1, &stack[stack.size() - 1]);
+                                break;
+                            }
+                            default:
+                                runtimeError("Cannot index access this object.");
+                                return INTERPRET_RUNTIME_ERROR;
+                        }
+                        break;
+                    }
+                    default:
+                        runtimeError("Cannot index access this object.");
+                        return INTERPRET_RUNTIME_ERROR;
+                }
+            }
         }
     }
 }
@@ -590,7 +616,7 @@ InterpretResult VM::run() {
 bool VM::invoke(ObjString *name, int argCount, bool interrupt) {
     Value receiver = peek(argCount);
     
-    if(!ValueOP::is_instance(receiver)) {
+    if(!ValueOP::is_instance(receiver) && !ValueOP::is_native_instance(receiver)) {
         runtimeError("Only instances have methods.");
         return false;
     }
@@ -723,7 +749,7 @@ bool VM::callValue(Value callee, int argCount) {
                 ObjNativeClass* _class = ValueOP::as_native_class(callee);
                 Value* back = &stack.back();
                 switch(_class->subType) {
-                    case OBJ_NATIVE_COLLECTION:
+                    case NATIVE_COLLECTION:
                         back[-argCount] = ValueOP::obj_val(ObjCollectionInstance::newCollectionInstance(static_cast<ObjCollectionClass*>(_class), this));
                         break;
                     default:
@@ -736,7 +762,10 @@ bool VM::callValue(Value callee, int argCount) {
                     _class->invokeMethod(ObjString::copyString(this, "init", 4), ValueOP::as_native_instance(back[-argCount]), argCount, &stack[stack.size() - 1] - argCount + 1);
                 } else if(argCount != 0) {
                     runtimeError("Expected 0 argument, but got %d.", argCount);
+                    return false;
                 }
+                
+                return true;
             }
             default:
                 break;
@@ -791,11 +820,11 @@ void VM::defineNative(const std::string& name, NativeFn function, int arity) {
     stack.pop_back();
 }
 
-void VM::defineNativeClass(const std::string &name, ObjType type) {
+void VM::defineNativeClass(const std::string &name, NativeClassType type) {
     ObjString* obj_name = ObjString::copyString(this, name.c_str(), (int)strlen(name.c_str()));
     push_stack(ValueOP::obj_val(obj_name));
     switch (type) {
-        case OBJ_NATIVE_COLLECTION:
+        case NATIVE_COLLECTION:
             push_stack(ValueOP::obj_val(ObjCollectionClass::newCollectionClass(obj_name, this)));
             break;
             
@@ -874,4 +903,14 @@ bool VM::bindMethod(ObjClass *_class, ObjString *name) {
 
 void VM::push_stack(Value value) {
     stack.push_back(value);
+}
+
+void VM::appendCollection() {
+    ObjCollectionInstance* collection1 = ValueOP::as_native_subinstance<ObjCollectionInstance>(peek(1));
+    ObjCollectionInstance* collection2 = ValueOP::as_native_subinstance<ObjCollectionInstance>(peek(0));
+    
+    ObjCollectionInstance* newcollection = ObjCollectionInstance::newCollectionInstance(static_cast<ObjCollectionClass*>(collection1->_class), this);
+    push_stack(ValueOP::obj_val(newcollection));
+    for(int i = 0; i < collection1->values.count; i++) newcollection->values.writeValueArray(collection1->values.values[i]);
+    for(int i = 0; i < collection2->values.count; i++) newcollection->values.writeValueArray(collection2->values.values[i]);
 }

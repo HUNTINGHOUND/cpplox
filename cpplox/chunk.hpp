@@ -14,7 +14,7 @@
 class VM;
 class ValueArray;
 
-enum OpCode {
+enum OpCode : uint8_t {
     OP_CONSTANT,
     OP_CONSTANT_LONG,
     OP_RETURN,
