@@ -179,8 +179,6 @@ int Disassembler::disassembleInstruction(Chunk* chunk, VM* vm, int offset) {
             return constantInstruction("OP_GET_SUPER", chunk, offset);
         case OP_SUPER_INVOKE:
             return invokeInstruction("OP_SUPER_INVOKE", chunk, offset);
-        case OP_RANDOM_ACCESS:
-            return simpleInstruction("OP_RANDOM_ACCESS", offset);
         case OP_RANGE:
             return simpleInstruction("OP_RANGE", offset);
         default:

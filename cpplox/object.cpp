@@ -125,13 +125,6 @@ ObjNativeClassMethod* ObjNativeClassMethod::newNativeClassMethod(NativeClassMeth
     return newMethod;
 };
 
-ObjNativeClass* ObjNativeClass::newNativeClass(ObjString* name, VM* vm, NativeClassType subType) {
-    ObjNativeClass* nativeClass = static_cast<ObjNativeClass*>(ObjClass::newClass(name, vm));
-    nativeClass->type = OBJ_NATIVE_CLASS;
-    nativeClass->hasInitializer = false;
-    nativeClass->subType = subType;
-    return nativeClass;
-};
 
 NativeClassRes NativeClassRes::genError(const std::string& errorMessage, bool propertyMissing) {
     NativeClassRes erro{true, propertyMissing, std::move(errorMessage)};
@@ -173,11 +166,12 @@ NativeClassRes ObjCollectionClass::indexAccess(ObjNativeInstance* instance, int 
         return NativeClassRes::genError("Expected number as argument for collection random access.");
     
     long index = ValueOP::as_number(args[0]);
-    if(index < 0) index = collection->values.count - index;
-    if(std::abs(index) == collection->values.count)
+    if(std::abs(index) >= collection->values.count)
         return NativeClassRes::genError("Out of range random accees");
     
-    return NativeClassRes::genResponse(collection->values.values[index], false);
+    if(index < 0) index = collection->values.count - index;
+    
+    return NativeClassRes::genResponse(collection->values.values[index]);
 }
 
 NativeClassRes ObjCollectionClass::addValue(ObjNativeInstance* instance, int argCount, Value* args) {
@@ -197,27 +191,30 @@ NativeClassRes ObjCollectionClass::init(ObjNativeInstance* instance, int argCoun
 }
 
 ObjCollectionClass* ObjCollectionClass::newCollectionClass(ObjString *name, VM *vm) {
-    ObjCollectionClass* collection = static_cast<ObjCollectionClass*>(ObjNativeClass::newNativeClass(name, vm, NATIVE_COLLECTION));
+    ObjCollectionClass* collection = allocate_obj<ObjCollectionClass>(OBJ_NATIVE_CLASS, vm);
     collection->hasInitializer = true;
+    collection->subType = NATIVE_COLLECTION;
+    
+    collection->name = name;
+    collection->methods = Table(vm);
+    collection->initializer = nullptr;
     
     collection->addMethod("init", static_cast<NativeClassMethod>(&ObjCollectionClass::init), vm);
     collection->addMethod("addValue", static_cast<NativeClassMethod>(&ObjCollectionClass::addValue), vm);
     collection->addMethod("indexAccess", static_cast<NativeClassMethod>(&ObjCollectionClass::indexAccess), vm);
+    collection->addMethod("deleteValue", static_cast<NativeClassMethod>(&ObjCollectionClass::deleteIndex), vm);
     
     
     return collection;
 }
 
-ObjNativeInstance* ObjNativeInstance::newNativeInstance(ObjNativeClass* _class, NativeInstanceType subtype, VM* vm) {
-    ObjNativeInstance* instance = static_cast<ObjNativeInstance*>(ObjInstance::newInstance(_class, vm));
-    instance->type = OBJ_INSTANCE;
-    
-    instance->subType = subtype;
-    return instance;
-}
 
 ObjCollectionInstance* ObjCollectionInstance::newCollectionInstance(ObjCollectionClass *_class, VM *vm) {
-    ObjCollectionInstance* instance = static_cast<ObjCollectionInstance*>(ObjNativeInstance::newNativeInstance(_class, NATIVE_COLLECTION_INSTANCE, vm));
+    ObjCollectionInstance* instance = allocate_obj<ObjCollectionInstance>(OBJ_NATIVE_INSTANCE, vm);
+    instance->_class = _class;
+    instance->subType = NATIVE_COLLECTION_INSTANCE;
+    
+    instance->fields = Table(vm);
     instance->values = ValueArray(vm);
     
     return instance;
@@ -226,4 +223,18 @@ ObjCollectionInstance* ObjCollectionInstance::newCollectionInstance(ObjCollectio
 NativeClassRes ObjNativeInstance::invokeMethod(ObjString* name, int argCount, Value* args) {
     ObjNativeClass* native_class = static_cast<ObjNativeClass*>(_class);
     return native_class->invokeMethod(name, this, argCount, args);
+}
+
+NativeClassRes ObjCollectionClass::deleteIndex(ObjNativeInstance *instance, int argCount, Value *args) {
+    ObjCollectionInstance* collection = static_cast<ObjCollectionInstance*>(instance);
+    if(argCount != 1) return NativeClassRes::genError("Expected 1 argument, got " + std::to_string(argCount) + " instead.");
+    if(!ValueOP::is_number(args[0])) return NativeClassRes::genError("Argument should be a number.");
+    
+    long index = ValueOP::as_number(args[0]);
+    if(abs(index) >= collection->values.count) return NativeClassRes::genError("Index out of bound.");
+    if(index < 0) index += collection->values.count;
+    
+    collection->values.values.erase(collection->values.values.begin() + index);
+    collection->values.count--;
+    return NativeClassRes::genResponse(ValueOP::empty_val(), true);
 }

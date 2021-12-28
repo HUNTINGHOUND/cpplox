@@ -63,33 +63,35 @@ void freeObject(Obj* object, VM* vm) {
             if(DEBUG_LOG_GC) std::cout << "OBJ_NATIVE_CLASS_METHOD" << std::endl;
             mem_deallocate<ObjNativeClassMethod>(static_cast<ObjNativeClassMethod*>(object), sizeof(ObjNativeClassMethod), vm);
             break;
-        case OBJ_NATIVE_CLASS:
-            if(DEBUG_LOG_GC) {
-                switch(static_cast<ObjNativeClass*>(object)->subType) {
-                    case NATIVE_COLLECTION:
-                        std::cout << "NATIVE_COLLECTION";
-                        break;
-                    default:
-                        // should never reach
-                        std::cout << "OBJ_NATIVE_CLASS";
-                        break;
-                }
+        case OBJ_NATIVE_CLASS: {
+            ObjNativeClass* _class = static_cast<ObjNativeClass*>(object);
+            switch (_class->subType) {
+                case NATIVE_COLLECTION:
+                    if(DEBUG_LOG_GC) std::cout << "NATIVE_COLLECTION";
+                    mem_deallocate<ObjCollectionClass>(static_cast<ObjCollectionClass*>(object), sizeof(ObjCollectionClass), vm);
+                    break;
+                    
+                default:
+                    if(DEBUG_LOG_GC) std::cout << "OBJ_NATIVE_CLASS...shouldn't see this";
+                    break;
             }
-            mem_deallocate<ObjNativeClass>(static_cast<ObjNativeClass*>(object), sizeof(ObjNativeClass), vm);
             break;
-        case OBJ_NATIVE_INSTANCE:
-            if(DEBUG_LOG_GC) {
-                switch (static_cast<ObjNativeInstance*>(object)->subType) {
-                    case NATIVE_COLLECTION_INSTANCE:
-                        std::cout << "NATIVE_COLLECTION_INSTANCE";
-                        break;
-                    default:
-                        //  should never reach
-                        std::cout << "OBJ_NATIVE_INSTANCE";
-                        break;
-                }
+        }
+        case OBJ_NATIVE_INSTANCE: {
+            ObjNativeInstance* instance = static_cast<ObjNativeInstance*>(object);
+            switch (instance->subType) {
+                case NATIVE_COLLECTION_INSTANCE:
+                    if(DEBUG_LOG_GC) std::cout << "NATIVE_COLLECTION_INSTANCE";
+                    mem_deallocate<ObjCollectionInstance>(static_cast<ObjCollectionInstance*>(instance), sizeof(ObjCollectionInstance), vm);
+                    break;
+                    
+                default:
+                    // should never be reached
+                    if(DEBUG_LOG_GC) std::cout << "OBJ_NATIVE_INSTANCE...shouldn't see this";
+                    break;
             }
-            mem_deallocate<ObjNativeInstance>(static_cast<ObjNativeInstance*>(object), sizeof(ObjNativeClass), vm);
+            break;
+        }
             
     }
 }

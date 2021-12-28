@@ -258,7 +258,7 @@ void ValueOP::printObject(Value value) {
             std::cout << as_instance(value)->_class->name->chars << " instance";
             break;
         case OBJ_NATIVE_CLASS_METHOD:
-            std::cout << "Native class method...(you should not be seeing this)";
+            std::cout << "Native class method.";
             break;
         case OBJ_NATIVE_CLASS: {
             ObjNativeClass* _class = as_native_class(value);
@@ -267,6 +267,7 @@ void ValueOP::printObject(Value value) {
                     std::cout << "Collection Class";
                     break;
             }
+            break;
         }
         case OBJ_NATIVE_INSTANCE: {
             ObjNativeInstance* instance = as_native_instance(value);
@@ -446,12 +447,11 @@ ObjString* ValueOP::to_string(Value value, VM* vm) {
 
 ObjString* ValueOP::object_to_string(Value value, VM* vm) {
     switch(obj_type(value)) {
+        case OBJ_FUNCTION:
         case OBJ_BOUND_METHOD:
             return function_to_string(get_value_function(value), vm);
         case OBJ_STRING:
             return as_string(value);
-        case OBJ_FUNCTION:
-            return function_to_string(get_value_function(value), vm);
         case OBJ_NATIVE:
             return ObjString::copyString(vm, "<native fn>", 11);
         case OBJ_CLOSURE:
@@ -465,7 +465,33 @@ ObjString* ValueOP::object_to_string(Value value, VM* vm) {
             buffer += " instance";
             return ObjString::copyString(vm, buffer.c_str(), buffer.size());
         }
-            
+        case OBJ_NATIVE_CLASS: {
+            ObjNativeClass* _class = ValueOP::as_native_class(value);
+            switch(_class->subType) {
+                case NATIVE_COLLECTION:
+                    return ObjString::copyString(vm, "Collection Class", 16);
+                default:
+                    return ObjString::copyString(vm, "Native Class", 12);
+            }
+        }
+        case OBJ_NATIVE_INSTANCE: {
+            ObjNativeInstance* instance = ValueOP::as_native_instance(value);
+            switch (instance->subType) {
+                case NATIVE_COLLECTION_INSTANCE: {
+                    ObjCollectionInstance* collection = static_cast<ObjCollectionInstance*>(instance);
+                    std::string buffer;
+                    for(int i = 0; i < collection->values.count; i++) {
+                        vm->push_stack(ValueOP::obj_val(to_string(collection->values.values[i], vm)));
+                        buffer += as_string(vm->peek(0))->chars;
+                        vm->stack.pop_back();
+                    }
+                    
+                    return ObjString::copyString(vm, buffer.c_str(), buffer.size());
+                }
+                default:
+                    return ObjString::copyString(vm, "Native Instance", 12);
+            }
+        }
         default: {
             Obj* object = as_obj(value);
             std::stringstream ss;

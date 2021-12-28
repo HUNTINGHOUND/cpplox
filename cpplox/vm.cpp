@@ -571,6 +571,11 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_RANGE: {
+                if(!ValueOP::is_number(peek(0)) || !ValueOP::is_number(peek(1)) || !ValueOP::is_number(peek(2))) {
+                    runtimeError("Range start, stop, step must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
                 double step = ValueOP::as_number(stack.back());
                 stack.pop_back();
                 
@@ -580,35 +585,22 @@ InterpretResult VM::run() {
                 double start = ValueOP::as_number(stack.back());
                 stack.pop_back();
                 
+                Value collection_idx;
+                globalNames.tableGet(ValueOP::obj_val(ObjString::copyString(this, "Collection", 10)), &collection_idx);
+                
+                ObjCollectionClass* collection_class = ValueOP::as_native_subclass<ObjCollectionClass>(globalValues.values[(long)ValueOP::as_number(collection_idx)]);
+                ObjCollectionInstance* collection = ObjCollectionInstance::newCollectionInstance(collection_class, this);
+                push_stack(ValueOP::obj_val(collection));
+                for(double i = start; (end > start) ? i < end : i > end; i += step) {
+                    Value tobeinserted = ValueOP::number_val(i);
+                    collection_class->addValue(collection, 1, &tobeinserted);
+                }
                 
                 break;
             }
-            case OP_RANDOM_ACCESS: {
-                if(!ValueOP::is_obj(peek(1))) {
-                    runtimeError("Index access can only be done on objects.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-                
-                switch(ValueOP::as_obj(peek(1))->type) {
-                    case OBJ_NATIVE_INSTANCE: {
-                        ObjNativeInstance* instance = ValueOP::as_native_instance(peek(1));
-                        switch(instance->subType) {
-                            case NATIVE_COLLECTION_INSTANCE: {
-                                ObjCollectionInstance* collection = ValueOP::as_native_subinstance<ObjCollectionInstance>(peek(1));
-                                collection->invokeMethod(ObjString::copyString(this, "indexAccess", 11), 1, &stack[stack.size() - 1]);
-                                break;
-                            }
-                            default:
-                                runtimeError("Cannot index access this object.");
-                                return INTERPRET_RUNTIME_ERROR;
-                        }
-                        break;
-                    }
-                    default:
-                        runtimeError("Cannot index access this object.");
-                        return INTERPRET_RUNTIME_ERROR;
-                }
-            }
+            default:
+                runtimeError("Invalid bytecode instruction.");
+                return INTERPRET_RUNTIME_ERROR;
         }
     }
 }
@@ -637,6 +629,21 @@ bool VM::invokeFromClass(ObjClass *_class, ObjString *name, int argCount, bool i
     if (!_class->methods.tableGet(ValueOP::obj_val(name), &method)) {
         if(interrupt) runtimeError("Undefined property '%s'.", name->chars.c_str());
         return false;
+    }
+    
+    if(ValueOP::is_native_method(method)) {
+        ObjNativeClass* native_class = static_cast<ObjNativeClass*>(_class);
+        NativeClassRes res = native_class->invokeMethod(name, ValueOP::as_native_instance(peek(1)), argCount, &stack[stack.size() - 1] - argCount + 1);
+        if(res.hasErr) {
+            if(interrupt) runtimeError(res.propertyMissing ? "Undefined property." : res.errorMessage);
+            return false;
+        }
+        
+        stack[stack.size() - 1 - argCount] = res.isVoid ? ValueOP::nul_val() : res.returnVal;
+        for(int i = 0; i < argCount; i++) {
+            stack.pop_back();
+        }
+        return true;
     }
     
     return call(ValueOP::as_obj(method), ValueOP::get_value_function(method), argCount);
@@ -760,6 +767,7 @@ bool VM::callValue(Value callee, int argCount) {
                 
                 if(_class->hasInitializer) {
                     _class->invokeMethod(ObjString::copyString(this, "init", 4), ValueOP::as_native_instance(back[-argCount]), argCount, &stack[stack.size() - 1] - argCount + 1);
+                    for(int i = 0; i < argCount; i++) stack.pop_back();
                 } else if(argCount != 0) {
                     runtimeError("Expected 0 argument, but got %d.", argCount);
                     return false;

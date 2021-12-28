@@ -57,7 +57,6 @@ enum OpCode : uint8_t {
     OP_INHERIT,
     OP_GET_SUPER,
     OP_SUPER_INVOKE,
-    OP_RANDOM_ACCESS,
     OP_RANGE
 };
 

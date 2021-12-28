@@ -160,7 +160,6 @@ public:
     bool hasInitializer;
     NativeClassType subType;
     
-    static ObjNativeClass* newNativeClass(ObjString* name, VM* vm, NativeClassType subType);
     
     void addMethod(const std::string& name, NativeClassMethod method, VM* vm);
     virtual NativeClassRes invokeMethod(ObjString* name, ObjNativeInstance* instance, int argCount, Value* args)=0;
@@ -169,21 +168,22 @@ public:
 
 
 class ObjCollectionClass : public ObjNativeClass {
-    NativeClassRes init(ObjNativeInstance* instance, int argCount, Value* args);
-    NativeClassRes addValue(ObjNativeInstance* instance, int argCount, Value* args);
-    NativeClassRes indexAccess(ObjNativeInstance* instance, int argCount, Value* args);
 public:
     using CollectionClassMethod = NativeClassRes(ObjCollectionClass::*)(ObjNativeInstance* instance, int argCount, Value* args);
     
     static ObjCollectionClass* newCollectionClass(ObjString* name, VM* vm);
     NativeClassRes invokeMethod(ObjString* name,  ObjNativeInstance* instance, int argCount, Value* args);
+    
+    NativeClassRes init(ObjNativeInstance* instance, int argCount, Value* args);
+    NativeClassRes addValue(ObjNativeInstance* instance, int argCount, Value* args);
+    NativeClassRes deleteIndex(ObjNativeInstance* instance, int argCount, Value* args);
+    NativeClassRes indexAccess(ObjNativeInstance* instance, int argCount, Value* args);
 };
 
 class ObjNativeInstance : public ObjInstance {
 public:
     NativeInstanceType subType;
     
-    static ObjNativeInstance* newNativeInstance(ObjNativeClass* _class, NativeInstanceType subtype, VM* vm);
     NativeClassRes invokeMethod(ObjString* name, int argCount, Value* args);
 };
 

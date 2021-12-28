@@ -3,12 +3,26 @@
    version = "1.0">
    <ContextStates>
       <ContextState
+         contextName = "ObjCollectionInstance::newCollectionInstance(ObjCollectionClass*, VM*):object.cpp">
+      </ContextState>
+      <ContextState
          contextName = "VM::run():vm.cpp">
          <PersistentStrings>
             <PersistentString
                value = "(ObjString *)((Obj *)0x100b7c400)">
             </PersistentString>
          </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "freeObject(Obj*, VM*):memory.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "(ObjString *)object">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "VM::callValue(Value, int):vm.cpp">
       </ContextState>
    </ContextStates>
 </VariablesViewState>
