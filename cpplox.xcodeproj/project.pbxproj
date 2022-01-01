@@ -19,7 +19,6 @@
 		9081509D2661EE57001E461C /* valuearray.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9081509B2661EE57001E461C /* valuearray.cpp */; };
 		9085E84F25F54A9F00C0E1F0 /* object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9085E84E25F54A9F00C0E1F0 /* object.cpp */; };
 		9085E94825FD0DE900C0E1F0 /* table.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9085E94725FD0DE800C0E1F0 /* table.cpp */; };
-		90A4207E25DFB71500DE641F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4C025BC870C003A74C5 /* main.cpp */; };
 		90A4208125DFB73A00DE641F /* compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 908D972025C7FD3600F9AB2E /* compiler.cpp */; };
 		90A4208325DFB73E00DE641F /* debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4D825BC9811003A74C5 /* debug.cpp */; };
 		90A4208525DFB74200DE641F /* memory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4D325BC92AD003A74C5 /* memory.cpp */; };
@@ -27,6 +26,8 @@
 		90A4208925DFB74800DE641F /* value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4DD25BC9C34003A74C5 /* value.cpp */; };
 		90A4208B25DFB74C00DE641F /* vm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4E325BD98D8003A74C5 /* vm.cpp */; };
 		90A4208D25DFB75600DE641F /* chunk.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4CF25BC8F53003A74C5 /* chunk.cpp */; };
+		90CF7E72277BBEB5009AB1F0 /* test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90CF7E71277BBEB5009AB1F0 /* test.cpp */; };
+		90CF7E7E277BFA3D009AB1F0 /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 90CF7E7D277BFA3D009AB1F0 /* libgtest.a */; };
 		90DAF9542736F6FF00C2FC71 /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90DAF9522736F6FF00C2FC71 /* util.cpp */; };
 /* End PBXBuildFile section */
 
@@ -74,6 +75,11 @@
 		9085E94625FD0D5900C0E1F0 /* table.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = table.hpp; sourceTree = "<group>"; };
 		9085E94725FD0DE800C0E1F0 /* table.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = table.cpp; sourceTree = "<group>"; };
 		908D972025C7FD3600F9AB2E /* compiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compiler.cpp; sourceTree = "<group>"; };
+		90CF7E71277BBEB5009AB1F0 /* test.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = test.cpp; sourceTree = "<group>"; };
+		90CF7E73277BBF9E009AB1F0 /* libboost_unit_test_framework-mt.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libboost_unit_test_framework-mt.dylib"; path = "../../../../usr/local/Cellar/boost/1.76.0/lib/libboost_unit_test_framework-mt.dylib"; sourceTree = "<group>"; };
+		90CF7E79277BC1FD009AB1F0 /* libboost_unit_test_framework.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libboost_unit_test_framework.dylib; path = ../../../../usr/local/Cellar/boost/1.76.0/lib/libboost_unit_test_framework.dylib; sourceTree = "<group>"; };
+		90CF7E7B277BC22F009AB1F0 /* libboost_unit_test_framework.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_unit_test_framework.a; path = ../../../../usr/local/Cellar/boost/1.76.0/lib/libboost_unit_test_framework.a; sourceTree = "<group>"; };
+		90CF7E7D277BFA3D009AB1F0 /* libgtest.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgtest.a; path = ../../../../usr/local/Cellar/googletest/1.11.0/lib/libgtest.a; sourceTree = "<group>"; };
 		90D528AB25E2BD7100DA0BFD /* flags.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = flags.hpp; sourceTree = "<group>"; };
 		90DAF9522736F6FF00C2FC71 /* util.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = util.cpp; sourceTree = "<group>"; };
 		90DAF9532736F6FF00C2FC71 /* util.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = util.hpp; sourceTree = "<group>"; };
@@ -99,6 +105,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				90CF7E7E277BFA3D009AB1F0 /* libgtest.a in Frameworks */,
 				9046DF932726F67A002E9680 /* libboost_program_options.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -132,10 +139,22 @@
 		9046DF892726F5A0002E9680 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				90CF7E7D277BFA3D009AB1F0 /* libgtest.a */,
+				90CF7E7B277BC22F009AB1F0 /* libboost_unit_test_framework.a */,
+				90CF7E79277BC1FD009AB1F0 /* libboost_unit_test_framework.dylib */,
+				90CF7E73277BBF9E009AB1F0 /* libboost_unit_test_framework-mt.dylib */,
 				9046DF8D2726F5C3002E9680 /* libboost_program_options.a */,
 				9046DF8A2726F5A0002E9680 /* libboost_program_options.dylib */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		90CF7E70277BBE87009AB1F0 /* test */ = {
+			isa = PBXGroup;
+			children = (
+				90CF7E71277BBEB5009AB1F0 /* test.cpp */,
+			);
+			path = test;
 			sourceTree = "<group>";
 		};
 		90E1B4B425BC870C003A74C5 = {
@@ -161,6 +180,7 @@
 		90E1B4BF25BC870C003A74C5 /* cpplox */ = {
 			isa = PBXGroup;
 			children = (
+				90CF7E70277BBE87009AB1F0 /* test */,
 				90270FCB2671EEBB002C211C /* pch.pch */,
 				90270FC92671EEBB002C211C /* loxtext */,
 				90E1B4CF25BC8F53003A74C5 /* chunk.cpp */,
@@ -254,6 +274,7 @@
 				90270FDC2671EEBC002C211C /* fileio.cpp in Sources */,
 				90DAF9542736F6FF00C2FC71 /* util.cpp in Sources */,
 				90270FE02671EEBC002C211C /* startEditor.cpp in Sources */,
+				90CF7E72277BBEB5009AB1F0 /* test.cpp in Sources */,
 				9085E84F25F54A9F00C0E1F0 /* object.cpp in Sources */,
 				90270FDA2671EEBB002C211C /* input.cpp in Sources */,
 				9081509D2661EE57001E461C /* valuearray.cpp in Sources */,
@@ -268,7 +289,6 @@
 				90270FDF2671EEBC002C211C /* editorOP.cpp in Sources */,
 				90A4208325DFB73E00DE641F /* debug.cpp in Sources */,
 				90A4208125DFB73A00DE641F /* compiler.cpp in Sources */,
-				90A4207E25DFB71500DE641F /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -312,6 +332,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = /usr/local/lib;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -375,6 +396,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_SEARCH_PATHS = /usr/local/lib;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -400,6 +422,11 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/boost/1.76.0/lib,
+					/usr/local/Cellar/googletest/1.11.0/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -410,6 +437,11 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/boost/1.76.0/lib,
+					/usr/local/Cellar/googletest/1.11.0/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
