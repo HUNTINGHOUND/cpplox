@@ -495,9 +495,36 @@ TEST_F(Chunk_test, test_lines) {
     EXPECT_EQ(chunk.getLine(5), 4);
 }
 
-TEST_F(Chunk_test, test_add_constant) {
-    
+TEST_F(Chunk_test, test_constant) {
+    std::vector<int> position;
+    for(int i = 0; i < 100; i++) position.push_back(chunk.addConstant(ValueOP::number_val(i)));
+    for(int i = 0; i < 100; i++) {
+        EXPECT_EQ(chunk.constants.values[i].as.number, i);
+        EXPECT_EQ(position[i], i);
+    }
 }
+
+TEST_F(Chunk_test, test_add_constant) {
+    chunk.writeConstant(ValueOP::number_val(1), 1);
+    chunk.writeConstant(ValueOP::number_val(2), 2);
+    chunk.writeConstant(ValueOP::number_val(3), 3);
+    chunk.writeConstant(ValueOP::number_val(4), 4);
+    for(int i = 0; i < 4; i++) {
+        EXPECT_EQ(chunk.constants.values[i].as.number, i + 1);
+    }
+}
+
+TEST_F(Chunk_test, test_large_constant) {
+    for(int i = 0; i < 257; i++) chunk.writeConstant(ValueOP::number_val(i), i);
+    EXPECT_EQ(chunk.code[512], OP_CONSTANT_LONG);
+    
+    long constant = chunk.code[513];
+    constant |= chunk.code[514] << 8;
+    constant |= chunk.code[515] << 16;
+    constant |= chunk.code[516] << 24;
+    EXPECT_EQ(constant, 256);
+}
+
 
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);
