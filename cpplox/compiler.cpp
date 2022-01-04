@@ -143,7 +143,7 @@ void Parser::errorAtCurrent(std::string message) {
     errorAt(&this->current, message);
 }
 
-void Parser::error(std::string message) {
+void Parser::errorAtPrevious(std::string message) {
     errorAt(&this->previous, message);
 }
 
@@ -241,7 +241,7 @@ void Compiler::emitConstant(Value value) {
 uint8_t Compiler::makeConstant(Value value) {
     int constant = currentChunk()->addConstant(value);
     if (constant > 256) {
-        parser->error("Too many constants in one chunk.");
+        parser->errorAtPrevious("Too many constants in one chunk.");
         return 0;
     }
     
@@ -326,7 +326,7 @@ void Compiler::parsePrecedence(Precedence precedence) {
     parser->advance();
     ParseFn prefixRule = ParseRule::getRule(parser->previous.type)->prefix;
     if (prefixRule == nullptr) {
-        parser->error("Expect Expression.");
+        parser->errorAtPrevious("Expect Expression.");
         return;
     }
     
@@ -340,7 +340,7 @@ void Compiler::parsePrecedence(Precedence precedence) {
     }
     
     if (!canAssign && match(TOKEN_EQUAL)) {
-        parser->error("Invalid assignment target.");
+        parser->errorAtPrevious("Invalid assignment target.");
     }
 }
 
@@ -496,7 +496,7 @@ uint8_t Compiler::parseVariable(const std::string& errorMessage, bool isConst, b
     if (scopeDepth > 0) return 0;
     
     if(parser->previous.source.compare("main") == 0 && !isFunc) {
-        parser->error("Identifier \"main\" is reserved for global scope main function declaration.");
+        parser->errorAtPrevious("Identifier \"main\" is reserved for global scope main function declaration.");
         return 0;
     }
     
@@ -554,12 +554,12 @@ void Compiler::namedVariable(Token* name, bool canAssign) {
             Value identifier = ValueOP::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length));
             vm->globalNames.tableGet(identifier, &index);
             if(ValueOP::isConst(index)) {
-                parser->error("Cannot assign to constant variable.");
+                parser->errorAtPrevious("Cannot assign to constant variable.");
                 return;
             }
         } else {
             if(locals[arg].isConst) {
-                parser->error("Cannot assign to constant variable.");
+                parser->errorAtPrevious("Cannot assign to constant variable.");
                 return;
             }
         }
@@ -607,7 +607,7 @@ void Compiler::declareVariable(bool isConst) {
         }
         
         if (identifierEqual(name, &local->name)) {
-            parser->error("Already variable with this name in this scope.");
+            parser->errorAtPrevious("Already variable with this name in this scope.");
         }
     }
     
@@ -616,7 +616,7 @@ void Compiler::declareVariable(bool isConst) {
 
 void Compiler::addLocal(Token name, bool isConst) {
     if(localCount + 1 == locals.max_size()) {
-        parser->error("Too many local variables in function.");
+        parser->errorAtPrevious("Too many local variables in function.");
         return;
     }
     
@@ -634,7 +634,7 @@ int Compiler::resolveLocal(Token* name) {
         Local* local = &locals[i];
         if (identifierEqual(name, &local->name)) {
             if(local->depth == -1) {
-                parser->error("Can't read local variable in its own initializer.");
+                parser->errorAtPrevious("Can't read local variable in its own initializer.");
             }
             return i;
         }
@@ -676,7 +676,7 @@ size_t Compiler::emitJump(uint8_t instruction) {
 void Compiler::patchJump(size_t offset) {
     size_t jump = currentChunk()->count - offset - 2;
     if (jump > UINT16_MAX) {
-        parser->error("Too much code to jump over.");
+        parser->errorAtPrevious("Too much code to jump over.");
     }
     
     currentChunk()->code[offset] = (jump >> 8) & 0xff;
@@ -740,7 +740,7 @@ void Compiler::emitLoop(int loopStart) {
     emitByte(OP_LOOP);
     
     int offset = (int)currentChunk()->count - loopStart + 2;
-    if (offset > UINT16_MAX) parser->error("Loop body too large.");
+    if (offset > UINT16_MAX) parser->errorAtPrevious("Loop body too large.");
     
     emitByte((offset >> 8) & 0xff);
     emitByte(offset & 0xff);
@@ -807,7 +807,7 @@ void Compiler::forStatement() {
 
 void Compiler::continueStatement() {
     if (innermostLoopScopeDepth == -1) {
-        parser->error("Cannot use 'continue' outside of a loop.");
+        parser->errorAtPrevious("Cannot use 'continue' outside of a loop.");
     }
     
     parser->consume(TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
@@ -821,7 +821,7 @@ void Compiler::continueStatement() {
 
 void Compiler::breakStatement() {
     if (innermostLoopScopeDepth == -1) {
-        parser->error("Cannot use 'break' outside of a loop");
+        parser->errorAtPrevious("Cannot use 'break' outside of a loop");
     }
     
     parser->consume(TOKEN_SEMICOLON, "Expect ';' after 'break'.");
@@ -861,14 +861,14 @@ void Compiler::switchStatement() {
             
             
             if (state == AFTER_DEFAULT) {
-                parser->error("Can't have another case or default after the default case.");
+                parser->errorAtPrevious("Can't have another case or default after the default case.");
             }
             
             if(state == 1) {
                 size_t previousCaseEnds = emitJump(OP_JUMP);
                 caseCount++;
                 if(caseCount == MAX_CASES) {
-                    parser->error("Too many cases in switch statement");
+                    parser->errorAtPrevious("Too many cases in switch statement");
                 }
                 
                 patchJump(previousCaseSkip);
@@ -897,7 +897,7 @@ void Compiler::switchStatement() {
             }
         } else {
             if(state == 0) {
-                parser->error("Cannot have statements before any case.");
+                parser->errorAtPrevious("Cannot have statements before any case.");
             }
             statement();
         }
@@ -993,7 +993,7 @@ uint8_t Compiler::argumentList() {
             expression();
             
             if(argCount == 255) {
-                parser->error("Can't have more than 255 arguments.");
+                parser->errorAtPrevious("Can't have more than 255 arguments.");
             }
             argCount++;
         } while(match(TOKEN_COMMA));
@@ -1005,14 +1005,14 @@ uint8_t Compiler::argumentList() {
 
 void Compiler::returnStatement() {
     if(type == TYPE_SCRIPT) {
-        parser->error("Can't return from top-level code");
+        parser->errorAtPrevious("Can't return from top-level code");
     }
     
     if(match(TOKEN_SEMICOLON)) {
         emitReturn();
     } else {
         if(type == TYPE_INITIALIZER) {
-            parser->error("Can't return a value from an initializer.");
+            parser->errorAtPrevious("Can't return a value from an initializer.");
         }
         expression();
         parser->consume(TOKEN_SEMICOLON, "Expect ';' after return.");
@@ -1048,7 +1048,7 @@ int Compiler::addUpvalue(uint8_t index, bool isLocal) {
     }
     
     if(upvalueCount == upvalues.max_size()) {
-        parser->error("Too many closure variable in function");
+        parser->errorAtPrevious("Too many closure variable in function");
         return 0;
     }
     
@@ -1084,7 +1084,7 @@ void Compiler::classDeclaration() {
         variable(false);
         
         if(identifierEqual(&className, &parser->previous)) {
-            parser->error("A class can't inherit from itself.");
+            parser->errorAtPrevious("A class can't inherit from itself.");
         }
         
         beginScope();
@@ -1169,7 +1169,7 @@ void Compiler::method() {
 
 void Compiler::_this(bool canAssign) {
     if(vm->currentClass == nullptr) {
-        parser->error("Can't use 'this' outside of a class.");
+        parser->errorAtPrevious("Can't use 'this' outside of a class.");
         return;
     }
     variable(false);
@@ -1177,9 +1177,9 @@ void Compiler::_this(bool canAssign) {
 
 void Compiler::super(bool canAssign) {
     if(!vm->currentClass) {
-        parser->error("Can't use 'super' outside of a class.");
+        parser->errorAtPrevious("Can't use 'super' outside of a class.");
     } else if (!vm->currentClass->hasSuperclass) {
-        parser->error("Can't use 'super' int a class with no superclass.");
+        parser->errorAtPrevious("Can't use 'super' int a class with no superclass.");
     }
     parser->consume(TOKEN_DOT, "Expect '.' after 'super'");
     parser->consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
@@ -1242,7 +1242,7 @@ void Compiler::importStatement() {
     try {
         import = readFile(module_string.c_str());
     } catch(std::string e) {
-        parser->error(e);
+        parser->errorAtPrevious(e);
     }
     
     Scanner scanner;

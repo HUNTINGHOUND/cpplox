@@ -12,9 +12,18 @@ enum FunctionType : short;
 /// Parser class that uses a scanner to parse through the tokens.
 /// This class mainly contain helper function that makes parsing easier with error recovery.
 class Parser{
+    Scanner* scanner;
+    
+    /// Report error at the token specified
+    /// @param token token where the error occured
+    /// @param message error message
+    void errorAt(Token* token, std::string message);
+    
+    
+public:
     Token current;
     Token previous;
-    Scanner* scanner;
+    
     bool hadError;
     bool panicMode;
     
@@ -25,31 +34,22 @@ class Parser{
     
     /// Report error at previous token
     /// @param message error message
-    void error(std::string message);
+    void errorAtPrevious(std::string message);
+    
+    /// Advance current token, will continue when encounter error token and report error. 
+    void advance();
     
     /// Report error at current token
     /// @param message error message
     void errorAtCurrent(std::string message);
     
-    /// Report error at the token specified
-    /// @param token token where the error occured
-    /// @param message error message
-    void errorAt(Token* token, std::string message);
-    
-    /// Advance current token, well continue when encounter error token
-    void advance();
-    
     /// Check if the current token matches with the given type.
     /// @param type Type to check against.
     bool check(TokenType type);
     
-    friend class Compiler;
-public:
     /// Constructor
     /// @param scanner scanner for the parser
     Parser(Scanner* scanner);
-    
-    
 };
 
 enum Precedence {

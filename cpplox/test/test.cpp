@@ -2,6 +2,7 @@
 #include "../pch.pch"
 #include "../scanner.hpp"
 #include "../chunk.hpp"
+#include "../compiler.hpp"
 
 class Scanner_Test : public testing::Test {
 protected:
@@ -525,6 +526,86 @@ TEST_F(Chunk_test, test_large_constant) {
     EXPECT_EQ(constant, 256);
 }
 
+class Parser_test : public testing::Test {
+protected:
+    Scanner scan;
+    Parser* parser;
+    
+    void SetUp() override {
+        parser = new Parser(&scan);
+        parser->panicMode = false;
+        parser->hadError = false;
+    }
+    
+    void TearDown() override {
+        delete parser;
+    }
+};
+
+TEST_F(Parser_test, consume) {
+    scan.setSource("123 abc");
+    parser->advance();
+    parser->consume(TOKEN_NUMBER, "Should be number");
+    EXPECT_EQ(parser->hadError, false);
+    parser->consume(TOKEN_IDENTIFIER, "Should be identifier");
+    EXPECT_EQ(parser->hadError, false);
+}
+
+TEST_F(Parser_test, error_at_previous) {
+    scan.setSource("123\nabc");
+    parser->advance();
+    parser->advance();
+    
+    testing::internal::CaptureStderr();
+    parser->errorAtPrevious("test message");
+    std::string message1 = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(parser->panicMode, true);
+    EXPECT_EQ(parser->hadError, true);
+    EXPECT_EQ(message1.compare("[line 1] Error at 123: test message\n"), 0) << "message is: " << message1 << std::endl;
+    
+    testing::internal::CaptureStderr();
+    parser->errorAtCurrent("test message");
+    std::string message2 = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(parser->hadError, true);
+    EXPECT_EQ(message2.compare(""), 0) << "message is: " << message2 << std::endl;
+}
+
+TEST_F(Parser_test, error_at_current) {
+    scan.setSource("123\nabc");
+    parser->advance();
+    parser->advance();
+    
+    testing::internal::CaptureStderr();
+    parser->errorAtCurrent("test message");
+    std::string message = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(parser->panicMode, true);
+    EXPECT_EQ(parser->hadError, true);
+    EXPECT_EQ(message.compare("[line 2] Error at abc: test message\n"), 0) << "message is: " << message << std::endl;
+}
+
+TEST_F(Parser_test, test_check) {
+    scan.setSource("123");
+    parser->advance();
+    
+    EXPECT_TRUE(parser->check(TOKEN_NUMBER));
+}
+
+TEST_F(Parser_test, advance_test) {
+    scan.setSource("123 # # # abc");
+    
+    parser->advance();
+    EXPECT_EQ(parser->current.type, TOKEN_NUMBER);
+    
+    parser->advance();
+    EXPECT_EQ(parser->current.type, TOKEN_IDENTIFIER);
+}
+
+TEST_F(Parser_test, check_test) {
+    scan.setSource("123");
+    parser->advance();
+    
+    EXPECT_EQ(parser->check(TOKEN_NUMBER), true);
+}
 
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);
