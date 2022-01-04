@@ -607,6 +607,22 @@ TEST_F(Parser_test, check_test) {
     EXPECT_EQ(parser->check(TOKEN_NUMBER), true);
 }
 
+class ValueArray_test : public testing::Test {
+protected:
+    ValueArray arr;
+};
+
+TEST_F(ValueArray_test, write_test) {
+    arr.writeValueArray(ValueOP::nul_val());
+    arr.writeValueArray(ValueOP::number_val(123));
+    
+    EXPECT_EQ(arr.count, 2);
+    EXPECT_TRUE(ValueOP::is_nul(arr.values[0]));
+    EXPECT_TRUE(ValueOP::is_number(arr.values[1]));
+    EXPECT_EQ(ValueOP::as_number(arr.values[1]), 123);
+}
+
+
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
