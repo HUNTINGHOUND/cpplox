@@ -156,7 +156,7 @@ void ValueOP::setConst(bool isCon, Value value) {
 void ValueOP::printValue(Value value) {
 #ifdef NAN_BOXING
     if (is_bool(value)) {
-        std::cout << (is_bool(value) ? "true" : "false");
+        std::cout << (as_bool(value) ? "true" : "false");
     } else if (is_nul(value)) {
         std::cout << "nul";;
     } else if (is_number(value)) {
@@ -168,7 +168,7 @@ void ValueOP::printValue(Value value) {
 #else
     switch (value.type) {
         case VAL_BOOL:
-            std::cout << (is_bool(value) ? "true" : "false");
+            std::cout << (as_bool(value) ? "true" : "false");
             break;
         case VAL_NUL:
             std::cout << "nul";

@@ -3,6 +3,9 @@
 #include "../scanner.hpp"
 #include "../chunk.hpp"
 #include "../compiler.hpp"
+#include "../table.hpp"
+#include "../value.hpp"
+#include "../object.hpp"
 
 class Scanner_Test : public testing::Test {
 protected:
@@ -561,13 +564,13 @@ TEST_F(Parser_test, error_at_previous) {
     std::string message1 = testing::internal::GetCapturedStderr();
     EXPECT_EQ(parser->panicMode, true);
     EXPECT_EQ(parser->hadError, true);
-    EXPECT_EQ(message1.compare("[line 1] Error at 123: test message\n"), 0) << "message is: " << message1 << std::endl;
+    EXPECT_STREQ(message1.c_str(), "[line 1] Error at 123: test message\n");
     
     testing::internal::CaptureStderr();
     parser->errorAtCurrent("test message");
     std::string message2 = testing::internal::GetCapturedStderr();
     EXPECT_EQ(parser->hadError, true);
-    EXPECT_EQ(message2.compare(""), 0) << "message is: " << message2 << std::endl;
+    EXPECT_STREQ(message2.c_str(), "");
 }
 
 TEST_F(Parser_test, error_at_current) {
@@ -580,7 +583,7 @@ TEST_F(Parser_test, error_at_current) {
     std::string message = testing::internal::GetCapturedStderr();
     EXPECT_EQ(parser->panicMode, true);
     EXPECT_EQ(parser->hadError, true);
-    EXPECT_EQ(message.compare("[line 2] Error at abc: test message\n"), 0) << "message is: " << message << std::endl;
+    EXPECT_STREQ(message.c_str(), "[line 2] Error at abc: test message\n");
 }
 
 TEST_F(Parser_test, test_check) {
@@ -622,6 +625,110 @@ TEST_F(ValueArray_test, write_test) {
     EXPECT_EQ(ValueOP::as_number(arr.values[1]), 123);
 }
 
+
+class Value_test : public testing::Test {
+protected:
+    VM vm;
+};
+
+TEST_F(Value_test, bool_test) {
+    std::string buffer;
+    ObjString* string;
+    
+    Value true_value = ValueOP::bool_val(true);
+    Value false_value = ValueOP::bool_val(false);
+    
+    EXPECT_EQ(true_value.type, VAL_BOOL);
+    EXPECT_EQ(false_value.type, VAL_BOOL);
+    EXPECT_TRUE(ValueOP::is_bool(true_value));
+    EXPECT_TRUE(true_value.as.boolean);
+    EXPECT_TRUE(ValueOP::as_bool(true_value));
+    
+    EXPECT_TRUE(ValueOP::is_bool(false_value));
+    EXPECT_FALSE(false_value.as.boolean);
+    EXPECT_FALSE(ValueOP::as_bool(false_value));
+    
+    testing::internal::CaptureStdout();
+    ValueOP::printValue(true_value);
+    buffer = testing::internal::GetCapturedStdout();
+    EXPECT_STREQ(buffer.c_str(), "true");
+    
+    testing::internal::CaptureStdout();
+    ValueOP::printValue(false_value);
+    buffer = testing::internal::GetCapturedStdout();
+    EXPECT_STREQ(buffer.c_str(), "false");
+
+    
+    string = ValueOP::to_string(true_value, &vm);
+    EXPECT_STREQ(string->chars.c_str(), "true");
+    
+    string = ValueOP::to_string(false_value, &vm);
+    EXPECT_STREQ(string->chars.c_str(), "false");
+    
+    EXPECT_FALSE(ValueOP::valuesEqual(true_value, false_value));
+    EXPECT_FALSE(ValueOP::valuesEqual(false_value, true_value));
+    EXPECT_TRUE(ValueOP::valuesEqual(true_value, ValueOP::bool_val(true)));
+    EXPECT_TRUE(ValueOP::valuesEqual(false_value, ValueOP::bool_val(false)));
+}
+
+TEST_F(Value_test, number_test) {
+    Value num_value = ValueOP::number_val(123);
+    
+    EXPECT_EQ(num_value.type, VAL_NUMBER);
+    EXPECT_TRUE(ValueOP::is_number(num_value));
+    EXPECT_EQ(num_value.as.number, 123);
+    EXPECT_EQ(ValueOP::as_number(num_value), 123);
+    
+    testing::internal::CaptureStdout();
+    ValueOP::printValue(num_value);
+    std::string buffer = testing::internal::GetCapturedStdout();
+    EXPECT_STREQ(buffer.c_str(), "123");
+    
+    ObjString* string = ValueOP::to_string(num_value, &vm);
+    EXPECT_STREQ(string->chars.c_str(), "123.000000");
+    
+    EXPECT_TRUE(ValueOP::valuesEqual(num_value, ValueOP::number_val(123)));
+    EXPECT_FALSE(ValueOP::valuesEqual(num_value, ValueOP::number_val(124)));
+}
+
+TEST_F(Value_test, object_string_test) {
+    ObjString* s = ObjString::copyString(&vm, "test", 4);
+    Value string_val = ValueOP::obj_val(s);
+    
+    EXPECT_EQ(s->type, OBJ_STRING);
+    EXPECT_STREQ(s->chars.c_str(), "test");
+    
+    EXPECT_EQ(ObjString::hashString("abcde", 5), ObjString::hashString("abcde", 5));
+    
+    EXPECT_EQ(string_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(string_val));
+    EXPECT_TRUE(ValueOP::is_string(string_val));
+    EXPECT_STREQ(ValueOP::as_string(string_val)->chars.c_str(), "test");
+    
+    testing::internal::CaptureStdout();
+    ValueOP::printValue(string_val);
+    std::string buffer = testing::internal::GetCapturedStdout();
+    EXPECT_STREQ(buffer.c_str(), "test");
+    
+    vm.push_stack(string_val);
+    Value second_string_val = ValueOP::obj_val(ObjString::copyString(&vm, "test", 4));
+    EXPECT_TRUE(ValueOP::valuesEqual(string_val, second_string_val));
+}
+
+TEST_F(Value_test, function_test) {
+    ObjFunction* f = ObjFunction::newFunction(&vm, TYPE_FUNCTION);
+    Value function_val = ValueOP::obj_val(f);
+    vm.push_stack(function_val);
+    
+    f->name = ObjString::copyString(&vm, "abc", 3);
+    
+    EXPECT_EQ(f->type, OBJ_FUNCTION);
+    EXPECT_STREQ(f->name->chars.c_str(), "abc");
+    
+    EXPECT_EQ(function_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(function_val));
+    EXPECT_EQ(f, ValueOP::as_function(function_val));
+}
 
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);
