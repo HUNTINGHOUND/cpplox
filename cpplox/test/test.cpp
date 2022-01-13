@@ -615,6 +615,16 @@ protected:
     ValueArray arr;
 };
 
+testing::AssertionResult print_value_test(Value val, const std::string& comp) {
+    testing::internal::CaptureStdout();
+    ValueOP::printValue(val);
+    std::string buffer = testing::internal::GetCapturedStdout();
+    if(buffer.compare(comp))
+        return testing::AssertionFailure() << "printed out \"" << buffer << "\" rather than \"" << comp << "\"";
+    else
+        return testing::AssertionSuccess();
+}
+
 TEST_F(ValueArray_test, write_test) {
     arr.writeValueArray(ValueOP::nul_val());
     arr.writeValueArray(ValueOP::number_val(123));
@@ -626,6 +636,7 @@ TEST_F(ValueArray_test, write_test) {
 }
 
 
+// Note that these tests do not test the VM's ability to manipulate values and object but instead test the value and objects themselves.
 class Value_test : public testing::Test {
 protected:
     VM vm;
@@ -648,15 +659,8 @@ TEST_F(Value_test, bool_test) {
     EXPECT_FALSE(false_value.as.boolean);
     EXPECT_FALSE(ValueOP::as_bool(false_value));
     
-    testing::internal::CaptureStdout();
-    ValueOP::printValue(true_value);
-    buffer = testing::internal::GetCapturedStdout();
-    EXPECT_STREQ(buffer.c_str(), "true");
-    
-    testing::internal::CaptureStdout();
-    ValueOP::printValue(false_value);
-    buffer = testing::internal::GetCapturedStdout();
-    EXPECT_STREQ(buffer.c_str(), "false");
+    EXPECT_TRUE(print_value_test(true_value, "true"));
+    EXPECT_TRUE(print_value_test(false_value, "false"));
 
     
     string = ValueOP::to_string(true_value, &vm);
@@ -679,10 +683,7 @@ TEST_F(Value_test, number_test) {
     EXPECT_EQ(num_value.as.number, 123);
     EXPECT_EQ(ValueOP::as_number(num_value), 123);
     
-    testing::internal::CaptureStdout();
-    ValueOP::printValue(num_value);
-    std::string buffer = testing::internal::GetCapturedStdout();
-    EXPECT_STREQ(buffer.c_str(), "123");
+    EXPECT_TRUE(print_value_test(num_value, "123"));
     
     ObjString* string = ValueOP::to_string(num_value, &vm);
     EXPECT_STREQ(string->chars.c_str(), "123.000000");
@@ -705,10 +706,7 @@ TEST_F(Value_test, object_string_test) {
     EXPECT_TRUE(ValueOP::is_string(string_val));
     EXPECT_STREQ(ValueOP::as_string(string_val)->chars.c_str(), "test");
     
-    testing::internal::CaptureStdout();
-    ValueOP::printValue(string_val);
-    std::string buffer = testing::internal::GetCapturedStdout();
-    EXPECT_STREQ(buffer.c_str(), "test");
+    EXPECT_TRUE(print_value_test(string_val, "test"));
     
     vm.push_stack(string_val);
     Value second_string_val = ValueOP::obj_val(ObjString::copyString(&vm, "test", 4));
@@ -723,11 +721,176 @@ TEST_F(Value_test, function_test) {
     f->name = ObjString::copyString(&vm, "abc", 3);
     
     EXPECT_EQ(f->type, OBJ_FUNCTION);
+    EXPECT_TRUE(ValueOP::is_obj(function_val));
+    EXPECT_TRUE(ValueOP::is_function(function_val));
     EXPECT_STREQ(f->name->chars.c_str(), "abc");
+    
+    EXPECT_TRUE(print_value_test(function_val, "<fn abc>"));
     
     EXPECT_EQ(function_val.type, VAL_OBJ);
     EXPECT_TRUE(ValueOP::is_obj(function_val));
     EXPECT_EQ(f, ValueOP::as_function(function_val));
+}
+
+TEST_F(Value_test, native_test) {
+    ObjNative* native_f = ObjNative::newNative(&VM::clockNative, 0, &vm);
+    Value native_function_val = ValueOP::obj_val(native_f);
+    
+    EXPECT_EQ(native_f->type, OBJ_NATIVE);
+    EXPECT_EQ(native_function_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(native_function_val));
+    EXPECT_TRUE(ValueOP::is_native(native_function_val));
+    
+    EXPECT_TRUE(print_value_test(native_function_val, "<native fn>"));
+    
+    EXPECT_EQ(ValueOP::as_native(native_function_val), native_f);
+    EXPECT_EQ(native_f->arity, 0);
+}
+
+TEST_F(Value_test, upvalue_test) {
+    ObjUpvalue* upvalue = ObjUpvalue::newUpvalue(&vm.stack[0], &vm);
+    Value upvalue_val = ValueOP::obj_val(upvalue);
+    
+    EXPECT_EQ(upvalue->type, OBJ_UPVALUE);
+    EXPECT_EQ(upvalue_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(upvalue_val));
+    EXPECT_TRUE(ValueOP::is_upvalue(upvalue_val));
+    
+    EXPECT_TRUE(print_value_test(upvalue_val, "upvalue"));
+    
+}
+
+TEST_F(Value_test, closure_test) {
+    ObjFunction* func = ObjFunction::newFunction(&vm, TYPE_FUNCTION);
+    vm.push_stack(ValueOP::obj_val(func));
+    func->name = ObjString::copyString(&vm, "abc", 3);
+    ObjClosure* closure = ObjClosure::newClosure(func, &vm);
+    Value closure_val = ValueOP::obj_val(closure);
+    
+    EXPECT_EQ(closure->type, OBJ_CLOSURE);
+    EXPECT_EQ(closure_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(closure_val));
+    EXPECT_TRUE(ValueOP::is_closure(closure_val));
+    
+    EXPECT_TRUE(print_value_test(closure_val, "<fn abc>"));
+    
+    EXPECT_EQ(ValueOP::as_closure(closure_val), closure);
+    EXPECT_EQ(closure->upvalueCount, 0);
+}
+
+TEST_F(Value_test, class_test) {
+    ObjString* name = ObjString::copyString(&vm, "test_class", 10);
+    vm.push_stack(ValueOP::obj_val(name));
+    ObjClass* _class = ObjClass::newClass(name, &vm);
+    Value _class_val = ValueOP::obj_val(_class);
+    
+    EXPECT_EQ(_class->type, OBJ_CLASS);
+    EXPECT_EQ(_class_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(_class_val));
+    EXPECT_TRUE(ValueOP::is_class(_class_val));
+    
+    EXPECT_TRUE(print_value_test(_class_val, "test_class"));
+    
+    EXPECT_EQ(ValueOP::as_class(_class_val), _class);
+    EXPECT_STREQ(_class->name->chars.c_str(), "test_class");
+    EXPECT_EQ(_class->name, name);
+    
+    EXPECT_EQ(_class->initializer, nullptr);
+}
+
+TEST_F(Value_test, instance_test) {
+    ObjString* name = ObjString::copyString(&vm, "test_class", 10);
+    vm.push_stack(ValueOP::obj_val(name));
+    ObjClass* _class = ObjClass::newClass(name, &vm);
+    vm.push_stack(ValueOP::obj_val(_class));
+    ObjInstance* instance = ObjInstance::newInstance(_class, &vm);
+    Value instance_val = ValueOP::obj_val(instance);
+    
+    EXPECT_EQ(instance->type, OBJ_INSTANCE);
+    EXPECT_EQ(instance_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(instance_val));
+    EXPECT_TRUE(ValueOP::is_instance(instance_val));
+    
+    EXPECT_TRUE(print_value_test(instance_val, "test_class instance"));
+    
+    EXPECT_EQ(ValueOP::as_instance(instance_val), instance);
+    EXPECT_EQ(instance->_class, _class);
+}
+
+TEST_F(Value_test, bound_method_test) {
+    ObjString* name = ObjString::copyString(&vm, "test_class", 10);
+    vm.push_stack(ValueOP::obj_val(name));
+    ObjClass* _class = ObjClass::newClass(name, &vm);
+    vm.push_stack(ValueOP::obj_val(_class));
+    ObjInstance* instance = ObjInstance::newInstance(_class, &vm);
+    vm.push_stack(ValueOP::obj_val(instance));
+    ObjFunction* func = ObjFunction::newFunction(&vm, TYPE_FUNCTION);
+    vm.push_stack(ValueOP::obj_val(func));
+    func->name = ObjString::copyString(&vm, "abc", 3);
+    ObjBoundMethod* bound_method = ObjBoundMethod::newBoundMethod(ValueOP::obj_val(instance), func, &vm);
+    Value bound_method_val = ValueOP::obj_val(bound_method);
+    
+    EXPECT_EQ(bound_method->type, OBJ_BOUND_METHOD);
+    EXPECT_EQ(bound_method_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(bound_method_val));
+    EXPECT_TRUE(ValueOP::is_bound_method(bound_method_val));
+    
+    EXPECT_TRUE(print_value_test(bound_method_val, "<fn abc>"));
+    
+    EXPECT_EQ(ValueOP::as_bound_method(bound_method_val), bound_method);
+    EXPECT_EQ(bound_method->method, func);
+}
+
+TEST_F(Value_test, native_class_method_test) {
+    ObjNativeClassMethod* method = ObjNativeClassMethod::newNativeClassMethod(static_cast<NativeClassMethod>(&ObjCollectionClass::init), &vm);
+    Value method_val = ValueOP::obj_val(method);
+    
+    EXPECT_EQ(method->type, OBJ_NATIVE_CLASS_METHOD);
+    EXPECT_EQ(method_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(method_val));
+    EXPECT_TRUE(ValueOP::is_native_method(method_val));
+    
+    EXPECT_TRUE(print_value_test(method_val, "native class method"));
+    
+    EXPECT_EQ(ValueOP::as_native_class_method(method_val), method);
+}
+
+TEST_F(Value_test, collection_test) {
+    ObjString* name = ObjString::copyString(&vm, "collection_class", 10);
+    vm.push_stack(ValueOP::obj_val(name));
+    ObjCollectionClass* collection = ObjCollectionClass::newCollectionClass(name, &vm);
+    Value collection_val = ValueOP::obj_val(collection);
+    
+    EXPECT_EQ(collection->type, OBJ_NATIVE_CLASS);
+    EXPECT_EQ(collection->subType, NATIVE_COLLECTION);
+    EXPECT_EQ(collection_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(collection_val));
+    EXPECT_TRUE(ValueOP::is_native_class(collection_val));
+    EXPECT_TRUE(ValueOP::is_native_subclass(collection_val, NATIVE_COLLECTION));
+    
+    EXPECT_TRUE(print_value_test(collection_val, "Collection Class"));
+    
+    EXPECT_EQ(ValueOP::as_native_subclass<ObjCollectionClass>(collection_val), collection);
+}
+
+TEST_F(Value_test, collection_instance_test) {
+    ObjString* name = ObjString::copyString(&vm, "collection_class", 10);
+    vm.push_stack(ValueOP::obj_val(name));
+    ObjCollectionClass* collection = ObjCollectionClass::newCollectionClass(name, &vm);
+    vm.push_stack(ValueOP::obj_val(collection));
+    ObjCollectionInstance* instance = ObjCollectionInstance::newCollectionInstance(collection, &vm);
+    Value instance_val = ValueOP::obj_val(instance);
+    
+    EXPECT_EQ(instance->type, OBJ_NATIVE_INSTANCE);
+    EXPECT_EQ(instance->subType, NATIVE_COLLECTION_INSTANCE);
+    EXPECT_EQ(instance_val.type, VAL_OBJ);
+    EXPECT_TRUE(ValueOP::is_obj(instance_val));
+    EXPECT_TRUE(ValueOP::is_native_instance(instance_val));
+    EXPECT_TRUE(ValueOP::is_native_subinstance(instance_val, NATIVE_COLLECTION_INSTANCE));
+    
+    EXPECT_TRUE(print_value_test(instance_val, "{}"));
+    
+    EXPECT_EQ(ValueOP::as_native_subinstance<ObjCollectionInstance>(instance_val), instance);
 }
 
 int main(int argc, char *argv[]) {

@@ -63,6 +63,7 @@ bool is_string(Value value);
 bool is_empty(Value value);
 bool is_function(Value value);
 bool is_native(Value value);
+bool is_upvalue(Value value);
 bool is_closure(Value value);
 bool is_class(Value value);
 bool is_instance(Value value);
