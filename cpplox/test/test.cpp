@@ -893,6 +893,84 @@ TEST_F(Value_test, collection_instance_test) {
     EXPECT_EQ(ValueOP::as_native_subinstance<ObjCollectionInstance>(instance_val), instance);
 }
 
+class Table_test : public testing::Test {
+protected:
+    VM vm;
+    Table table;
+};
+
+TEST_F(Table_test, set_and_get_test) {
+    Value num_key = ValueOP::number_val(10);
+    Value string_key = ValueOP::obj_val(ObjString::copyString(&vm, "test", 4));
+    Value bool_key = ValueOP::bool_val(false);
+    Value nul_key = ValueOP::nul_val();
+    
+    table.tableSet(num_key, ValueOP::number_val(1));
+    table.tableSet(string_key, ValueOP::number_val(2));
+    table.tableSet(bool_key, ValueOP::number_val(3));
+    table.tableSet(nul_key, ValueOP::number_val(4));
+    
+    Value res;
+    ASSERT_TRUE(table.tableGet(num_key, &res));
+    ASSERT_TRUE(ValueOP::is_number(res));
+    EXPECT_EQ(ValueOP::as_number(res), 1);
+    
+    ASSERT_TRUE(table.tableGet(string_key, &res));
+    ASSERT_TRUE(ValueOP::is_number(res));
+    EXPECT_EQ(ValueOP::as_number(res), 2);
+    
+    ASSERT_TRUE(table.tableGet(bool_key, &res));
+    ASSERT_TRUE(ValueOP::is_number(res));
+    EXPECT_EQ(ValueOP::as_number(res), 3);
+    
+    ASSERT_TRUE(table.tableGet(nul_key, &res));
+    EXPECT_TRUE(ValueOP::is_number(res));
+    EXPECT_EQ(ValueOP::as_number(res), 4);
+}
+
+TEST_F(Table_test, override_test) {
+    Value string_key = ValueOP::obj_val(ObjString::copyString(&vm, "test", 4));
+    table.tableSet(string_key, ValueOP::number_val(5));
+    
+    Value res;
+    ASSERT_TRUE(table.tableGet(string_key, &res));
+    
+    ASSERT_TRUE(ValueOP::is_number(res));
+    EXPECT_EQ(ValueOP::as_number(res), 5);
+    
+    table.tableSet(string_key, ValueOP::number_val(35));
+    
+    ASSERT_TRUE(table.tableGet(string_key, &res));
+    
+    ASSERT_TRUE(ValueOP::is_number(res));
+    EXPECT_EQ(ValueOP::as_number(res), 35);
+}
+
+TEST_F(Table_test, delete_test) {
+    Value string_key = ValueOP::obj_val(ObjString::copyString(&vm, "test", 4));
+    table.tableSet(string_key, ValueOP::number_val(10));
+    
+    Value res;
+    ASSERT_TRUE(table.tableGet(string_key, &res));
+    ASSERT_TRUE(ValueOP::is_number(res));
+    EXPECT_EQ(ValueOP::as_number(res), 10);
+    
+    ASSERT_TRUE(table.tableDelete(string_key));
+    EXPECT_FALSE(table.tableGet(string_key, &res));
+}
+
+TEST_F(Table_test, find_string_test) {
+    EXPECT_EQ(table.tableFindString("no", 2, ObjString::hashString("no", 2)), nullptr);
+    ObjString* name = ObjString::copyString(&vm, "test_test", 9);
+    Value name_val = ValueOP::obj_val(name);
+    vm.push_stack(name_val);
+    
+    table.tableSet(name_val, ValueOP::number_val(123));
+    ObjString* res = table.tableFindString("test_test", 9, ObjString::hashString("test_test", 9));
+    ASSERT_NE(res, nullptr);
+    EXPECT_STREQ(res->chars.c_str(), "test_test");
+}
+
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

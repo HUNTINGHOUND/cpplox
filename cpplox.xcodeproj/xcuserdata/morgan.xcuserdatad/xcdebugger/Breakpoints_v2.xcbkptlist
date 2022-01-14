@@ -708,5 +708,53 @@
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "D3CBC56E-D95A-4DC2-BC21-51C538321507"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "cpplox/test/test.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "963"
+            endingLineNumber = "963"
+            landmarkName = "TEST_F()"
+            landmarkType = "9">
+            <Locations>
+               <Location
+                  uuid = "D3CBC56E-D95A-4DC2-BC21-51C538321507 - 376465a22a4f3013"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Table_test_find_string_test_Test::TestBody()"
+                  moduleName = "cpplox_test"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/morgan/Desktop/cpplox/cpplox/test/test.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "963"
+                  endingLineNumber = "963"
+                  offsetFromSymbolStart = "19">
+               </Location>
+               <Location
+                  uuid = "D3CBC56E-D95A-4DC2-BC21-51C538321507 - 376465a22a4f3013"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Table_test_find_string_test_Test::TestBody()"
+                  moduleName = "cpplox_test"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/morgan/Desktop/cpplox/cpplox/test/test.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "963"
+                  endingLineNumber = "963"
+                  offsetFromSymbolStart = "145">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
    </Breakpoints>
 </Bucket>
