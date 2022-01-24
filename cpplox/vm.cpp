@@ -190,9 +190,9 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
         runtimeError("Operands must be numbers.");
         return INTERPRET_RUNTIME_ERROR;
     }
-    double b = ValueOP::as_number(stack.back());
+    Number b = ValueOP::as_number(stack.back());
     stack.pop_back();
-    double a = ValueOP::as_number(stack.back());
+    Number a = ValueOP::as_number(stack.back());
     stack.pop_back();
     Value v = std::invoke(*valuetype, func(a,b));
     push_stack(v);
@@ -268,18 +268,18 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_GREATER: {
-                binary_op<bool, double>(ValueOP::bool_val, std::greater<double>());
+                binary_op<bool, Number>(ValueOP::bool_val, std::greater<Number>());
                 break;
             }
             case OP_LESS: {
-                binary_op<bool, double>(ValueOP::bool_val, std::less<double>());
+                binary_op<bool, Number>(ValueOP::bool_val, std::less<Number>());
                 break;
             }
             case OP_ADD: {
                 if (ValueOP::is_string(peek(0)) && ValueOP::is_string(peek(1))) {
                     concatenate();
                 } else if (ValueOP::is_number(peek(0)) && ValueOP::is_number(peek(1))) {
-                    binary_op<double,double>(ValueOP::number_val, std::plus<double>());
+                    binary_op<Number,Number>(ValueOP::number_val, std::plus<Number>());
                 } else if (ValueOP::is_native_subinstance(peek(0), NATIVE_COLLECTION_INSTANCE) && ValueOP::is_native_subinstance(peek(1), NATIVE_COLLECTION_INSTANCE)) {
                     appendCollection();
                 } else {
@@ -290,15 +290,15 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_DIVIDE: {
-                binary_op<double,double>(ValueOP::number_val, std::divides<double>());
+                binary_op<Number,Number>(ValueOP::number_val, std::divides<Number>());
                 break;
             }
             case OP_MULTIPLY: {
-                binary_op<double,double>(ValueOP::number_val, std::multiplies<double>());
+                binary_op<Number,Number>(ValueOP::number_val, std::multiplies<Number>());
                 break;
             }
             case OP_SUBTRACT: {
-                binary_op<double,double>(ValueOP::number_val, std::minus<double>());
+                binary_op<Number,Number>(ValueOP::number_val, std::minus<Number>());
                 break;
             }
             case OP_NOT: {
@@ -576,19 +576,22 @@ InterpretResult VM::run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                double step = ValueOP::as_number(stack.back());
+                double step = ValueOP::as_number(stack.back()).is_float ?
+                    ValueOP::as_number(stack.back()).number.decimal : ValueOP::as_number(stack.back()).number.whole;
                 stack.pop_back();
                 
-                double end = ValueOP::as_number(stack.back());
+                double end = ValueOP::as_number(stack.back()).is_float ?
+                    ValueOP::as_number(stack.back()).number.decimal : ValueOP::as_number(stack.back()).number.whole;
                 stack.pop_back();
                 
-                double start = ValueOP::as_number(stack.back());
+                double start = ValueOP::as_number(stack.back()).is_float ?
+                    ValueOP::as_number(stack.back()).number.decimal : ValueOP::as_number(stack.back()).number.whole;
                 stack.pop_back();
                 
                 Value collection_idx;
                 globalNames.tableGet(ValueOP::obj_val(ObjString::copyString(this, "Collection", 10)), &collection_idx);
                 
-                ObjCollectionClass* collection_class = ValueOP::as_native_subclass<ObjCollectionClass>(globalValues.values[(long)ValueOP::as_number(collection_idx)]);
+                ObjCollectionClass* collection_class = ValueOP::as_native_subclass<ObjCollectionClass>(globalValues.values[(long)(ValueOP::as_number(collection_idx).is_float ? ValueOP::as_number(collection_idx).number.decimal : ValueOP::as_number(collection_idx).number.whole)]);
                 ObjCollectionInstance* collection = ObjCollectionInstance::newCollectionInstance(collection_class, this);
                 push_stack(ValueOP::obj_val(collection));
                 for(double i = start; (end > start) ? i < end : i > end; i += step) {

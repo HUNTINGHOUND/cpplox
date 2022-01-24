@@ -33,6 +33,7 @@ ParseRule rules[53] = {
     [TOKEN_IDENTIFIER]    = {&Compiler::variable,     nullptr,   PREC_NONE},
     [TOKEN_STRING]        = {&Compiler::string, nullptr, PREC_NONE},
     [TOKEN_NUMBER]        = {&Compiler::number, nullptr, PREC_NONE},
+    [TOKEN_FLOAT]         = {&Compiler::number, nullptr, PREC_NONE},
     [TOKEN_AND]           = {nullptr,     &Compiler::_and,   PREC_AND},
     [TOKEN_CLASS]         = {nullptr,     nullptr,   PREC_NONE},
     [TOKEN_ELSE]          = {nullptr,     nullptr,   PREC_NONE},
@@ -184,7 +185,7 @@ ObjFunction* Compiler::endCompiler() {
         Value main_loc;
         Value identifier = ValueOP::obj_val(ObjString::copyString(vm, "main", 4));
         if(vm->globalNames.tableGet(identifier, &main_loc)) {
-            uint8_t main_index = (uint8_t)ValueOP::as_number(main_loc);
+            uint8_t main_index = static_cast<uint8_t>(ValueOP::as_number(main_loc).number.whole);
             emitBytes(OP_GET_GLOBAL, main_index);
             emitBytes(OP_CALL, 0);
             emitByte(OP_POP);
@@ -230,8 +231,17 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
 }
 
 void Compiler::number(bool canAssign) {
-    double value = std::stod(parser->previous.source);
-    emitConstant(ValueOP::number_val(value));
+    Number num;
+    if(parser->previous.type == TOKEN_FLOAT) {
+        double value = std::stod(parser->previous.source);
+        num.is_float = true;
+        num.number.decimal = value;
+    } else {
+        long long value = std::stoll(parser->previous.source);
+        num.is_float = false;
+        num.number.whole = value;
+    }
+    emitConstant(ValueOP::number_val(num));
 }
 
 void Compiler::emitConstant(Value value) {
@@ -507,11 +517,11 @@ uint8_t Compiler::globalConstant(Token *name, bool isConst) {
     Value index;
     Value identifier = ValueOP::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length));
     if (vm->globalNames.tableGet(identifier, &index)) {
-        return (uint8_t)ValueOP::as_number(index);
+        return (uint8_t)(ValueOP::as_number(index).number.whole);
     }
     
     uint8_t newIndex = (uint8_t)vm->globalValues.count;
-    Value v = ValueOP::number_val((double)newIndex);
+    Value v = ValueOP::number_val(newIndex);
     ValueOP::setConst(isConst, v);
     vm->globalNames.tableSet(identifier, v);
     vm->globalValues.writeValueArray(ValueOP::empty_val());
@@ -1132,11 +1142,11 @@ uint8_t Compiler::addIdentifierConstant(Token *name) {
     Value indexValue;
     
     if(stringConstants.tableGet(ValueOP::obj_val(string),&indexValue)) {
-        return (uint8_t)ValueOP::as_number(indexValue);
+        return (uint8_t)(ValueOP::as_number(indexValue).number.whole);
     }
     
     uint8_t index = makeConstant(ValueOP::obj_val(string));
-    stringConstants.tableSet(ValueOP::obj_val(string), ValueOP::number_val((double)index));
+    stringConstants.tableSet(ValueOP::obj_val(string), ValueOP::number_val(index));
     return index;
 }
 

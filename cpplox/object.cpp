@@ -164,8 +164,10 @@ NativeClassRes ObjCollectionClass::indexAccess(ObjNativeInstance* instance, int 
         return NativeClassRes::genError("Expected 1 argument, got " + std::to_string(argCount) + " instead.");
     if(!ValueOP::is_number(args[0]))
         return NativeClassRes::genError("Expected number as argument for collection random access.");
+    if(!ValueOP::is_whole_number(args[0]))
+        return NativeClassRes::genError("Expect number to be whole number.");
     
-    long index = ValueOP::as_number(args[0]);
+    long long index = ValueOP::as_number(args[0]).number.whole;
     if(std::abs(index) >= collection->values.count)
         return NativeClassRes::genError("Out of range random accees");
     
@@ -229,8 +231,9 @@ NativeClassRes ObjCollectionClass::deleteIndex(ObjNativeInstance *instance, int 
     ObjCollectionInstance* collection = static_cast<ObjCollectionInstance*>(instance);
     if(argCount != 1) return NativeClassRes::genError("Expected 1 argument, got " + std::to_string(argCount) + " instead.");
     if(!ValueOP::is_number(args[0])) return NativeClassRes::genError("Argument should be a number.");
+    if(!ValueOP::is_whole_number(args[0])) return NativeClassRes::genError("Expect number to be whole number.");
     
-    long index = ValueOP::as_number(args[0]);
+    long long index = ValueOP::as_number(args[0]).number.whole;
     if(abs(index) >= collection->values.count) return NativeClassRes::genError("Index out of bound.");
     if(index < 0) index += collection->values.count;
     

@@ -27,6 +27,7 @@
 		90A4208925DFB74800DE641F /* value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4DD25BC9C34003A74C5 /* value.cpp */; };
 		90A4208B25DFB74C00DE641F /* vm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4E325BD98D8003A74C5 /* vm.cpp */; };
 		90A4208D25DFB75600DE641F /* chunk.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90E1B4CF25BC8F53003A74C5 /* chunk.cpp */; };
+		90D406822794AA5D0007360C /* number.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90D406802794AA5D0007360C /* number.cpp */; };
 		90DAF9542736F6FF00C2FC71 /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90DAF9522736F6FF00C2FC71 /* util.cpp */; };
 /* End PBXBuildFile section */
 
@@ -74,6 +75,8 @@
 		9085E94625FD0D5900C0E1F0 /* table.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = table.hpp; sourceTree = "<group>"; };
 		9085E94725FD0DE800C0E1F0 /* table.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = table.cpp; sourceTree = "<group>"; };
 		908D972025C7FD3600F9AB2E /* compiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compiler.cpp; sourceTree = "<group>"; };
+		90D406802794AA5D0007360C /* number.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = number.cpp; sourceTree = "<group>"; };
+		90D406812794AA5D0007360C /* number.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = number.hpp; sourceTree = "<group>"; };
 		90D528AB25E2BD7100DA0BFD /* flags.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = flags.hpp; sourceTree = "<group>"; };
 		90DAF9522736F6FF00C2FC71 /* util.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = util.cpp; sourceTree = "<group>"; };
 		90DAF9532736F6FF00C2FC71 /* util.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = util.hpp; sourceTree = "<group>"; };
@@ -189,6 +192,8 @@
 				9085E94625FD0D5900C0E1F0 /* table.hpp */,
 				90DAF9522736F6FF00C2FC71 /* util.cpp */,
 				90DAF9532736F6FF00C2FC71 /* util.hpp */,
+				90D406802794AA5D0007360C /* number.cpp */,
+				90D406812794AA5D0007360C /* number.hpp */,
 			);
 			path = cpplox;
 			sourceTree = "<group>";
@@ -251,6 +256,7 @@
 			files = (
 				90A4208D25DFB75600DE641F /* chunk.cpp in Sources */,
 				9011AB0626F399DB00D762E8 /* flags.cpp in Sources */,
+				90D406822794AA5D0007360C /* number.cpp in Sources */,
 				90270FDC2671EEBC002C211C /* fileio.cpp in Sources */,
 				90DAF9542736F6FF00C2FC71 /* util.cpp in Sources */,
 				90270FE02671EEBC002C211C /* startEditor.cpp in Sources */,

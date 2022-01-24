@@ -141,7 +141,7 @@ void markGlobal(Table* table, VM* vm) {
         Entry* entry = &table->entries[i];
         if(ValueOP::is_obj(entry->key)) {
             markObject(vm, ValueOP::as_obj(entry->key));
-            markValue(vm, vm->globalValues.values[(int)ValueOP::as_number(entry->value)]);
+            markValue(vm, vm->globalValues.values[ValueOP::as_number(entry->value).number.whole]);
         }
     }
 }

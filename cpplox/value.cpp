@@ -91,7 +91,7 @@ Value ValueOP::nul_val() {
     return val;
 }
 
-Value ValueOP::number_val(double value) {
+Value ValueOP::number_val(Number value) {
     Value val;
     val.type = VAL_NUMBER;
     val.as.number = value;
@@ -102,7 +102,7 @@ bool ValueOP::as_bool(Value value) {
     return value.as.boolean;
 }
 
-double ValueOP::as_number(Value value) {
+Number ValueOP::as_number(Value value) {
     return value.as.number;
 }
 
@@ -116,6 +116,10 @@ bool ValueOP::is_nul(Value value) {
 
 bool ValueOP::is_number(Value value) {
     return value.type == VAL_NUMBER;
+}
+
+bool ValueOP::is_whole_number(Value value) {
+    return !as_number(value).is_float;
 }
 
 bool ValueOP::is_obj(Value value) {
@@ -173,9 +177,10 @@ void ValueOP::printValue(Value value) {
         case VAL_NUL:
             std::cout << "nul";
             break;
-        case VAL_NUMBER:
+        case VAL_NUMBER: {
             std::cout << as_number(value);
             break;
+        }
         case VAL_OBJ:
             printObject(value);
             break;
@@ -295,13 +300,15 @@ void ValueOP::printFunction(ObjFunction *function) {
 }
 
 
-uint32_t ValueOP::hashDouble(double value) {
+uint32_t ValueOP::hashNumber(Number value) {
     union {
-        double value;
+        double decimal;
+        long long whole;
         uint32_t ints[2];
     } cast;
     
-    cast.value = (value) + 1.0;
+    if(value.is_float) cast.decimal = value.number.decimal + 1.0;
+    else cast.whole = value.number.whole + 1;
     return cast.ints[0] + cast.ints[1];
 }
 
@@ -320,7 +327,7 @@ uint32_t ValueOP::hashValue(Value value) {
     switch(value.type) {
         case VAL_BOOL: return as_bool(value) ? 3 : 4;
         case VAL_NUL: return 8;
-        case VAL_NUMBER: return hashDouble(as_number(value));
+        case VAL_NUMBER: return hashNumber(as_number(value));
         case VAL_OBJ: return as_string(value)->hash;
         case VAL_EMPTY: return 0;
     }
@@ -433,8 +440,9 @@ ObjString* ValueOP::to_string(Value value, VM* vm) {
             return ObjString::copyString(vm, "nul", 3);
         }
         case VAL_NUMBER: {
-            std::string num = std::to_string(value.as.number);
-            return ObjString::copyString(vm, num.c_str(), num.length());
+            std::stringstream ss;
+            ss << value.as.number;
+            return ObjString::copyString(vm, ss.str().c_str(), ss.str().length());
         }
         case VAL_OBJ: {
             return object_to_string(value, vm);
