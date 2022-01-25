@@ -47,20 +47,36 @@ ObjString* ObjString::makeString(VM* vm, size_t length, uint32_t hash) {
     return string;
 }
 
-ObjString* ObjString::copyString(VM* vm, const char* chars, size_t length) {
-    uint32_t hash = hashString(chars, length);
-    ObjString* interned = vm->strings.tableFindString(chars, length,
+ObjString* ObjString::copyString(VM* vm, std::string& chars) {
+    uint32_t hash = hashString(chars.c_str(), chars.size());
+    ObjString* interned = vm->strings.tableFindString(chars.c_str(), chars.size(),
                                                       hash);
     
     if (interned != nullptr) {
         return interned;
     }
     
-    ObjString* string = makeString(vm, length, hash);
-    string->chars = std::string(chars, length);
+    ObjString* string = makeString(vm, chars.size(), hash);
+    string->chars = chars;
     
     return string;
 }
+
+ObjString* ObjString::copyString(VM* vm, std::string&& chars) {
+    uint32_t hash = hashString(chars.c_str(), chars.size());
+    ObjString* interned = vm->strings.tableFindString(chars.c_str(), chars.size(),
+                                                      hash);
+    
+    if (interned != nullptr) {
+        return interned;
+    }
+    
+    ObjString* string = makeString(vm, chars.size(), hash);
+    string->chars = std::move(chars);
+    
+    return string;
+}
+
 
 ObjFunction* ObjFunction::newFunction(VM* vm, FunctionType type) {
     ObjFunction* function = allocate_obj<ObjFunction>(OBJ_FUNCTION, vm);
@@ -136,8 +152,8 @@ NativeClassRes NativeClassRes::genResponse(Value returnVal, bool isVoid) {
     return res;
 }
 
-void ObjNativeClass::addMethod(const std::string& name, NativeClassMethod method, VM* vm) {
-    vm->push_stack(ValueOP::obj_val(ObjString::copyString(vm, name.c_str(), name.size())));
+void ObjNativeClass::addMethod(std::string&& name, NativeClassMethod method, VM* vm) {
+    vm->push_stack(ValueOP::obj_val(ObjString::copyString(vm, std::move(name))));
     vm->push_stack(ValueOP::obj_val(ObjNativeClassMethod::newNativeClassMethod(method, vm)));
     methods.tableSet(vm->peek(1), vm->peek(0));
     vm->stack.pop_back();
@@ -164,8 +180,10 @@ NativeClassRes ObjCollectionClass::indexAccess(ObjNativeInstance* instance, int 
         return NativeClassRes::genError("Expected 1 argument, got " + std::to_string(argCount) + " instead.");
     if(!ValueOP::is_number(args[0]))
         return NativeClassRes::genError("Expected number as argument for collection random access.");
+    if(!ValueOP::is_whole_number(args[0]))
+        return NativeClassRes::genError("Expect number to be whole number.");
     
-    long index = ValueOP::as_number(args[0]);
+    long long index = ValueOP::as_number(args[0]).number.whole;
     if(std::abs(index) >= collection->values.count)
         return NativeClassRes::genError("Out of range random accees");
     
@@ -229,8 +247,9 @@ NativeClassRes ObjCollectionClass::deleteIndex(ObjNativeInstance *instance, int 
     ObjCollectionInstance* collection = static_cast<ObjCollectionInstance*>(instance);
     if(argCount != 1) return NativeClassRes::genError("Expected 1 argument, got " + std::to_string(argCount) + " instead.");
     if(!ValueOP::is_number(args[0])) return NativeClassRes::genError("Argument should be a number.");
+    if(!ValueOP::is_whole_number(args[0])) return NativeClassRes::genError("Expect number to be whole number.");
     
-    long index = ValueOP::as_number(args[0]);
+    long long index = ValueOP::as_number(args[0]).number.whole;
     if(abs(index) >= collection->values.count) return NativeClassRes::genError("Index out of bound.");
     if(index < 0) index += collection->values.count;
     

@@ -98,13 +98,19 @@ Token Scanner::string() {
 Token Scanner::number() {
     while(isdigit(peek())) advance();
     
+    bool isFloat = false;
     if (peek() == '.' && isdigit(peekNext())) {
+        isFloat = true;
         advance();
         
         while (isdigit(peek())) advance();
     }
     
-    return makeToken(TOKEN_NUMBER);
+    if(isFloat) {
+        return makeToken(TOKEN_FLOAT);
+    } else {
+        return makeToken(TOKEN_NUMBER);
+    }
 }
 
 TokenType Scanner::checkKeyword(int start, int length,

@@ -58,7 +58,8 @@ class ObjString : public Obj {
 public:
     uint32_t hash;
     std::string chars;
-    static ObjString* copyString(VM* vm, const char* chars, size_t length);
+    static ObjString* copyString(VM* vm, std::string& chars);
+    static ObjString* copyString(VM* vm, std::string&& chars);
     static uint32_t hashString(const char* key, size_t length);
 };
 
@@ -161,7 +162,7 @@ public:
     NativeClassType subType;
     
     
-    void addMethod(const std::string& name, NativeClassMethod method, VM* vm);
+    void addMethod(std::string&& name, NativeClassMethod method, VM* vm);
     virtual NativeClassRes invokeMethod(ObjString* name, ObjNativeInstance* instance, int argCount, Value* args)=0;
     virtual ~ObjNativeClass()=default;
 };
