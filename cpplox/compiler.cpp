@@ -98,9 +98,9 @@ Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scan
     function = ObjFunction::newFunction(vm, type);
     
     if (type != TYPE_SCRIPT && type != TYPE_IMPORT) {
-        function->name = ObjString::copyString(vm, parser->previous.source.c_str(), parser->previous.length);
+        function->name = ObjString::copyString(vm, parser->previous.source);
     } else if(type == TYPE_IMPORT) {
-        function->name = ObjString::copyString(vm, "<import>", 8);
+        function->name = ObjString::copyString(vm, "<import>");
     }
     
     if(localCount + 1 >= locals.capacity()) {
@@ -183,7 +183,7 @@ void Compiler::emitByte(uint8_t byte) {
 ObjFunction* Compiler::endCompiler() {
     if(type == TYPE_SCRIPT) {
         Value main_loc;
-        Value identifier = ValueOP::obj_val(ObjString::copyString(vm, "main", 4));
+        Value identifier = ValueOP::obj_val(ObjString::copyString(vm, "main"));
         if(vm->globalNames.tableGet(identifier, &main_loc)) {
             uint8_t main_index = static_cast<uint8_t>(ValueOP::as_number(main_loc).number.whole);
             emitBytes(OP_GET_GLOBAL, main_index);
@@ -282,9 +282,7 @@ void Compiler::unary(bool canAssign) {
 }
 
 void Compiler::string(bool canAssign) {
-    ObjString* string = ObjString::copyString(vm, parser->previous.source.c_str() + 1,
-                                              parser->previous.length - 2);
-    
+    ObjString* string = ObjString::copyString(vm, parser->previous.source.substr(1, parser->previous.source.size() - 2));
     emitConstant(ValueOP::obj_val(string));
 }
 
@@ -515,7 +513,7 @@ uint8_t Compiler::parseVariable(const std::string& errorMessage, bool isConst, b
 
 uint8_t Compiler::globalConstant(Token *name, bool isConst) {
     Value index;
-    Value identifier = ValueOP::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length));
+    Value identifier = ValueOP::obj_val(ObjString::copyString(vm, name->source));
     if (vm->globalNames.tableGet(identifier, &index)) {
         return (uint8_t)(ValueOP::as_number(index).number.whole);
     }
@@ -561,7 +559,7 @@ void Compiler::namedVariable(Token* name, bool canAssign) {
     if (canAssign && match(TOKEN_EQUAL)) {
         if(setOp == OP_SET_GLOBAL) {
             Value index;
-            Value identifier = ValueOP::obj_val(ObjString::copyString(vm, name->source.c_str(), name->length));
+            Value identifier = ValueOP::obj_val(ObjString::copyString(vm, name->source));
             vm->globalNames.tableGet(identifier, &index);
             if(ValueOP::isConst(index)) {
                 parser->error("Cannot assign to constant variable.");
@@ -1138,7 +1136,7 @@ void Compiler::dot(bool canAssign) {
 }
 
 uint8_t Compiler::addIdentifierConstant(Token *name) {
-    ObjString* string = ObjString::copyString(vm, name->source.c_str(), name->length);
+    ObjString* string = ObjString::copyString(vm, name->source);
     Value indexValue;
     
     if(stringConstants.tableGet(ValueOP::obj_val(string),&indexValue)) {
