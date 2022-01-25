@@ -154,8 +154,8 @@ VM::VM() : strings(this), globalNames(this), globalValues(this){
     defineNative("setField", &VM::setFieldNative, 3);
     defineNative("interpolate", &VM::interpolateNative, 2);
     defineNative("toString", &VM::toStringNative, 1);
-    defineNative("isFloat", &VM::isFloat, 1);
-    defineNative("isWhole", &VM::isFloat, 1);
+    defineNative("isFloat", &VM::isFloatNative, 1);
+    defineNative("isWhole", &VM::isWholeNative, 1);
     
     defineNativeClass("Collection", NATIVE_COLLECTION);
 }
@@ -928,7 +928,7 @@ void VM::appendCollection() {
     for(int i = 0; i < collection2->values.count; i++) newcollection->values.writeValueArray(collection2->values.values[i]);
 }
 
-bool VM::isFloat(int argCount, Value *args) {
+bool VM::isFloatNative(int argCount, Value *args) {
     if (!ValueOP::is_number(args[0])) {
         args[-1] = ValueOP::obj_val(ObjString::copyString(this, "isFloat only accept Number"));
         return false;
@@ -939,13 +939,13 @@ bool VM::isFloat(int argCount, Value *args) {
     return true;
 }
 
-bool VM::isWhole(int argCount, Value *args) {
+bool VM::isWholeNative(int argCount, Value *args) {
     if (!ValueOP::is_number(args[0])) {
         args[-1] = ValueOP::obj_val(ObjString::copyString(this, "isWhole only accept Number"));
         return false;
     }
     
-    isFloat(argCount, args);
-    args[-1] = ValueOP::bool_val(!ValueOP::as_bool(args[-1]));
+    Number a = ValueOP::as_number(args[0]);
+    args[-1] = ValueOP::bool_val(!a.is_float);
     return true;
 }

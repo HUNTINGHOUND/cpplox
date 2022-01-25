@@ -100,9 +100,10 @@ class VM {
     
     bool toStringNative(int argCount, Value* args);
     
-    bool isFloat(int argCount, Value* args);
+    bool isFloatNative(int argCount, Value* args);
     
-    bool isWhole(int argCount, Value* args);
+    bool isWholeNative(int argCount, Value* args);
+    
     
 public:
     Compiler* current;
