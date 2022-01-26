@@ -971,6 +971,13 @@ TEST_F(Table_test, find_string_test) {
     EXPECT_STREQ(res->chars.c_str(), "test_test");
 }
 
+class Compiler_test {
+protected:
+    Scanner scan;
+    Parser parse;
+    
+}
+
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

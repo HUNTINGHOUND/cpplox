@@ -99,6 +99,9 @@ struct Upvalue {
 
 /// Class representing a compiler. Compiles functions (including base script) into chunks of byte code
 class Compiler {
+    Scanner* scanner;
+    Parser* parser;
+    
     /// Current function compiling
     ObjFunction* function;
     
@@ -350,9 +353,6 @@ class Compiler {
     void method();
     
 public:
-    
-    Scanner* scanner;
-    Parser* parser;
     
     std::vector<Local> locals;
     int localCount;
