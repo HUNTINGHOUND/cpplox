@@ -1081,6 +1081,46 @@ TEST_F(Compiler_test, compile_binary_less_equal) {
     EXPECT_EQ(func->chunk.code[6], OP_POP);
 }
 
+TEST_F(Compiler_test, compile_binary_plus) {
+    ObjFunction *func = compiler->compile("123 + 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_ADD);
+    EXPECT_EQ(func->chunk.code[5], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_binary_minus) {
+    ObjFunction *func = compiler->compile("123 - 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_SUBTRACT);
+    EXPECT_EQ(func->chunk.code[5], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_binary_multiply) {
+    ObjFunction *func = compiler->compile("123 * 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_MULTIPLY);
+    EXPECT_EQ(func->chunk.code[5], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_binary_divi) {
+    ObjFunction *func = compiler->compile("123 / 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_DIVIDE);
+    EXPECT_EQ(func->chunk.code[5], OP_POP);
+}
+
 
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);

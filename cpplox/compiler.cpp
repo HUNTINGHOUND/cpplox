@@ -207,7 +207,7 @@ ObjFunction* Compiler::endCompiler() {
 }
 
 void Compiler::condition(bool canAssign) {
-    parsePrecedence(PREC_CONDITIONAL);
+    parsePrecedence(PREC_OR);
     
     parser->consume(TOKEN_COLON, "Expect ':' after conditional operator");
     
