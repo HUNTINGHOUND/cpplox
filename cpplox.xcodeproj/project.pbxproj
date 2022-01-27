@@ -251,6 +251,8 @@
 				9085E94625FD0D5900C0E1F0 /* table.hpp */,
 				90DAF9522736F6FF00C2FC71 /* util.cpp */,
 				90DAF9532736F6FF00C2FC71 /* util.hpp */,
+				90D406802794AA5D0007360C /* number.cpp */,
+				90D406812794AA5D0007360C /* number.hpp */,
 			);
 			path = cpplox;
 			sourceTree = "<group>";
@@ -359,6 +361,7 @@
 				90CF7EA827856FA0009AB1F0 /* main.cpp in Sources */,
 				90A4208D25DFB75600DE641F /* chunk.cpp in Sources */,
 				9011AB0626F399DB00D762E8 /* flags.cpp in Sources */,
+				90D406822794AA5D0007360C /* number.cpp in Sources */,
 				90270FDC2671EEBC002C211C /* fileio.cpp in Sources */,
 				90DAF9542736F6FF00C2FC71 /* util.cpp in Sources */,
 				90270FE02671EEBC002C211C /* startEditor.cpp in Sources */,

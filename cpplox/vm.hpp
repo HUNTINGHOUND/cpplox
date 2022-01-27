@@ -58,9 +58,9 @@ class VM {
     
     bool callFunction(ObjFunction* function, int argCount);
     
-    void defineNative(const std::string& name, NativeFn function, int arity);
+    void defineNative(std::string&& name, NativeFn function, int arity);
     
-    void defineNativeClass(const std::string& name, NativeClassType type);
+    void defineNativeClass(std::string&& name, NativeClassType type);
     
     ObjUpvalue* captureUpvalue(size_t localIndex);
     

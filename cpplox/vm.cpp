@@ -15,11 +15,11 @@ bool VM::toStringNative(int argCount, Value *args) {
 
 bool VM::interpolateNative(int argCount, Value *args) {
     if(!ValueOP::is_string(args[0])) {
-        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first element to be a string.", 38));
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first element to be a string."));
         return false;
     }
     if(!ValueOP::is_native_subinstance(args[1], NATIVE_COLLECTION_INSTANCE)) {
-        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected the second argument to be collection.", 46));
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected the second argument to be collection."));
         return false;
     }
     
@@ -35,7 +35,7 @@ bool VM::interpolateNative(int argCount, Value *args) {
     while(i < n) {
         if(format->chars[i] == '$' && i != n - 2 && format->chars[i + 1] == '{' && format->chars[i + 2] == '}') {
             if(j >= m) {
-                args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected more arguments for interpolation.", 42));
+                args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected more arguments for interpolation."));
                 return false;
             }
             
@@ -52,7 +52,7 @@ bool VM::interpolateNative(int argCount, Value *args) {
         }
     }
     
-    args[-1] = ValueOP::obj_val(ObjString::copyString(this, interloped.c_str(), interloped.size()));
+    args[-1] = ValueOP::obj_val(ObjString::copyString(this, interloped));
     return true;
 }
 
@@ -62,13 +62,13 @@ bool VM::clockNative(int argCount, Value *args) {
 }
 
 bool VM::errNative(int argCount, Value* args) {
-    args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Error.", 6));
+    args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Error."));
     return false;
 }
 
 bool VM::runtimeErrNative(int argCount, Value *args) {
     ObjString* errMessage = ValueOP::as_string(args[0]);
-    args[-1] = ValueOP::obj_val(ObjString::copyString(this, errMessage->chars.c_str(), errMessage->chars.length()));
+    args[-1] = ValueOP::obj_val(ObjString::copyString(this, errMessage->chars));
     return false;
 }
 
@@ -76,22 +76,22 @@ bool VM::getLineNative(int argCount, Value *args) {
     try {
         std::string get;
         getline(std::cin, get);
-        args[-1] = ValueOP::obj_val(ObjString::copyString(this, get.c_str(), get.length()));
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, get));
         return true;
     } catch(std::exception& e) {
-        args[-1] = ValueOP::obj_val(ObjString::copyString(this, e.what(), (int)strlen(e.what())));
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, e.what()));
         return false;
     }
 }
 
 bool VM::hasFieldNative(int argCount, Value* args) {
     if(!ValueOP::is_instance(args[0])) {
-        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first argument to be a class instance.", 47));
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first argument to be a class instance."));
         return false;
     }
     
     if(!ValueOP::is_string(args[1])) {
-        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected second argument to be a string.", 40));
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected second argument to be a string."));
         return false;
     }
     
@@ -103,12 +103,12 @@ bool VM::hasFieldNative(int argCount, Value* args) {
 
 bool VM::getFieldNative(int argCount, Value *args) {
     if(!ValueOP::is_instance(args[0])) {
-        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first argument to be a class instance.", 47));
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected first argument to be a class instance."));
         return false;
     }
     
     if(!ValueOP::is_string(args[1])) {
-        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected second argument to be a string.", 40));
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Expected second argument to be a string."));
         return false;
     }
     
@@ -119,7 +119,7 @@ bool VM::getFieldNative(int argCount, Value *args) {
         args[-1] = field;
         return true;
     } else {
-        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Instance does not contain given field.", 38));
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "Instance does not contain given field."));
         return false;
     }
 }
@@ -143,7 +143,7 @@ VM::VM() : strings(this), globalNames(this), globalValues(this){
     marker = true;
     
     initString = nullptr;
-    initString = ObjString::copyString(this, "init", 4);
+    initString = ObjString::copyString(this, "init");
     
     defineNative("clock", &VM::clockNative, 0);
     defineNative("error", &VM::errNative, 0);
@@ -154,6 +154,8 @@ VM::VM() : strings(this), globalNames(this), globalValues(this){
     defineNative("setField", &VM::setFieldNative, 3);
     defineNative("interpolate", &VM::interpolateNative, 2);
     defineNative("toString", &VM::toStringNative, 1);
+    defineNative("isFloat", &VM::isFloatNative, 1);
+    defineNative("isWhole", &VM::isWholeNative, 1);
     
     defineNativeClass("Collection", NATIVE_COLLECTION);
 }
@@ -190,9 +192,9 @@ InterpretResult VM::binary_op(Value (*valuetype)(T),std::function<T (U, U)> func
         runtimeError("Operands must be numbers.");
         return INTERPRET_RUNTIME_ERROR;
     }
-    double b = ValueOP::as_number(stack.back());
+    Number b = ValueOP::as_number(stack.back());
     stack.pop_back();
-    double a = ValueOP::as_number(stack.back());
+    Number a = ValueOP::as_number(stack.back());
     stack.pop_back();
     Value v = std::invoke(*valuetype, func(a,b));
     push_stack(v);
@@ -268,18 +270,18 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_GREATER: {
-                binary_op<bool, double>(ValueOP::bool_val, std::greater<double>());
+                binary_op<bool, Number>(ValueOP::bool_val, std::greater<Number>());
                 break;
             }
             case OP_LESS: {
-                binary_op<bool, double>(ValueOP::bool_val, std::less<double>());
+                binary_op<bool, Number>(ValueOP::bool_val, std::less<Number>());
                 break;
             }
             case OP_ADD: {
                 if (ValueOP::is_string(peek(0)) && ValueOP::is_string(peek(1))) {
                     concatenate();
                 } else if (ValueOP::is_number(peek(0)) && ValueOP::is_number(peek(1))) {
-                    binary_op<double,double>(ValueOP::number_val, std::plus<double>());
+                    binary_op<Number,Number>(ValueOP::number_val, std::plus<Number>());
                 } else if (ValueOP::is_native_subinstance(peek(0), NATIVE_COLLECTION_INSTANCE) && ValueOP::is_native_subinstance(peek(1), NATIVE_COLLECTION_INSTANCE)) {
                     appendCollection();
                 } else {
@@ -290,15 +292,15 @@ InterpretResult VM::run() {
                 break;
             }
             case OP_DIVIDE: {
-                binary_op<double,double>(ValueOP::number_val, std::divides<double>());
+                binary_op<Number,Number>(ValueOP::number_val, std::divides<Number>());
                 break;
             }
             case OP_MULTIPLY: {
-                binary_op<double,double>(ValueOP::number_val, std::multiplies<double>());
+                binary_op<Number,Number>(ValueOP::number_val, std::multiplies<Number>());
                 break;
             }
             case OP_SUBTRACT: {
-                binary_op<double,double>(ValueOP::number_val, std::minus<double>());
+                binary_op<Number,Number>(ValueOP::number_val, std::minus<Number>());
                 break;
             }
             case OP_NOT: {
@@ -352,7 +354,7 @@ InterpretResult VM::run() {
                 break;
             case OP_PRINT: {
                 if(ValueOP::is_instance(stack.back())) {
-                    ObjString* name = ObjString::copyString(this, "toString", 8);
+                    ObjString* name = ObjString::copyString(this, "toString");
                     if(invoke(name, 0, false)) {
                         frame->ip--;
                         frame = &frames.back();
@@ -576,19 +578,22 @@ InterpretResult VM::run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                double step = ValueOP::as_number(stack.back());
+                double step = ValueOP::as_number(stack.back()).is_float ?
+                    ValueOP::as_number(stack.back()).number.decimal : ValueOP::as_number(stack.back()).number.whole;
                 stack.pop_back();
                 
-                double end = ValueOP::as_number(stack.back());
+                double end = ValueOP::as_number(stack.back()).is_float ?
+                    ValueOP::as_number(stack.back()).number.decimal : ValueOP::as_number(stack.back()).number.whole;
                 stack.pop_back();
                 
-                double start = ValueOP::as_number(stack.back());
+                double start = ValueOP::as_number(stack.back()).is_float ?
+                    ValueOP::as_number(stack.back()).number.decimal : ValueOP::as_number(stack.back()).number.whole;
                 stack.pop_back();
                 
                 Value collection_idx;
-                globalNames.tableGet(ValueOP::obj_val(ObjString::copyString(this, "Collection", 10)), &collection_idx);
+                globalNames.tableGet(ValueOP::obj_val(ObjString::copyString(this, "Collection")), &collection_idx);
                 
-                ObjCollectionClass* collection_class = ValueOP::as_native_subclass<ObjCollectionClass>(globalValues.values[(long)ValueOP::as_number(collection_idx)]);
+                ObjCollectionClass* collection_class = ValueOP::as_native_subclass<ObjCollectionClass>(globalValues.values[(long)(ValueOP::as_number(collection_idx).is_float ? ValueOP::as_number(collection_idx).number.decimal : ValueOP::as_number(collection_idx).number.whole)]);
                 ObjCollectionInstance* collection = ObjCollectionInstance::newCollectionInstance(collection_class, this);
                 push_stack(ValueOP::obj_val(collection));
                 for(double i = start; (end > start) ? i < end : i > end; i += step) {
@@ -656,7 +661,7 @@ void VM::concatenate() {
     
     std::string newString = a->chars + b->chars;
     
-    ObjString* result = ObjString::copyString(this, newString.c_str(), newString.length());
+    ObjString* result = ObjString::copyString(this, newString.c_str());
     
     stack.pop_back();
     stack.pop_back();
@@ -766,7 +771,7 @@ bool VM::callValue(Value callee, int argCount) {
                 }
                 
                 if(_class->hasInitializer) {
-                    _class->invokeMethod(ObjString::copyString(this, "init", 4), ValueOP::as_native_instance(back[-argCount]), argCount, &stack[stack.size() - 1] - argCount + 1);
+                    _class->invokeMethod(ObjString::copyString(this, "init"), ValueOP::as_native_instance(back[-argCount]), argCount, &stack[stack.size() - 1] - argCount + 1);
                     for(int i = 0; i < argCount; i++) stack.pop_back();
                 } else if(argCount != 0) {
                     runtimeError("Expected 0 argument, but got %d.", argCount);
@@ -819,8 +824,8 @@ bool VM::call(Obj* callee, ObjFunction* function, int argCount) {
     return true;
 }
 
-void VM::defineNative(const std::string& name, NativeFn function, int arity) {
-    push_stack(ValueOP::obj_val(ObjString::copyString(this, name.c_str(), (int)strlen(name.c_str()))));
+void VM::defineNative(std::string&& name, NativeFn function, int arity) {
+    push_stack(ValueOP::obj_val(ObjString::copyString(this, std::move(name))));
     push_stack(ValueOP::obj_val(ObjNative::newNative(function,arity, this)));
     globalValues.writeValueArray(stack[1]);
     globalNames.tableSet(stack[0], ValueOP::number_val(globalValues.count - 1));
@@ -828,8 +833,8 @@ void VM::defineNative(const std::string& name, NativeFn function, int arity) {
     stack.pop_back();
 }
 
-void VM::defineNativeClass(const std::string &name, NativeClassType type) {
-    ObjString* obj_name = ObjString::copyString(this, name.c_str(), (int)strlen(name.c_str()));
+void VM::defineNativeClass(std::string&& name, NativeClassType type) {
+    ObjString* obj_name = ObjString::copyString(this, std::move(name));
     push_stack(ValueOP::obj_val(obj_name));
     switch (type) {
         case NATIVE_COLLECTION:
@@ -921,4 +926,26 @@ void VM::appendCollection() {
     push_stack(ValueOP::obj_val(newcollection));
     for(int i = 0; i < collection1->values.count; i++) newcollection->values.writeValueArray(collection1->values.values[i]);
     for(int i = 0; i < collection2->values.count; i++) newcollection->values.writeValueArray(collection2->values.values[i]);
+}
+
+bool VM::isFloatNative(int argCount, Value *args) {
+    if (!ValueOP::is_number(args[0])) {
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "isFloat only accept Number"));
+        return false;
+    }
+    
+    Number a = ValueOP::as_number(args[0]);
+    args[-1] = ValueOP::bool_val(a.is_float);
+    return true;
+}
+
+bool VM::isWholeNative(int argCount, Value *args) {
+    if (!ValueOP::is_number(args[0])) {
+        args[-1] = ValueOP::obj_val(ObjString::copyString(this, "isWhole only accept Number"));
+        return false;
+    }
+    
+    Number a = ValueOP::as_number(args[0]);
+    args[-1] = ValueOP::bool_val(!a.is_float);
+    return true;
 }
