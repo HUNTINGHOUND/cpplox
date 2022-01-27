@@ -19,8 +19,8 @@ void Find::editorFind() {
 }
 
 void Find::editorFindCallback(std::string& query, int key) {
-    static int last_matchy = -1;
-    static int last_matchx = -1;
+    static size_t last_matchy = -1;
+    static size_t last_matchx = -1;
     static int direction = 1;
     
     static int saved_hl_line;
@@ -48,7 +48,7 @@ void Find::editorFindCallback(std::string& query, int key) {
     }
     
     if(last_matchy == -1) direction = 1;
-    int current = last_matchy;
+    size_t current = last_matchy;
     if(current == -1) current = 0;
     for(int i = 0; i <= E.numsrows; i++) {
         Erow* row = &E.row[current];

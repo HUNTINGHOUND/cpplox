@@ -34,9 +34,7 @@ void Chunk::writeChunk(uint8_t byte, int line) {
 }
 
 int Chunk::addConstant(Value value) {
-    vm->stack.push_back(value);
     this->constants.writeValueArray(value);
-    vm->stack.pop_back();
     return (int)this->constants.count - 1;
 }
 

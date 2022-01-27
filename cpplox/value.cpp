@@ -263,7 +263,7 @@ void ValueOP::printObject(Value value) {
             std::cout << as_instance(value)->_class->name->chars << " instance";
             break;
         case OBJ_NATIVE_CLASS_METHOD:
-            std::cout << "Native class method.";
+            std::cout << "native class method";
             break;
         case OBJ_NATIVE_CLASS: {
             ObjNativeClass* _class = as_native_class(value);
@@ -538,4 +538,8 @@ bool ValueOP::is_native_method(Value value) {
 
 ObjNativeClassMethod* ValueOP::as_native_class_method(Value value) {
     return static_cast<ObjNativeClassMethod*>(as_obj(value));
+}
+
+bool ValueOP::is_upvalue(Value value) {
+    return is_obj(value) && as_obj(value)->type == OBJ_UPVALUE;
 }

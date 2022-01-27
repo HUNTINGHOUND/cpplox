@@ -4,6 +4,7 @@
 
 
 Table::Table() {
+    count = 0;
     vm = nullptr;
 }
 

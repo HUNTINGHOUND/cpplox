@@ -38,7 +38,7 @@ char Terminal::ctrl_key(char k) {
 }
 
 int Terminal::editorReadKey() {
-    int nread;
+    size_t nread;
     char c;
     while((nread = read(STDIN_FILENO, &c, 1)) != 1) {
         if(nread == -1 && errno != EAGAIN) kill("read");
