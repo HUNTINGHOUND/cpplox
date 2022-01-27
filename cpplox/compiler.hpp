@@ -443,7 +443,7 @@ public:
     /// @param enclosing The pointer to the outter compiler enclosing this one (used for compiling methods and functions)
     /// @param scanner The pointer to the scanner which the compiler will read from
     /// @param parser The pointer to the parser which the compiler will read from
-    Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser, std::string& current_source);
+    Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser, const std::string& current_source);
     
     
     /// Compile a given source code and return an ObjFunction pointer containing the compiled function. Note that the compiled function is the "<script>"  as this method is only called by the VM.

@@ -971,12 +971,116 @@ TEST_F(Table_test, find_string_test) {
     EXPECT_STREQ(res->chars.c_str(), "test_test");
 }
 
-class Compiler_test {
+class Compiler_test : public testing::Test {
 protected:
-    Scanner scan;
-    Parser parse;
+    std::unique_ptr<Scanner> scan = nullptr;
+    std::unique_ptr<Parser> parser = nullptr;
+    std::unique_ptr<VM> vm = nullptr;
+    std::unique_ptr<Compiler> compiler = nullptr;
     
+    void SetUp() override {
+        scan = std::make_unique<Scanner>();
+        parser = std::make_unique<Parser>(scan.get());
+        vm = std::make_unique<VM>();
+        
+        std::filesystem::path currentPath(".");
+        compiler = std::make_unique<Compiler>(vm.get(), TYPE_SCRIPT, nullptr, scan.get(), parser.get(), std::filesystem::absolute(currentPath).string());
+        
+    }
+    
+};
+
+TEST_F(Compiler_test, compile_number) {
+    ObjFunction *func = compiler->compile("123;");
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_POP);
 }
+
+TEST_F(Compiler_test, compile_grouping) {
+    ObjFunction *func = compiler->compile("2 * (2 + 3);");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[6], OP_ADD);
+    EXPECT_EQ(func->chunk.code[7], OP_MULTIPLY);
+    EXPECT_EQ(func->chunk.code[8], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_unary) {
+    ObjFunction *func = compiler->compile("-123;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_NEGATE);
+    EXPECT_EQ(func->chunk.code[3], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_binary_bangequal) {
+    ObjFunction *func = compiler->compile("123 != 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_EQUAL);
+    EXPECT_EQ(func->chunk.code[5], OP_NOT);
+    EXPECT_EQ(func->chunk.code[6], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_binary_equalequal) {
+    ObjFunction *func = compiler->compile("123 == 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_EQUAL);
+    EXPECT_EQ(func->chunk.code[5], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_binary_greater) {
+    ObjFunction *func = compiler->compile("123 > 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_GREATER);
+    EXPECT_EQ(func->chunk.code[5], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_binary_greater_equal) {
+    ObjFunction *func = compiler->compile("123 >= 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_LESS);
+    EXPECT_EQ(func->chunk.code[5], OP_NOT);
+    EXPECT_EQ(func->chunk.code[6], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_binary_less) {
+    ObjFunction *func = compiler->compile("123 < 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_LESS);
+    EXPECT_EQ(func->chunk.code[5], OP_POP);
+}
+
+TEST_F(Compiler_test, compile_binary_less_equal) {
+    ObjFunction *func = compiler->compile("123 <= 234;");
+    ASSERT_TRUE(func);
+    
+    EXPECT_EQ(func->chunk.code[0], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[2], OP_CONSTANT);
+    EXPECT_EQ(func->chunk.code[4], OP_GREATER);
+    EXPECT_EQ(func->chunk.code[5], OP_NOT);
+    EXPECT_EQ(func->chunk.code[6], OP_POP);
+}
+
 
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);

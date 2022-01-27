@@ -77,7 +77,7 @@ Local::Local() : name(TOKEN_NUL, "", 0, 0, 0) {
     this->isCaptured = false;
 }
 
-Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser, std::string& current_source) : stringConstants(vm) {
+Compiler::Compiler(VM* vm, FunctionType type, Compiler* enclosing, Scanner* scanner, Parser* parser, const std::string& current_source) : stringConstants(vm) {
     this->enclosing = enclosing;
     
     this->scanner = scanner;
