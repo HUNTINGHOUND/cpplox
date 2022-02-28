@@ -4,6 +4,7 @@
 #define value_h
 
 #include "pch.pch"
+#include "number.hpp"
 
 class Obj;
 class ObjString;
@@ -44,7 +45,7 @@ public:
     bool isConst = false;
     union {
         bool boolean;
-        double number;
+        Number number;
         Obj* obj;
     } as;
     
@@ -53,11 +54,12 @@ public:
 #endif
 
 namespace ValueOP {
-uint32_t hashDouble(double value);
+uint32_t hashNumber(Number value);
 
 bool is_bool(Value value);
 bool is_nul(Value value);
 bool is_number(Value value);
+bool is_whole_number(Value value);
 bool is_obj(Value value);
 bool is_string(Value value);
 bool is_empty(Value value);
@@ -77,7 +79,7 @@ bool isObjType(Value value, ObjType type);
 bool isConst(Value value);
 
 bool as_bool(Value value);
-double as_number(Value value);
+Number as_number(Value value);
 Obj* as_obj(Value value);
 ObjString* as_string(Value value);
 std::string* as_std_string(Value value);
@@ -105,7 +107,7 @@ ObjString* function_to_string(ObjFunction* function, VM* vm);
 
 Value bool_val(bool value);
 Value nul_val();
-Value number_val(double value);
+Value number_val(Number value);
 Value obj_val(Obj* obj);
 Value empty_val();
 

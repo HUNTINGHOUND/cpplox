@@ -58,9 +58,9 @@ class VM {
     
     bool callFunction(ObjFunction* function, int argCount);
     
-    void defineNative(const std::string& name, NativeFn function, int arity);
+    void defineNative(std::string&& name, NativeFn function, int arity);
     
-    void defineNativeClass(const std::string& name, NativeClassType type);
+    void defineNativeClass(std::string&& name, NativeClassType type);
     
     ObjUpvalue* captureUpvalue(size_t localIndex);
     
@@ -79,7 +79,32 @@ class VM {
     bool invokeFromClass(ObjClass* _class, ObjString* name, int argCount, bool interrupt);
     
     void appendCollection();
+  
+    //Native functions
     
+    bool clockNative(int argCount, Value *args);
+    
+    bool errNative(int argCount, Value* args);
+    
+    bool runtimeErrNative(int argCount, Value* args);
+    
+    bool getLineNative(int argCount, Value* args);
+    
+    bool hasFieldNative(int argCount, Value* args);
+    
+    bool getFieldNative(int argCount, Value* args);
+    
+    bool setFieldNative(int argCount, Value* args);
+    
+    bool interpolateNative(int argCount, Value* args);
+    
+    bool toStringNative(int argCount, Value* args);
+    
+    bool isFloatNative(int argCount, Value* args);
+    
+    bool isWholeNative(int argCount, Value* args);
+    
+   
 public:
     Compiler* current;
     ClassCompiler* currentClass;
