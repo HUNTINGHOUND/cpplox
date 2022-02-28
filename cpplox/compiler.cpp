@@ -1202,9 +1202,17 @@ void Compiler::super(bool canAssign) {
 void Compiler::randomAccess(bool canAssign) {
     parsePrecedence(PREC_CALL);
     parser->consume(TOKEN_RIGHT_BRACK, "Expect ']' after expression.");
-    Token name = Token::createToken("indexAccess");
-    emitBytes(OP_INVOKE, addIdentifierConstant(&name));
-    emitByte(1);
+    if(parser->check(TOKEN_EQUAL)) {
+        parser->advance();
+        expression();
+        Token name = Token::createToken("indexAssign");
+        emitBytes(OP_INVOKE, addIdentifierConstant(&name));
+        emitByte(2);
+    } else {
+        Token name = Token::createToken("indexAccess");
+        emitBytes(OP_INVOKE, addIdentifierConstant(&name));
+        emitByte(1);
+    }
 }
 
 

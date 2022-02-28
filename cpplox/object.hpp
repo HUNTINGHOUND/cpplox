@@ -178,6 +178,7 @@ public:
     NativeClassRes addValue(ObjNativeInstance* instance, int argCount, Value* args);
     NativeClassRes deleteIndex(ObjNativeInstance* instance, int argCount, Value* args);
     NativeClassRes indexAccess(ObjNativeInstance* instance, int argCount, Value* args);
+    NativeClassRes indexAssign(ObjNativeInstance* instance, int argCount, Value* args);
 };
 
 class ObjNativeInstance : public ObjInstance {
