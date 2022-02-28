@@ -638,7 +638,7 @@ bool VM::invokeFromClass(ObjClass *_class, ObjString *name, int argCount, bool i
     
     if(ValueOP::is_native_method(method)) {
         ObjNativeClass* native_class = static_cast<ObjNativeClass*>(_class);
-        NativeClassRes res = native_class->invokeMethod(name, ValueOP::as_native_instance(peek(1)), argCount, &stack[stack.size() - 1] - argCount + 1);
+        NativeClassRes res = native_class->invokeMethod(name, ValueOP::as_native_instance(peek(argCount)), argCount, &stack[stack.size() - 1] - argCount + 1);
         if(res.hasErr) {
             if(interrupt) runtimeError(res.propertyMissing ? "Undefined property." : res.errorMessage);
             return false;

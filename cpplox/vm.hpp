@@ -79,7 +79,7 @@ class VM {
     bool invokeFromClass(ObjClass* _class, ObjString* name, int argCount, bool interrupt);
     
     void appendCollection();
-    
+  
     //Native functions
     
     bool clockNative(int argCount, Value *args);
@@ -104,7 +104,7 @@ class VM {
     
     bool isWholeNative(int argCount, Value* args);
     
-    
+   
 public:
     Compiler* current;
     ClassCompiler* currentClass;
@@ -139,6 +139,26 @@ public:
     void push_stack(Value value);
     
     Value peek(int distance);
+    
+    // Native functions
+    
+    bool clockNative(int argCount, Value *args);
+    
+    bool errNative(int argCount, Value* args);
+    
+    bool runtimeErrNative(int argCount, Value* args);
+    
+    bool getLineNative(int argCount, Value* args);
+    
+    bool hasFieldNative(int argCount, Value* args);
+    
+    bool getFieldNative(int argCount, Value* args);
+    
+    bool setFieldNative(int argCount, Value* args);
+    
+    bool interpolateNative(int argCount, Value* args);
+    
+    bool toStringNative(int argCount, Value* args);
 };
 
 

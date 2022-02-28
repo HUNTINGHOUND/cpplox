@@ -27,6 +27,9 @@ Scanner::Scanner() {
 }
 
 void Scanner::setSource(const std::string &src) {
+    start = 0;
+    current = 0;
+    line = 1;
     source = src;
 }
 

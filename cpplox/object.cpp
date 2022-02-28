@@ -205,7 +205,23 @@ NativeClassRes ObjCollectionClass::init(ObjNativeInstance* instance, int argCoun
         addValue(instance, 1, &args[i]);
     }
     
-    return NativeClassRes::genResponse(ValueOP::empty_val(), true);
+    return NativeClassRes::genResponse(ValueOP::nul_val(), true);
+}
+
+NativeClassRes ObjCollectionClass::indexAssign(ObjNativeInstance *instance, int argCount, Value *args) {
+    ObjCollectionInstance* collection = static_cast<ObjCollectionInstance*>(instance);
+    if (argCount != 2)
+        return NativeClassRes::genError("Expect 1 argument, got " + std::to_string(argCount) + " instead.");
+    if (!ValueOP::is_number(args[0]))
+        return NativeClassRes::genError("Expected number as argument for collection random access.");
+    
+    long index = ValueOP::as_number(args[0]);
+    if(std::abs(index) >= collection->values.count)
+        return NativeClassRes::genError("Out of range random accees");
+    
+    if(index < 0) index = collection->values.count - index;
+    collection->values.values[index] = args[1];
+    return NativeClassRes::genResponse(ValueOP::nul_val(), true);
 }
 
 ObjCollectionClass* ObjCollectionClass::newCollectionClass(ObjString *name, VM *vm) {
@@ -220,6 +236,7 @@ ObjCollectionClass* ObjCollectionClass::newCollectionClass(ObjString *name, VM *
     collection->addMethod("init", static_cast<NativeClassMethod>(&ObjCollectionClass::init), vm);
     collection->addMethod("addValue", static_cast<NativeClassMethod>(&ObjCollectionClass::addValue), vm);
     collection->addMethod("indexAccess", static_cast<NativeClassMethod>(&ObjCollectionClass::indexAccess), vm);
+    collection->addMethod("indexAssign", static_cast<NativeClassMethod>(&ObjCollectionClass::indexAssign), vm);
     collection->addMethod("deleteValue", static_cast<NativeClassMethod>(&ObjCollectionClass::deleteIndex), vm);
     
     

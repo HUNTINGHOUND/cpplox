@@ -12,16 +12,26 @@
 		<key>cpplox_options.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>2</integer>
+			<integer>1</integer>
 		</dict>
-		<key>cpplox_withTest.xcscheme_^#shared#^_</key>
+		<key>cpplox_test.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>1</integer>
+			<integer>2</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>90CF7E8A27856F36009AB1F0</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>90CF7EA92785F386009AB1F0</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>90E1B4BC25BC870C003A74C5</key>
 		<dict>
 			<key>primary</key>
