@@ -430,8 +430,8 @@
             filePath = "cpplox/object.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "218"
-            endingLineNumber = "218"
+            startingLineNumber = "235"
+            endingLineNumber = "235"
             landmarkName = "ObjCollectionInstance::newCollectionInstance(_class, vm)"
             landmarkType = "7">
          </BreakpointContent>
