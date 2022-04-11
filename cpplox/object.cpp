@@ -215,12 +215,12 @@ NativeClassRes ObjCollectionClass::indexAssign(ObjNativeInstance *instance, int 
     if (!ValueOP::is_number(args[0]))
         return NativeClassRes::genError("Expected number as argument for collection random access.");
     
-    long index = ValueOP::as_number(args[0]);
+    Number index = ValueOP::as_number(args[0]);
     if(std::abs(index) >= collection->values.count)
         return NativeClassRes::genError("Out of range random accees");
     
     if(index < 0) index = collection->values.count - index;
-    collection->values.values[index] = args[1];
+    collection->values.values[Number::cast_to<size_t>(index)] = args[1];
     return NativeClassRes::genResponse(ValueOP::nul_val(), true);
 }
 
