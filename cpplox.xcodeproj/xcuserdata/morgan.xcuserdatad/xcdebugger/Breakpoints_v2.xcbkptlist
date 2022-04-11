@@ -32,8 +32,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "288"
             endingLineNumber = "288"
-            landmarkName = "Compiler::string(canAssign)"
-            landmarkType = "7">
+            landmarkName = "unknown"
+            landmarkType = "0">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -48,7 +48,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "665"
             endingLineNumber = "665"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::ifStatement()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -80,7 +80,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "492"
             endingLineNumber = "492"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::varDeclaration(isConst)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -176,7 +176,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1091"
             endingLineNumber = "1091"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::classDeclaration()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -192,7 +192,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1076"
             endingLineNumber = "1076"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::classDeclaration()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -224,7 +224,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1187"
             endingLineNumber = "1187"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::super(canAssign)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -240,7 +240,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "487"
             endingLineNumber = "487"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::varDeclaration(isConst)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -256,7 +256,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1032"
             endingLineNumber = "1032"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::resolveUpvalue(name)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -272,7 +272,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "290"
             endingLineNumber = "290"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::binary(canAssign)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -288,7 +288,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "334"
             endingLineNumber = "334"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::parsePrecedence(precedence)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -304,7 +304,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "546"
             endingLineNumber = "546"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::namedVariable(name, canAssign)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -320,7 +320,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "540"
             endingLineNumber = "540"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::variable(canAssign)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -336,7 +336,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "289"
             endingLineNumber = "289"
-            landmarkName = "Compiler::string(canAssign)"
+            landmarkName = "Compiler::binary(canAssign)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -432,7 +432,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "235"
             endingLineNumber = "235"
-            landmarkName = "ObjCollectionInstance::newCollectionInstance(_class, vm)"
+            landmarkName = "ObjCollectionClass::newCollectionClass(name, vm)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

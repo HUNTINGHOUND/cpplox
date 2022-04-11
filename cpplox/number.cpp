@@ -93,3 +93,8 @@ std::ostream& operator<<(std::ostream& os, Number const& num) {
     os << (num.is_float ? num.number.decimal : num.number.whole);
     return os;
 }
+
+Number std::abs(Number const & n) {
+    if (n < 0) return -n;
+    else return n;
+}
